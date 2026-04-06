@@ -1,9 +1,8 @@
-import mongoose from "mongoose"
+import mongoose, { ObjectId } from "mongoose"
 import XLSX from 'xlsx'
 import { IListening, Listening, IListeningPaginateResult } from "../models/listening.model"
 import ErrorHandler from "../utils/ErrorHandler"
 import { StudyHistory } from '../models/studyHistory.model'
-import { UserProgress } from '../models/userProgress.model'
 import { StudyService } from './study.service'
 import { StreakService } from "./streak.service"
 import { User } from "../models/user.model"
@@ -17,8 +16,8 @@ export class ListeningService {
     const totalLessons = await Listening.countDocuments();
     const activeLessons = await Listening.countDocuments({ isActive: true });
     const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalProgressRecords = await UserProgress.countDocuments({ category: 'listening' });
-    const completedProgressRecords = await UserProgress.countDocuments({ category: 'listening', isCompleted: true });
+    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'listening' });
+    const completedProgressRecords = await StudyHistory.countDocuments({ category: 'listening', status: 'passed' });
 
     // Tính tỷ lệ hoàn thành
     const completionRate = totalProgressRecords > 0
@@ -30,18 +29,18 @@ export class ListeningService {
     currentMonth.setDate(1)
     currentMonth.setHours(0, 0, 0, 0)
 
-    const monthlyLearns = await UserProgress.countDocuments({
+    const monthlyLearns = await StudyHistory.countDocuments({
       category: 'listening',
-      updatedAt: { $gte: currentMonth }
+      createdAt: { $gte: currentMonth }
     })
 
     // Tính lượt học tháng trước để so sánh
     const lastMonth = new Date(currentMonth)
     lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-    const lastMonthLearns = await UserProgress.countDocuments({
+    const lastMonthLearns = await StudyHistory.countDocuments({
       category: 'listening',
-      updatedAt: {
+      createdAt: {
         $gte: lastMonth,
         $lt: currentMonth
       }
@@ -298,35 +297,24 @@ export class ListeningService {
   static async getListeningList(userId: string): Promise<IListening[]> {
     const getAllListening = await Listening.find({ isActive: true }).sort({ orderIndex: 1 })
 
-    // Nếu chưa có bài nào, tạo bài đầu tiên (mở khóa mặc định cho user mới)
-    const firstListening = await Listening.findOne({ isActive: true }).sort({ orderIndex: 1 })
-    if (firstListening) {
-      const exists = await UserProgress.findOne({ userId, lessonId: firstListening._id, category: 'listening' })
-      if (!exists) {
-        await UserProgress.create({
-          userId,
-          lessonId: firstListening._id,
-          category: 'listening',
-          isActive: true,
-          isCompleted: false,
-          progress: 0
-        })
-      }
-    }
-
-    const progresses = await UserProgress.find({ userId, category: 'listening' })
-    const progressMap = new Map(progresses.map(p => [String(p.lessonId), p]))
+    // Lấy bản ghi tốt nhất từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'listening' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
 
     return getAllListening.map((listening) => {
       const p = progressMap.get(String(listening._id))
       const listeningObj = listening.toObject()
       return {
         ...listeningObj,
-        isCompleted: p?.isCompleted || false,
-        isActive: p?.isActive || false,
+        isCompleted: p?.status === 'passed',
+        isActive: true,
         progress: p?.progress || 0,
-        point: p?.point || 0,
-        isResult: !!(p && (((p as any).resultData && Object.keys((p as any).resultData).length > 0) || (p.point || 0) > 0)),
+        point: p?.progress || 0,
+        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
         isVipRequired: listeningObj.isVipRequired !== undefined ? listeningObj.isVipRequired : true
       } as unknown as IListening
     })
@@ -353,7 +341,7 @@ export class ListeningService {
     time: number,
     result: { index: number, text: string, isCorrect: boolean }[],
     studyTimeSeconds: number = 0
-  ): Promise<any> {
+  ) {
     const listening = await Listening.findById(listeningId)
     if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
 
@@ -384,14 +372,17 @@ export class ListeningService {
 
   // (USER) Lấy kết quả bài nghe
   static async getListeningResult(userId: string, listeningId: string): Promise<any> {
-    const progress = await UserProgress.findOne({ userId, lessonId: listeningId, category: 'listening' })
-    const history = await StudyHistory.findOne({ userId, lessonId: listeningId, category: 'listening' }).sort({ createdAt: -1 })
+    const history = await StudyHistory.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      lessonId: new mongoose.Types.ObjectId(listeningId),
+      category: 'listening'
+    }).sort({ progress: -1, createdAt: -1 })
 
-    if (!progress) throw new ErrorHandler('Kết quả bài nghe không tồn tại', 404)
+    if (!history) throw new ErrorHandler('Kết quả bài nghe không tồn tại', 404)
 
     return {
-      ...progress.toObject(),
-      result: history?.resultData || []
+      ...history.toObject(),
+      result: history?.resultId || []
     }
   }
 

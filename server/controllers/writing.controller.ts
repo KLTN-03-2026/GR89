@@ -160,14 +160,14 @@ export class WritingController {
   })
 
   // (USER) Lấy kết quả làm bài của người dùng theo ID bài viết
-  static getUserProgress = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+  static getWritingResult = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const user = req.user as UserInfo
-    const userProgress = await WritingService.getUserProgress(user._id, id)
+    const result = await WritingService.getWritingBestResult(user._id, id)
     res.status(200).json({
       success: true,
       message: 'Lấy thành tích của người dùng theo id thành công',
-      data: userProgress
+      data: result
     })
   })
 

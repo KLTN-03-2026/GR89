@@ -1,7 +1,6 @@
 import mongoose from "mongoose"
 import { GrammarTopic, IGrammarPracticeQuestion, IGrammarSection, IGrammarTopic, IGrammarTopicPaginateResult } from "../models/grammarTopic.model"
 import { Quiz } from "../models/quiz.model"
-import { UserProgress } from "../models/userProgress.model"
 import { StudyHistory } from "../models/studyHistory.model"
 import { StudyService } from "./study.service"
 import ErrorHandler from "../utils/ErrorHandler"
@@ -90,11 +89,11 @@ export class GrammarService {
 
   // (ADMIN) Lấy thống kê tổng quan về ngữ pháp
   static async getOverviewStats(): Promise<any> {
-    const totalLessons = await GrammarTopic.countDocuments();
-    const activeLessons = await GrammarTopic.countDocuments({ isActive: true });
+    const totalTopics = await GrammarTopic.countDocuments();
+    const activeTopics = await GrammarTopic.countDocuments({ isActive: true });
     const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalProgressRecords = await UserProgress.countDocuments({ category: 'grammar' });
-    const completedProgressRecords = await UserProgress.countDocuments({ category: 'grammar', isCompleted: true });
+    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'grammar' });
+    const completedProgressRecords = await StudyHistory.countDocuments({ category: 'grammar', status: 'passed' });
 
     // Tính tỷ lệ hoàn thành
     const completionRate = totalProgressRecords > 0
@@ -106,18 +105,18 @@ export class GrammarService {
     currentMonth.setDate(1)
     currentMonth.setHours(0, 0, 0, 0)
 
-    const monthlyLearns = await UserProgress.countDocuments({
+    const monthlyLearns = await StudyHistory.countDocuments({
       category: 'grammar',
-      updatedAt: { $gte: currentMonth }
+      createdAt: { $gte: currentMonth }
     })
 
     // Tính lượt học tháng trước để so sánh
     const lastMonth = new Date(currentMonth)
     lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-    const lastMonthLearns = await UserProgress.countDocuments({
+    const lastMonthLearns = await StudyHistory.countDocuments({
       category: 'grammar',
-      updatedAt: {
+      createdAt: {
         $gte: lastMonth,
         $lt: currentMonth
       }
@@ -129,8 +128,8 @@ export class GrammarService {
       : monthlyLearns > 0 ? 100 : 0
 
     return {
-      totalLessons,
-      activeLessons,
+      totalTopics,
+      activeTopics,
       totalUsers,
       completionRate,
       monthlyLearns,
@@ -455,20 +454,26 @@ export class GrammarService {
   // (USER) Lấy danh sách chủ đề ngữ pháp cho người dùng
   static async getAllTopicsByUser(userId: string): Promise<IGrammarTopicUser[]> {
     const grammarTopics = await GrammarTopic.find({ isActive: true }).sort({ orderIndex: 1 })
-    const progresses = await UserProgress.find({ userId, category: 'grammar' })
-    const progressMap = new Map(progresses.map(p => [String(p.lessonId), p]))
 
-    const grammarTopicsUser = await grammarTopics.map((topic) => {
+    // Lấy bản ghi tốt nhất cho mỗi bài học từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'grammar' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
+
+    const grammarTopicsUser = grammarTopics.map((topic) => {
       const p = progressMap.get(String(topic._id))
       return {
         _id: topic._id,
         title: topic.title || '',
         description: topic.description || '',
         progress: p?.progress || 0,
-        point: p?.point || 0,
-        isCompleted: p?.isCompleted || false,
-        isActive: p?.isActive || false,
-        isResult: !!(p && ((p as any).resultId?.length > 0 || (p.point || 0) > 0 || (p as any).resultData)),
+        point: p?.progress || 0, // Dùng progress thay cho point
+        isCompleted: p?.status === 'passed',
+        isActive: true,
+        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
         isVipRequired: topic?.isVipRequired || false,
         level: (topic as any).level,
       }
@@ -494,6 +499,10 @@ export class GrammarService {
     const point = correctCount
     const progress = Math.round(((correctCount / (quizResults.length || 1)) * 100) * 100) / 100
 
+    // Lấy tags của các câu sai để làm weakPoints
+    // const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
+    const weakPoints = Array.from([])
+
     // Lưu qua StudyService (Unified)
     const history = await StudyService.saveStudyResult({
       userId,
@@ -506,7 +515,8 @@ export class GrammarService {
       studyTime: studyTimeSeconds,
       resultId, // Lưu ID vào Progress/History
       correctAnswers: correctCount,
-      totalQuestions: quizResults.length
+      totalQuestions: quizResults.length,
+      weakPoints
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
@@ -516,22 +526,25 @@ export class GrammarService {
   }
 
   // (USER) Lấy kết quả bài tập ngữ pháp
-  static async getGrammarResult(userId: string, grammarTopicId: string): Promise<any[]> {
-    const progress = await UserProgress.findOne({
+  static async getGrammarResult(userId: string, grammarTopicId: string): Promise<any> {
+    // Lấy bản ghi tốt nhất (điểm cao nhất và mới nhất)
+    const history = await StudyHistory.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(grammarTopicId),
       category: 'grammar'
-    })
-    if (!progress) throw new ErrorHandler('Kết quả ngữ pháp không tồn tại', 404)
+    }).sort({ progress: -1, createdAt: -1 })
+
+    if (!history) throw new ErrorHandler('Kết quả ngữ pháp không tồn tại', 404)
 
     // Nếu có resultId (Quizz), load từ QuizResult
-    if (progress.resultId && progress.resultId.length > 0) {
-      const results = await QuizResult.find({ _id: { $in: progress.resultId } })
+    let detailedResults = []
+    if (history.resultId && history.resultId.length > 0) {
+      const results = await QuizResult.find({ _id: { $in: history.resultId } })
         .populate({ path: 'quizId', select: 'question answer type' })
         .sort({ questionNumber: 1 })
         .lean();
 
-      return results.map(r => ({
+      detailedResults = results.map(r => ({
         ...r,
         question: (r.quizId as any)?.question ?? null,
         correctAnswer: (r.quizId as any)?.answer ?? null,
@@ -539,8 +552,10 @@ export class GrammarService {
       }))
     }
 
-    const history = await StudyHistory.findOne({ userId, lessonId: grammarTopicId, category: 'grammar' }).sort({ createdAt: -1 })
-    return history?.resultData || []
+    return {
+      ...history.toObject(),
+      result: detailedResults
+    }
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
@@ -759,50 +774,55 @@ export class GrammarService {
     return { currentTopic, swappedTopic }
   }
 
-  // (ADMIN) Lấy thống kê chi tiết của một chủ đề
+  // (ADMIN) Lấy thống kê chi tiết của một chủ đề ngữ pháp
   static async getGrammarTopicStats(id: string): Promise<any> {
-    const topic = await this.getGrammarTopicById(id)
-    const progressCount = await UserProgress.countDocuments({ lessonId: topic._id, category: 'grammar' })
-    const completedCount = await UserProgress.countDocuments({ lessonId: topic._id, category: 'grammar', isCompleted: true })
+    const topic = await GrammarTopic.findById(id).select('title')
+    if (!topic) throw new ErrorHandler('Chủ đề ngữ pháp không tồn tại', 404)
+
+    // Lấy tất cả history của bài này (mỗi user lấy bản ghi tốt nhất)
+    const topicProgresses = await StudyHistory.aggregate([
+      { $match: { lessonId: topic._id, category: 'grammar' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$userId", best: { $first: "$$ROOT" } } }
+    ])
+
+    const progressCount = topicProgresses.length
+    const completedCount = topicProgresses.filter(p => p.best.status === 'passed').length
 
     return {
-      _id: topic._id,
       title: topic.title,
-      description: topic.description,
-      progressCount,
-      completedCount,
-      completionRate: progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0,
-      isActive: topic.isActive,
-      createdAt: topic.createdAt,
-      updatedAt: topic.updatedAt
+      totalLearners: progressCount,
+      completedLearners: completedCount,
+      completionRate: progressCount > 0 ? Math.round((completedCount / progressCount) * 100) : 0
     }
   }
 
   // (ADMIN) Lấy thống kê người dùng cho ngữ pháp
-  static async getGrammarUserStats(): Promise<any> {
+  static async getUserStats(): Promise<any> {
     const totalUsers = await User.countDocuments({ role: 'user' })
-    const activeUsers = await UserProgress.distinct('userId', { category: 'grammar' }).then(ids => ids.length)
+    const activeUsers = await StudyHistory.distinct('userId', { category: 'grammar' }).then(ids => ids.length)
 
-    const topUsers = await UserProgress.aggregate([
-      { $match: { category: 'grammar', isCompleted: true } },
-      { $group: { _id: '$userId', completedCount: { $sum: 1 } } },
-      { $sort: { completedCount: -1 } },
+    const topUsers = await StudyHistory.aggregate([
+      { $match: { category: 'grammar', progress: { $gt: 0 } } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: { userId: "$userId", lessonId: "$lessonId" }, best: { $first: "$progress" } } },
+      { $group: { _id: "$_id.userId", totalScore: { $sum: "$best" } } },
+      { $sort: { totalScore: -1 } },
       { $limit: 10 },
       {
         $lookup: {
           from: 'users',
           localField: '_id',
           foreignField: '_id',
-          as: 'user'
+          as: 'userInfo'
         }
       },
-      { $unwind: '$user' },
+      { $unwind: '$userInfo' },
       {
         $project: {
-          _id: 1,
-          fullName: '$user.fullName',
-          email: '$user.email',
-          completedCount: 1
+          fullName: '$userInfo.fullName',
+          email: '$userInfo.email',
+          totalScore: 1
         }
       }
     ])
@@ -814,30 +834,29 @@ export class GrammarService {
     }
   }
 
-  // (ADMIN) Lấy thống kê theo thời gian
-  static async getGrammarTimeSeriesStats(period: string = '30days'): Promise<any> {
-    const days = period === '30days' ? 30 : period === '7days' ? 7 : 30
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+  // (ADMIN) Lấy thống kê theo thời gian (7 ngày qua)
+  static async getTimeSeriesStats(): Promise<any> {
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-    const results = await UserProgress.aggregate([
-      { $match: { category: 'grammar', updatedAt: { $gte: startDate } } },
+    const results = await StudyHistory.aggregate([
+      {
+        $match: {
+          category: 'grammar',
+          createdAt: { $gte: sevenDaysAgo }
+        }
+      },
       {
         $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$updatedAt' } },
-          totalProgress: { $sum: 1 },
-          completedProgress: {
-            $sum: { $cond: [{ $eq: ['$isCompleted', true] }, 1, 0] }
-          }
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          attempts: { $sum: 1 },
+          passed: { $sum: { $cond: [{ $eq: ["$status", "passed"] }, 1, 0] } }
         }
       },
       { $sort: { _id: 1 } }
     ])
 
-    return {
-      dailyStats: results,
-      period
-    }
+    return results
   }
 
   // (ADMIN) Xuất dữ liệu ngữ pháp ra Excel

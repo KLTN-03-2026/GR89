@@ -1,7 +1,7 @@
 import { Types } from 'mongoose'
 import { User, IUser } from '../models/user.model'
 import { Plan } from '../models/plan.model'
-import { UserProgress } from '../models/userProgress.model'
+import { StudyHistory } from '../models/studyHistory.model'
 import { VocabularyTopic } from '../models/vocabularyTopic.model'
 import { Reading } from '../models/reading.model'
 import { Listening } from '../models/listening.model'
@@ -279,15 +279,34 @@ export class UserScoreService {
       Ipa.find({ isActive: true }).distinct("_id"),
     ]);
 
-    const matchByUserId = userIds && userIds.length 
-      ? [{ $match: { userId: { $in: toObjectId(userIds) } } }] 
+    const matchByUserId = userIds && userIds.length
+      ? [{ $match: { userId: { $in: toObjectId(userIds) } } }]
       : [];
 
-    const getSkillAggregation = (category: string, activeIds: any[], scoreField: string = "point") => {
-      return UserProgress.aggregate([
+    const getSkillAggregation = (category: string, activeIds: any[]) => {
+      return StudyHistory.aggregate([
         ...matchByUserId,
         { $match: { category, lessonId: { $in: activeIds } } },
-        { $group: { _id: "$userId", total: { $sum: `$${scoreField}` } } },
+        { $sort: { progress: -1, createdAt: -1 } },
+        { $group: { _id: { userId: "$userId", lessonId: "$lessonId" }, best: { $first: "$progress" } } },
+        { $group: { _id: "$_id.userId", total: { $sum: "$best" } } }
+      ]);
+    };
+
+    const getListeningAggregation = (activeIds: any[]) => {
+      return Promise.all([
+        StudyHistory.aggregate([
+          ...matchByUserId,
+          { $match: { category: 'listening', lessonId: { $in: activeIds } } },
+          { $sort: { progress: -1, createdAt: -1 } },
+          { $group: { _id: { userId: "$userId", lessonId: "$lessonId" }, best: { $first: "$progress" } } },
+          { $group: { _id: "$_id.userId", total: { $sum: "$best" } } }
+        ]),
+        StudyHistory.aggregate([
+          ...matchByUserId,
+          { $match: { category: 'listening', lessonId: { $in: activeIds } } },
+          { $group: { _id: "$userId", total: { $sum: "$duration" } } }
+        ])
       ]);
     };
 
@@ -295,36 +314,22 @@ export class UserScoreService {
       vocabularyTotalsRaw,
       grammarTotalsRaw,
       readingTotalsRaw,
-      listeningTotalsRaw,
+      [listeningPointsRaw, listeningTimeRaw],
       writingTotalsRaw,
       ipaTotalsRaw,
       speakingTotalsRaw,
     ] = await Promise.all([
-      getSkillAggregation('vocabulary', activeVocabularyTopicIds, 'point'),
-      getSkillAggregation('grammar', activeGrammarTopicIds, 'progress'),
-      getSkillAggregation('reading', activeReadingIds, 'progress'),
-      UserProgress.aggregate([
-        ...matchByUserId,
-        { $match: { category: 'listening', lessonId: { $in: activeListeningIds } } },
-        {
-          $group: {
-            _id: "$userId",
-            totalPoints: { $sum: "$point" },
-            totalTime: { $sum: "$studyTime" },
-          },
-        },
-      ]),
-      getSkillAggregation('writing', activeWritingIds, 'point'),
-      getSkillAggregation('ipa', activeIpaIds, 'progress'),
-      getSkillAggregation('speaking', activeSpeakingIds, 'point'),
+      getSkillAggregation('vocabulary', activeVocabularyTopicIds),
+      getSkillAggregation('grammar', activeGrammarTopicIds),
+      getSkillAggregation('reading', activeReadingIds),
+      getListeningAggregation(activeListeningIds),
+      getSkillAggregation('writing', activeWritingIds),
+      getSkillAggregation('ipa', activeIpaIds),
+      getSkillAggregation('speaking', activeSpeakingIds),
     ]);
 
-    const listeningPointsMap = new Map<string, number>();
-    const listeningTimeMap = new Map<string, number>();
-    listeningTotalsRaw.forEach((item) => {
-      listeningPointsMap.set(String(item._id), item.totalPoints || 0);
-      listeningTimeMap.set(String(item._id), item.totalTime || 0);
-    });
+    const listeningPointsMap = buildTotalsMap(listeningPointsRaw);
+    const listeningTimeMap = buildTotalsMap(listeningTimeRaw);
 
     return {
       vocabulary: buildTotalsMap(vocabularyTotalsRaw),

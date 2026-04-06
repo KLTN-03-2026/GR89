@@ -1,5 +1,5 @@
-import mongoose, { now } from 'mongoose'
-import { UserProgress } from '../models/userProgress.model'
+import mongoose from 'mongoose'
+import { StudyHistory } from '../models/studyHistory.model'
 import { VocabularyTopic } from '../models/vocabularyTopic.model'
 import { GrammarTopic } from '../models/grammarTopic.model'
 import { Ipa } from '../models/ipa.model'
@@ -23,28 +23,43 @@ export class UserProgressService {
     const activeIds = await model.find({ isActive: true }).distinct('_id')
     const total = activeIds.length
 
-    // 2. Lấy progress cho topic active
-    const progresses = await UserProgress.find({
-      userId: userIdObj,
-      category,
-      lessonId: { $in: activeIds }
-    })
+    // 2. Lấy bản ghi tốt nhất cho mỗi lessonId từ StudyHistory
+    const progressesAggregation = await StudyHistory.aggregate([
+      {
+        $match: {
+          userId: userIdObj,
+          category,
+          lessonId: { $in: activeIds.map(id => new mongoose.Types.ObjectId(id as string)) }
+        }
+      },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+
+    const progresses = progressesAggregation.map(p => p.best)
 
     // 3. Tính toán
-    const completed = progresses.filter(p => p.isCompleted).length
-    const totalPoints = progresses.reduce((sum, p) => sum + (p.point || 0), 0)
-    const totalStudyTime = progresses.reduce((sum, p) => sum + (p.studyTime || 0), 0)
+    const completed = progresses.filter(p => p.status === 'passed').length
+    const totalPoints = progresses.reduce((sum, p) => sum + (p.progress || 0), 0)
+
+    // Tính tổng thời gian học từ tất cả các lần (History)
+    const timeAggregation = await StudyHistory.aggregate([
+      { $match: { userId: userIdObj, category, lessonId: { $in: activeIds.map(id => new mongoose.Types.ObjectId(id as string)) } } },
+      { $group: { _id: null, totalStudyTime: { $sum: "$duration" } } }
+    ])
+    const totalStudyTime = timeAggregation[0]?.totalStudyTime || 0
+
     const averageScore = progresses.length > 0
       ? totalPoints / progresses.length
       : 0
 
     // 4. Lấy bài gần nhất
-    const lastProgress = await UserProgress.findOne({
+    const lastHistory = await StudyHistory.findOne({
       userId: userIdObj,
       category,
-      lessonId: { $in: activeIds }
+      lessonId: { $in: activeIds.map(id => new mongoose.Types.ObjectId(id as string)) }
     })
-      .sort({ updatedAt: -1 })
+      .sort({ createdAt: -1 })
       .populate({
         path: 'lessonId',
         select: titleField,
@@ -54,19 +69,18 @@ export class UserProgressService {
     return {
       total,
       completed,
-      inProgress: progresses.filter(p => !p.isCompleted && p.isActive).length,
+      inProgress: progresses.filter(p => p.status !== 'passed').length,
       notStarted: total - progresses.length,
       percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
       averageScore: Math.round(averageScore),
       totalPoints,
       totalStudyTime,
-      lastLesson: lastProgress && lastProgress.lessonId ? {
-        id: String(lastProgress.lessonId),
-        name: (lastProgress.lessonId as any)[titleField] || '',
-        score: lastProgress.point || 0,
-        progress: lastProgress.progress || 0
+      lastLesson: lastHistory && lastHistory.lessonId ? {
+        id: String(lastHistory.lessonId),
+        name: (lastHistory.lessonId as any)[titleField] || '',
+        score: lastHistory.progress || 0,
+        progress: lastHistory.progress || 0
       } : null
-      
     }
   }
 

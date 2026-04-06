@@ -1,8 +1,7 @@
-import mongoose, { ObjectId } from "mongoose"
+import mongoose from "mongoose"
 import { IQuiz, Quiz } from "../models/quiz.model"
 import { IReading, Reading, IReadingPaginateResult, IVocabularyReading } from "../models/reading.model"
 import ErrorHandler from "../utils/ErrorHandler"
-import { UserProgress } from "../models/userProgress.model"
 import { StudyHistory } from "../models/studyHistory.model"
 import { StudyService } from "./study.service"
 import { shuffle } from "../utils/shuffle.util"
@@ -28,8 +27,8 @@ export class ReadingService {
     const totalLessons = await Reading.countDocuments();
     const activeLessons = await Reading.countDocuments({ isActive: true });
     const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalProgressRecords = await UserProgress.countDocuments({ category: 'reading' });
-    const completedProgressRecords = await UserProgress.countDocuments({ category: 'reading', isCompleted: true });
+    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'reading' });
+    const completedProgressRecords = await StudyHistory.countDocuments({ category: 'reading', status: 'passed' });
 
     const completionRate = totalProgressRecords > 0
       ? Math.round((completedProgressRecords / totalProgressRecords) * 100)
@@ -39,17 +38,17 @@ export class ReadingService {
     currentMonth.setDate(1)
     currentMonth.setHours(0, 0, 0, 0)
 
-    const monthlyLearns = await UserProgress.countDocuments({
+    const monthlyLearns = await StudyHistory.countDocuments({
       category: 'reading',
-      updatedAt: { $gte: currentMonth }
+      createdAt: { $gte: currentMonth }
     })
 
     const lastMonth = new Date(currentMonth)
     lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-    const lastMonthLearns = await UserProgress.countDocuments({
+    const lastMonthLearns = await StudyHistory.countDocuments({
       category: 'reading',
-      updatedAt: {
+      createdAt: {
         $gte: lastMonth,
         $lt: currentMonth
       }
@@ -399,35 +398,24 @@ export class ReadingService {
       .sort({ orderIndex: 1 })
       .populate({ path: 'image', select: '_id url' });
 
-    // Tự động mở bài đầu tiên
-    const firstReading = await Reading.findOne({ isActive: true }).sort({ orderIndex: 1 })
-    if (firstReading) {
-      const exists = await UserProgress.findOne({ userId, lessonId: firstReading._id, category: 'reading' })
-      if (!exists) {
-        await UserProgress.create({
-          userId,
-          lessonId: firstReading._id,
-          category: 'reading',
-          isActive: true,
-          isCompleted: false,
-          progress: 0
-        })
-      }
-    }
-
-    const progresses = await UserProgress.find({ userId, category: 'reading' })
-    const progressMap = new Map(progresses.map(p => [String(p.lessonId), p]))
+    // Lấy bản ghi tốt nhất từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'reading' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
 
     return readings.map((reading) => {
       const p = progressMap.get(String(reading._id))
       const readingObj = reading.toObject()
       return {
         ...readingObj,
-        isCompleted: p?.isCompleted || false,
-        isActive: p?.isActive || false,
+        isCompleted: p?.status === 'passed',
+        isActive: true,
         progress: p?.progress || 0,
-        point: p?.point || 0,
-        isResult: !!(p && (((p as any).resultId?.length || 0) > 0 || (p.point || 0) > 0 || (p as any).resultData)),
+        point: p?.progress || 0,
+        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
         isVipRequired: readingObj.isVipRequired !== undefined ? readingObj.isVipRequired : true
       } as unknown as IReading
     })
@@ -458,6 +446,10 @@ export class ReadingService {
     const point = correctCount // Điểm là số câu đúng
     const progress = Math.round(((correctCount / (quizResults.length || 1)) * 100) * 100) / 100
 
+    // Lấy tags của các câu sai để làm weakPoints
+    const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
+    const weakPoints = Array.from(new Set(incorrectQuizzes.flatMap(q => q.tags || [])))
+
     // Lưu qua StudyService (Unified)
     const history = await StudyService.saveStudyResult({
       userId,
@@ -470,7 +462,8 @@ export class ReadingService {
       studyTime: studyTimeSeconds,
       resultId, // Lưu ID vào Progress/History
       correctAnswers: correctCount,
-      totalQuestions: quizResults.length
+      totalQuestions: quizResults.length,
+      weakPoints
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
@@ -484,18 +477,25 @@ export class ReadingService {
   }
 
   // (USER) Lấy kết quả bài đọc
-  static async getReadingResult(userId: string, readingId: string): Promise<any[]> {
-    const progress = await UserProgress.findOne({ userId, lessonId: readingId, category: 'reading' })
-    if (!progress) throw new ErrorHandler('Kết quả bài đọc không tồn tại', 404)
+  static async getReadingResult(userId: string, readingId: string): Promise<any> {
+    // Lấy bản ghi tốt nhất (điểm cao nhất và mới nhất)
+    const history = await StudyHistory.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      lessonId: new mongoose.Types.ObjectId(readingId),
+      category: 'reading'
+    }).sort({ progress: -1, createdAt: -1 })
+
+    if (!history) throw new ErrorHandler('Kết quả bài đọc không tồn tại', 404)
 
     // Nếu có resultId (Quizz), load từ QuizResult
-    if (progress.resultId && progress.resultId.length > 0) {
-      const results = await QuizResult.find({ _id: { $in: progress.resultId } })
+    let detailedResults = []
+    if (history.resultId && history.resultId.length > 0) {
+      const results = await QuizResult.find({ _id: { $in: history.resultId } })
         .populate({ path: 'quizId', select: 'question answer type' })
         .sort({ questionNumber: 1 })
         .lean();
 
-      return results.map(r => ({
+      detailedResults = results.map(r => ({
         ...r,
         question: (r.quizId as any)?.question ?? null,
         correctAnswer: (r.quizId as any)?.answer ?? null,
@@ -503,10 +503,10 @@ export class ReadingService {
       }))
     }
 
-    // Nếu không, load từ History gần nhất (cho các loại bài cũ hoặc bài không phải quiz)
-    const history = await StudyHistory.findOne({ userId, lessonId: readingId, category: 'reading' }).sort({ createdAt: -1 })
-
-    return history?.resultData || []
+    return {
+      ...history.toObject(),
+      result: detailedResults
+    }
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

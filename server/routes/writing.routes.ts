@@ -20,7 +20,7 @@ router.delete('/', authenticateTokenAdmin, requireRole(['admin', 'content']), Wr
 /*============================ NGƯỜI DÙNG ============================*/
 router.get('/user', authenticateTokenUser, requireRole(['user']), WritingController.getAllWritingByUser)
 router.get('/user/:id', authenticateTokenUser, checkVipContentUser('writing'), WritingController.getWritingById)
-router.get('/:id/result', authenticateTokenUser, requireRole(['user']), checkVipContentUser('writing'), WritingController.getUserProgress)
+router.get('/:id/result', authenticateTokenUser, requireRole(['user']), checkVipContentUser('writing'), WritingController.getWritingResult)
 router.post('/evaluate/:id', authenticateTokenUser, requireRole(['user']), checkVipContentUser('writing'), WritingController.evaluateWriting)
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

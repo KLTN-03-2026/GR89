@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import { Speaking, ISpeaking, ISpeakingPaginateResult } from '../models/speaking.model';
-import { UserProgress } from '../models/userProgress.model';
 import { StudyHistory } from '../models/studyHistory.model';
 import { StudyService } from './study.service';
 import ErrorHandler from '../utils/ErrorHandler';
@@ -38,9 +37,9 @@ export class SpeakingService {
       User.countDocuments({ role: 'user' })
     ])
 
-    const speakingUserAggregation = await UserProgress.aggregate([
-      { $match: { category: 'speaking', point: { $gt: 0 } } },
-      { $group: { _id: '$userId', totalPoint: { $sum: '$point' } } }
+    const speakingUserAggregation = await StudyHistory.aggregate([
+      { $match: { category: 'speaking', progress: { $gt: 0 } } },
+      { $group: { _id: '$userId', totalPoint: { $max: '$progress' } } }
     ])
 
     const usersWithSpeakingScores = speakingUserAggregation.length
@@ -63,15 +62,15 @@ export class SpeakingService {
     lastMonth.setMonth(lastMonth.getMonth() - 1)
 
     const [monthlyLearnerIds, lastMonthLearnerIds] = await Promise.all([
-      UserProgress.distinct('userId', {
+      StudyHistory.distinct('userId', {
         category: 'speaking',
-        updatedAt: { $gte: currentMonth },
-        point: { $gt: 0 }
+        createdAt: { $gte: currentMonth },
+        progress: { $gt: 0 }
       }),
-      UserProgress.distinct('userId', {
+      StudyHistory.distinct('userId', {
         category: 'speaking',
-        updatedAt: { $gte: lastMonth, $lt: currentMonth },
-        point: { $gt: 0 }
+        createdAt: { $gte: lastMonth, $lt: currentMonth },
+        progress: { $gt: 0 }
       })
     ])
 
@@ -409,18 +408,24 @@ export class SpeakingService {
   // (USER) Lấy danh sách bài nói cho người dùng
   static async getSpeakingByUser(userId: string): Promise<ISpeakingData[]> {
     const speakings = await Speaking.find({ isActive: true }).sort({ orderIndex: 1 })
-    const progressList = await UserProgress.find({ userId, category: 'speaking' })
-    const progressMap = new Map(progressList.map(p => [p.lessonId.toString(), p]))
+
+    // Lấy bản ghi tốt nhất từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'speaking' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
 
     return speakings.map((speaking: ISpeaking) => {
-      const progress = progressMap.get(speaking._id.toString())
+      const p = progressMap.get(speaking._id.toString())
       return {
         ...speaking.toObject(),
-        progress: progress ? Math.round(progress.progress * 100) / 100 : 0,
-        point: progress?.point || 0,
-        isCompleted: !!progress?.isCompleted,
-        isActive: !!progress?.isActive,
-        isResult: !!(progress && (((progress as any).resultData && Object.keys((progress as any).resultData).length > 0) || (progress.point || 0) > 0)),
+        progress: p ? Math.round(p.progress * 100) / 100 : 0,
+        point: p?.progress || 0,
+        isCompleted: p?.status === 'passed',
+        isActive: true,
+        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
         isVipRequired: (speaking as any).isVipRequired !== undefined ? (speaking as any).isVipRequired : true,
       }
     }) as ISpeakingData[]
@@ -435,26 +440,6 @@ export class SpeakingService {
     const preview = ((speaking as any).videoUrl as any)?.subtitles?.[0]?.preview;
     const speakingObj = speaking.toObject();
     (speakingObj as any).subtitleIds = preview;
-
-    const existingProgress = await UserProgress.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
-      lessonId: new mongoose.Types.ObjectId(id),
-      category: 'speaking'
-    });
-
-    if (!existingProgress) {
-      await UserProgress.create({
-        userId: new mongoose.Types.ObjectId(userId),
-        lessonId: new mongoose.Types.ObjectId(id),
-        category: 'speaking',
-        isActive: true,
-        isCompleted: false,
-        progress: 0,
-        point: 0,
-        studyTime: 0,
-        lastLearnDate: new Date()
-      });
-    }
 
     return speakingObj;
   }

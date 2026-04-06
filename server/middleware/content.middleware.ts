@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import ErrorHandler from "../utils/ErrorHandler";
 import { CatchAsyncError } from "./CatchAsyncError";
-import { UserProgress } from "../models/userProgress.model";
 import { VocabularyTopic } from "../models/vocabularyTopic.model";
 import { GrammarTopic } from "../models/grammarTopic.model";
 import { Reading } from "../models/reading.model";
@@ -11,6 +10,7 @@ import { writingModel } from "../models/writing.model";
 import { UserInfo } from "../services/auth.service";
 import { Entertainment } from "../models/entertainment.model";
 import { Ipa } from "../models/ipa.model";
+import { StudyHistory } from "../models/studyHistory.model";
 
 // MIDDLEWARE PHÂN QUYỀN
 export const checkUnlockContentUser = (contentType: 'vocabulary' | 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'ipa', paramName: string = 'id') => {
@@ -41,17 +41,8 @@ export const checkUnlockContentUser = (contentType: 'vocabulary' | 'grammar' | '
       if (content.isActive === false) return next(new ErrorHandler('Nội dung này hiện đã bị khóa', 403))
     }
 
-    // Kiểm tra xem User đã unlock bài này chưa qua bảng UserProgress thống nhất
-    const progress = await UserProgress.findOne({
-      userId: req.user._id,
-      lessonId: contentId,
-      category: contentType
-    })
-
-    if (!progress || progress.isActive === false) {
-      return next(new ErrorHandler('Bạn chưa mở khóa nội dung này', 403))
-    }
-
+    // Với hệ thống mới, ta cho phép truy cập nếu không phải VIP hoặc đã có VIP
+    // Các bài học sẽ được mở khóa dựa trên lộ trình (Roadmap) hoặc mặc định mở hết nếu không VIP
     next();
   })
 }

@@ -1,3 +1,4 @@
+import { StudyHistory } from "../models/studyHistory.model";
 import mongoose from "mongoose";
 import ErrorHandler from "../utils/ErrorHandler";
 import { IRoadmapTopic, RoadmapTopic } from "../models/roadmapTopic.model";
@@ -8,7 +9,6 @@ import { Listening } from "../models/listening.model";
 import { Speaking } from "../models/speaking.model";
 import { Reading } from "../models/reading.model";
 import { writingModel } from "../models/writing.model";
-import { UserProgress } from "../models/userProgress.model";
 
 export interface ICreateRoadmapTopicData {
   title: string;
@@ -607,17 +607,23 @@ export class RoadmapTopicService {
   ): Promise<Map<string, number>> {
     const scoreMap = new Map<string, number>();
     const categories = Object.keys(idsByCategory);
+    const allLessonIds = Object.values(idsByCategory).flat().map(id => new mongoose.Types.ObjectId(id));
 
-    const progresses = await UserProgress.find({
-      userId,
-      category: { $in: categories },
-      lessonId: { $in: Object.values(idsByCategory).flat() }
-    }).lean();
+    // Lấy bản ghi tốt nhất cho mỗi lessonId từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      {
+        $match: {
+          userId,
+          category: { $in: categories },
+          lessonId: { $in: allLessonIds }
+        }
+      },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", bestProgress: { $max: "$progress" } } }
+    ]);
 
     progresses.forEach(p => {
-      // Dùng progress hoặc point tùy theo category nếu cần, 
-      // nhưng ở đây ta lấy progress làm mặc định cho roadmap
-      scoreMap.set(String(p.lessonId), p.progress || p.point || 0);
+      scoreMap.set(String(p._id), p.bestProgress || 0);
     });
 
     return scoreMap;

@@ -1,5 +1,5 @@
 import { ResultListeningPage, getListeningResult } from '@/features/listening'
-import type { IListeningProgress } from '@/types/listening'
+import type { IListeningProgress } from '@/features/listening/types'
 
 export default async function page({ params }: { params: Promise<{ _id: string }> }) {
   const { _id } = await params

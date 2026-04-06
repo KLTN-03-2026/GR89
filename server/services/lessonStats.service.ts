@@ -1,5 +1,5 @@
 import { Types } from 'mongoose'
-import { UserProgress } from '../models/userProgress.model'
+import { StudyHistory } from '../models/studyHistory.model'
 import { writingModel } from '../models/writing.model'
 import { VocabularyTopic } from '../models/vocabularyTopic.model'
 import { GrammarTopic } from '../models/grammarTopic.model'
@@ -138,27 +138,40 @@ export class LessonStatsService {
   private static async getSkillStats(
     userId: string | Types.ObjectId,
     category: 'vocabulary' | 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'ipa',
-    lessonModel: any,
-    options?: {
-      scoreSelector?: ScoreSelector
-      timeSelector?: TimeSelector
-    }
+    lessonModel: any
   ): Promise<LessonSkillStats> {
     const userObjectId = typeof userId === "string" ? new Types.ObjectId(userId) : userId;
 
-    const [progressList, activeLessons] = await Promise.all([
-      UserProgress.find({ userId: userObjectId, category, isActive: true }).lean(),
+    const [activeLessons, progressesAggregation] = await Promise.all([
       lessonModel.find({ isActive: true }).select("_id").lean<{ _id: Types.ObjectId }>(),
+      StudyHistory.aggregate([
+        { 
+          $match: { 
+            userId: userObjectId, 
+            category 
+          } 
+        },
+        { $sort: { progress: -1, createdAt: -1 } },
+        { $group: { _id: "$lessonId", best: { $first: "$$ROOT" }, totalTime: { $sum: "$duration" } } }
+      ])
     ]);
 
     const activeLessonDocs = Array.isArray(activeLessons) ? activeLessons : [];
-    const lessonIds = toIdSet(activeLessonDocs);
+    const activeLessonIds = new Set(activeLessonDocs.map(l => String(l._id)));
+
+    // Chỉ lấy progress của những bài học còn active
+    const activeProgresses = progressesAggregation.filter(p => activeLessonIds.has(String(p._id)));
 
     const stats = computeStats(
-      filterByActiveRefs(progressList, (doc: any) => doc.lessonId, lessonIds),
+      activeProgresses.map(p => ({
+        ...p.best,
+        studyTime: p.totalTime, // Dùng tổng thời gian học từ tất cả các lần
+        isCompleted: p.best.status === 'passed'
+      })),
       {
-        scoreSelector: options?.scoreSelector || ((doc) => doc.point || 0),
-        timeSelector: options?.timeSelector || ((doc) => doc.studyTime || 0),
+        scoreSelector: (doc) => doc.progress || 0,
+        timeSelector: (doc) => doc.studyTime || 0,
+        completedSelector: (doc) => doc.isCompleted
       }
     );
 
@@ -173,44 +186,32 @@ export class LessonStatsService {
 
   // (USER) Lấy thống kê ngữ pháp của người dùng
   static async getGrammarStats(userId: string | Types.ObjectId): Promise<LessonSkillStats> {
-    return this.getSkillStats(userId, 'grammar', GrammarTopic, {
-      scoreSelector: (doc) => doc.progress || 0
-    });
+    return this.getSkillStats(userId, 'grammar', GrammarTopic);
   }
 
   // (USER) Lấy thống kê đọc của người dùng
   static async getReadingStats(userId: string | Types.ObjectId): Promise<LessonSkillStats> {
-    return this.getSkillStats(userId, 'reading', Reading, {
-      scoreSelector: (doc) => doc.progress || 0
-    });
+    return this.getSkillStats(userId, 'reading', Reading);
   }
 
   // (USER) Lấy thống kê nghe của người dùng
   static async getListeningStats(userId: string | Types.ObjectId): Promise<LessonSkillStats> {
-    return this.getSkillStats(userId, 'listening', Listening, {
-      scoreSelector: (doc) => doc.progress || 0
-    });
+    return this.getSkillStats(userId, 'listening', Listening);
   }
 
   // (USER) Lấy thống kê nói của người dùng
   static async getSpeakingStats(userId: string | Types.ObjectId): Promise<LessonSkillStats> {
-    return this.getSkillStats(userId, 'speaking', Speaking, {
-      scoreSelector: (doc) => doc.progress || 0
-    });
+    return this.getSkillStats(userId, 'speaking', Speaking);
   }
 
   // (USER) Lấy thống kê viết của người dùng
   static async getWritingStats(userId: string | Types.ObjectId): Promise<LessonSkillStats> {
-    return this.getSkillStats(userId, 'writing', writingModel, {
-      scoreSelector: (doc) => (doc.isCompleted ? 100 : 0)
-    });
+    return this.getSkillStats(userId, 'writing', writingModel);
   }
 
   // (USER) Lấy thống kê IPA của người dùng
   static async getIpaStats(userId: string | Types.ObjectId): Promise<LessonSkillStats> {
-    return this.getSkillStats(userId, 'ipa', Ipa, {
-      scoreSelector: (doc) => doc.progress || 0
-    });
+    return this.getSkillStats(userId, 'ipa', Ipa);
   }
 
   // (USER) Lấy tổng quan thống kê các kỹ năng của người dùng

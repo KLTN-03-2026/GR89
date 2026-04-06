@@ -2,7 +2,6 @@
 
 import { Types } from 'mongoose'
 import { User } from '../models/user.model'
-import { UserProgress } from '../models/userProgress.model'
 import { VocabularyTopic } from '../models/vocabularyTopic.model'
 import { GrammarTopic } from '../models/grammarTopic.model'
 import { Reading } from '../models/reading.model'
@@ -10,6 +9,7 @@ import { Listening } from '../models/listening.model'
 import { Speaking } from '../models/speaking.model'
 import { writingModel } from '../models/writing.model'
 import { Ipa } from '../models/ipa.model'
+import { StudyHistory } from '../models/studyHistory.model'
 
 export interface IUserDataForAI {
   _id: string
@@ -116,22 +116,28 @@ export class ChatbotService {
       Ipa.find({ isActive: true }).distinct('_id')
     ])
 
-    // Chỉ lấy progress của các bài học active và còn tồn tại từ bảng UserProgress duy nhất
-    const allProgress = await UserProgress.find({
-      userId: userObjectId,
-      isActive: true
-    }).lean()
+    // Chỉ lấy progress của các bài học active từ StudyHistory (lấy bản ghi tốt nhất cho mỗi lessonId)
+    const allProgress = await StudyHistory.aggregate([
+      { $match: { userId: userObjectId } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+
+    const progresses = allProgress.map(p => ({
+      ...p.best,
+      isCompleted: p.best.status === 'passed'
+    }))
 
     const filterProgress = (category: string, activeIds: any[]) => {
       const activeIdStrings = activeIds.map(id => String(id))
-      return allProgress.filter(p => p.category === category && activeIdStrings.includes(String(p.lessonId)))
+      return progresses.filter(p => p.category === category && activeIdStrings.includes(String(p.lessonId)))
     }
 
     return {
       vocabulary: this.buildSkillProgress(
         filterProgress('vocabulary', activeVocabularyTopicIds),
         (p: any) => String(p.lessonId),
-        (p: any) => p.point || 0,
+        (p: any) => p.progress || 0,
         totals?.vocabulary ?? activeVocabularyTopicIds.length
       ),
       grammar: this.buildSkillProgress(
@@ -161,7 +167,7 @@ export class ChatbotService {
       writing: this.buildSkillProgress(
         filterProgress('writing', activeWritingIds),
         (p: any) => String(p.lessonId),
-        (p: any) => p.point || 0,
+        (p: any) => p.progress || 0,
         totals?.writing ?? activeWritingIds.length
       ),
       ipa: this.buildSkillProgress(

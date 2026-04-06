@@ -37,3 +37,8 @@ export async function getReadingLesson(_id: string) {
   const reading = await fetchServer<IReading>(`/reading/user/${_id}`)
   return reading
 }
+
+export async function getReadingResult(_id: string) {
+  const result = await fetchServer<any>(`/reading/${_id}/result`)
+  return result
+}

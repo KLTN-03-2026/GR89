@@ -37,3 +37,27 @@ export interface ReadingProgress {
   isActive: boolean
   isCompleted: boolean
 }
+
+export interface IReadingResult {
+  _id: string
+  userId: string
+  lessonId: string
+  category: string
+  level: string
+  progress: number
+  duration: number
+  correctAnswers: number
+  totalQuestions: number
+  weakPoints: string[]
+  status: string
+  createdAt: string
+  result: Array<{
+    _id: string
+    isCorrect: boolean
+    userAnswer: string | string[]
+    questionNumber: number
+    question: string
+    correctAnswer: string | string[]
+    type: string
+  }>
+}

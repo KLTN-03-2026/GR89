@@ -9,7 +9,6 @@ import { writingModel as Writing } from '../models/writing.model'
 import { VocabularyTopic } from '../models/vocabularyTopic.model'
 import { Entertainment } from '../models/entertainment.model'
 import { Payment } from '../models/payment.model'
-import { UserProgress } from '../models/userProgress.model'
 import { StudyHistory } from '../models/studyHistory.model'
 
 export class AdminDashboardService {
@@ -61,14 +60,22 @@ export class AdminDashboardService {
       Media.countDocuments({ type: "video" }),
       Media.countDocuments({ type: "image" }),
       StudyHistory.countDocuments(),
-      UserProgress.countDocuments({ category: 'reading', isCompleted: true }),
-      UserProgress.countDocuments({ category: 'ipa', isCompleted: true }),
-      UserProgress.countDocuments({ category: 'grammar', isCompleted: true }),
-      UserProgress.countDocuments({ category: 'listening', isCompleted: true }),
-      UserProgress.countDocuments({ category: 'speaking', isCompleted: true }),
-      UserProgress.countDocuments({ category: 'writing', isCompleted: true }),
-      UserProgress.countDocuments({ category: 'vocabulary', isCompleted: true })
+      StudyHistory.distinct('lessonId', { category: 'reading', status: 'passed' }),
+      StudyHistory.distinct('lessonId', { category: 'ipa', status: 'passed' }),
+      StudyHistory.distinct('lessonId', { category: 'grammar', status: 'passed' }),
+      StudyHistory.distinct('lessonId', { category: 'listening', status: 'passed' }),
+      StudyHistory.distinct('lessonId', { category: 'speaking', status: 'passed' }),
+      StudyHistory.distinct('lessonId', { category: 'writing', status: 'passed' }),
+      StudyHistory.distinct('lessonId', { category: 'vocabulary', status: 'passed' })
     ]);
+
+    const completedReadingCount = (completedReading as any).length;
+    const completedIpaCount = (completedIpa as any).length;
+    const completedGrammarCount = (completedGrammar as any).length;
+    const completedListeningCount = (completedListening as any).length;
+    const completedSpeakingCount = (completedSpeaking as any).length;
+    const completedWritingCount = (completedWriting as any).length;
+    const completedVocabularyCount = (completedVocabulary as any).length;
 
     const totalRevenueAmount = totalRevenue[0]?.total || 0;
     const lastMonthRevenueAmount = lastMonthRevenue[0]?.total || 0;
@@ -118,7 +125,7 @@ export class AdminDashboardService {
       }))
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    const totalCompletedLessons = completedReading + completedIpa + completedGrammar + completedListening + completedSpeaking + completedWriting + completedVocabulary;
+    const totalCompletedLessons = completedReadingCount + completedIpaCount + completedGrammarCount + completedListeningCount + completedSpeakingCount + completedWritingCount + completedVocabularyCount;
     const totalLessonsCount = readingLessons + ipaLessons + grammarTopics + listeningLessons + speakingLessons + writingLessons + vocabularyTopics;
 
     return {

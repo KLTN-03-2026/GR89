@@ -1,5 +1,5 @@
 import { IIpa, Ipa, IIpaPaginateResult, IExample } from "../models/ipa.model"
-import { UserProgress } from "../models/userProgress.model"
+import { IpaScoring } from "../models/ipaScoring.model"
 import { StudyHistory } from "../models/studyHistory.model"
 import { StudyService } from "./study.service"
 import { SpeechAceProvider } from "../providers/speechace.provider"
@@ -18,8 +18,8 @@ export class IpaService {
     const totalLessons = await Ipa.countDocuments();
     const activeLessons = await Ipa.countDocuments({ isActive: true });
     const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalProgressRecords = await UserProgress.countDocuments({ category: 'ipa' });
-    const completedProgressRecords = await UserProgress.countDocuments({ category: 'ipa', isCompleted: true });
+    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'ipa' });
+    const completedProgressRecords = await StudyHistory.countDocuments({ category: 'ipa', status: 'passed' });
 
     const completionRate = totalProgressRecords > 0
       ? Math.round((completedProgressRecords / totalProgressRecords) * 100)
@@ -29,17 +29,17 @@ export class IpaService {
     currentMonth.setDate(1)
     currentMonth.setHours(0, 0, 0, 0)
 
-    const monthlyLearns = await UserProgress.countDocuments({
+    const monthlyLearns = await StudyHistory.countDocuments({
       category: 'ipa',
-      updatedAt: { $gte: currentMonth }
+      createdAt: { $gte: currentMonth }
     })
 
     const lastMonth = new Date(currentMonth)
     lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-    const lastMonthLearns = await UserProgress.countDocuments({
+    const lastMonthLearns = await StudyHistory.countDocuments({
       category: 'ipa',
-      updatedAt: {
+      createdAt: {
         $gte: lastMonth,
         $lt: currentMonth
       }
@@ -363,18 +363,23 @@ export class IpaService {
     const ipas = await Ipa.find({ isActive: true })
       .sort({ orderIndex: 1 })
 
-    const progresses = await UserProgress.find({ userId, category: 'ipa' });
-    const progressMap = new Map(progresses.map(p => [String(p.lessonId), p]));
+    // Lấy bản ghi tốt nhất từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'ipa' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
 
     return ipas.map((ipa) => {
       const p = progressMap.get(String(ipa._id));
       return {
         ...ipa.toObject(),
         progress: p?.progress || 0,
-        point: p?.point || 0,
-        isCompleted: p?.isCompleted || false,
-        isActive: p?.isActive || false,
-        isResult: !!(p && (((p as any).resultData && Object.keys((p as any).resultData).length > 0) || (p.point || 0) > 0)),
+        point: p?.progress || 0,
+        isCompleted: p?.status === 'passed',
+        isActive: true,
+        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
         isVipRequired: ipa.isVipRequired !== undefined ? ipa.isVipRequired : true,
       } as unknown as IIpa;
     });
@@ -401,56 +406,73 @@ export class IpaService {
       throw new ErrorHandler('Không phát hiện thấy giọng nói nào, vui lòng thử lại', 500)
     }
 
-    const wordScore = result.text_score.word_score_list[0]
-    const score = wordScore.quality_score || 0
+    const textScore = result.text_score
+    const wordScoreList = textScore.word_score_list || []
+    const overallScore = textScore.quality_score || 0
+
+    // Tạo bản ghi kết quả chi tiết
+    const ipaScoring = await IpaScoring.create({
+      userId,
+      lessonId: ipaId,
+      referenceText: referenceText.trim(),
+      overallScore,
+      accuracyScore: textScore.accuracy_score || 0,
+      fluencyScore: textScore.fluency_score || 0,
+      completenessScore: textScore.completeness_score || 0,
+      words: wordScoreList,
+      totalWords: wordScoreList.length,
+      correctWords: wordScoreList.filter((w: any) => (w.quality_score || 0) >= 80).length,
+      errorWords: wordScoreList.filter((w: any) => (w.quality_score || 0) < 80).length,
+      feedback: overallScore >= 80 ? "Phát âm rất tốt!" : "Cần luyện tập thêm!",
+      detailedFeedback: `Bạn cần chú ý phát âm các từ: ${wordScoreList.filter((w: any) => (w.quality_score || 0) < 80).map((w: any) => w.word).join(', ')}`,
+      gradingSystem: 'HundredMark',
+      granularity: 'Phoneme'
+    })
 
     // Lưu qua StudyService
     await StudyService.saveStudyResult({
       userId,
       lessonId: ipaId,
       category: 'ipa',
-      progress: score,
-      point: score,
-      isCompleted: true, // Chỉ cần có làm là tính hoàn thành
+      progress: overallScore,
+      point: overallScore,
+      isCompleted: true,
       studyTime: studyTimeSeconds,
-      resultData: wordScore,
-      correctAnswers: 1,
-      totalQuestions: 1
+      resultId: [ipaScoring._id as unknown as mongoose.Types.ObjectId],
+      resultData: ipaScoring.toObject(),
+      correctAnswers: ipaScoring.correctWords,
+      totalQuestions: ipaScoring.totalWords,
+      weakPoints: wordScoreList.filter((w: any) => (w.quality_score || 0) < 80).map((w: any) => w.word)
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
     await StreakService.update(userId)
 
-    return wordScore
+    return ipaScoring
   }
 
   // (USER) Lấy điểm cao nhất của bài IPA
   static async getHighestScore(
     userId: string,
     ipaId: string
-  ): Promise<{
-    highestScore: number | null
-    hasRecord: boolean
-    progress?: any
-  }> {
-    const progress = await UserProgress.findOne({
+  ): Promise<number> {
+    const history = await StudyHistory.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(ipaId),
       category: 'ipa'
-    })
+    }).sort({ progress: -1, createdAt: -1 });
 
-    if (progress) {
-      return {
-        highestScore: progress.point,
-        hasRecord: true,
-        progress
-      }
-    }
+    return history?.progress || 0;
+  }
 
-    return {
-      highestScore: null,
-      hasRecord: false
-    }
+  // (USER) Lấy thông tin chi tiết IPA theo ID cho người dùng
+  static async getIpaByIdForUser(id: string, userId: string): Promise<IIpa> {
+    const ipa = await Ipa.findOne({ _id: id, isActive: true })
+      .populate('image')
+      .populate('video');
+    if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404);
+
+    return ipa;
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
@@ -623,16 +645,16 @@ export class IpaService {
     const ipa = await Ipa.findById(ipaId).select('level')
     if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
 
-    const existingProgress = await UserProgress.findOne({
+    const existingBest = await StudyHistory.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(ipaId),
       category: 'ipa'
-    })
+    }).sort({ progress: -1, createdAt: -1 })
 
-    const previousBest = existingProgress?.point || 0
+    const previousBest = existingBest?.progress || 0
     const isNewRecord = progress > previousBest
 
-    await StudyService.saveStudyResult({
+    const history = await StudyService.saveStudyResult({
       userId,
       lessonId: ipaId,
       category: 'ipa',
@@ -644,25 +666,17 @@ export class IpaService {
       resultData: { score: progress }
     })
 
-    const savedProgress = await UserProgress.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
-      lessonId: new mongoose.Types.ObjectId(ipaId),
-      category: 'ipa'
-    })
-
-    const progressDoc = savedProgress as any
-
     return {
       isNewRecord,
       currentScore: progress,
       previousBest,
       progress: {
-        _id: progressDoc?._id?.toString() || '',
-        userId: progressDoc?.userId?.toString() || '',
-        ipaId: progressDoc?.lessonId?.toString() || '',
-        progress: progressDoc?.progress || 0,
-        createdAt: progressDoc?.createdAt,
-        updatedAt: progressDoc?.updatedAt
+        _id: history?._id?.toString() || '',
+        userId: userId,
+        ipaId: ipaId,
+        progress: progress,
+        createdAt: history?.createdAt,
+        updatedAt: history?.createdAt
       }
     }
   }

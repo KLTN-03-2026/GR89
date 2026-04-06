@@ -1,5 +1,5 @@
 import mongoose, { ObjectId } from "mongoose";
-import { UserProgress } from "../models/userProgress.model";
+import { StudyHistory } from "../models/studyHistory.model";
 import { StudyService } from "./study.service";
 import { StreakService } from "./streak.service";
 import { IVocabularyTopic, VocabularyTopic, IVocabularyTopicPaginateResult } from "../models/vocabularyTopic.model";
@@ -49,8 +49,8 @@ export class VocabularyService {
     const totalLessons = await VocabularyTopic.countDocuments();
     const activeLessons = await VocabularyTopic.countDocuments({ isActive: true });
     const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalProgressRecords = await UserProgress.countDocuments({ category: 'vocabulary' });
-    const completedProgressRecords = await UserProgress.countDocuments({ category: 'vocabulary', isCompleted: true });
+    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'vocabulary' });
+    const completedProgressRecords = await StudyHistory.countDocuments({ category: 'vocabulary', status: 'passed' });
 
     const topics = await VocabularyTopic.find({ isActive: true }).populate('vocabularies');
     const totalWords = topics.reduce((sum, topic) => {
@@ -67,18 +67,18 @@ export class VocabularyService {
     currentMonth.setDate(1)
     currentMonth.setHours(0, 0, 0, 0)
 
-    const monthlyLearns = await UserProgress.countDocuments({
+    const monthlyLearns = await StudyHistory.countDocuments({
       category: 'vocabulary',
-      updatedAt: { $gte: currentMonth }
+      createdAt: { $gte: currentMonth }
     })
 
     // Tính lượt học tháng trước để so sánh
     const lastMonth = new Date(currentMonth)
     lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-    const lastMonthLearns = await UserProgress.countDocuments({
+    const lastMonthLearns = await StudyHistory.countDocuments({
       category: 'vocabulary',
-      updatedAt: {
+      createdAt: {
         $gte: lastMonth,
         $lt: currentMonth
       }
@@ -491,25 +491,58 @@ export class VocabularyService {
 
   /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
-  // (USER) Lấy danh sách chủ đề từ vựng kèm tiến độ của người dùng
-  static async getVocabularyListByUser(userId: string): Promise<ITopicVocabularyUserResponse[]> {
-    const topics = await VocabularyTopic
-      .find({ isActive: true })
-      .sort({ orderIndex: 1 })
-      .populate({ path: 'image', select: '_id url' })
+  static async getVocabularyListByUser(userId: string | mongoose.Types.ObjectId): Promise<ITopicVocabularyUserResponse[]> {
+    const userIdObj = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId
 
-    const progresses = await UserProgress.find({ userId, category: 'vocabulary' })
-    const progressMap = new Map(progresses.map(p => [String(p.lessonId), p]))
+    const topics = await VocabularyTopic.find({ isActive: true })
+      .populate({ path: 'image', select: '_id url' })
+      .sort({ orderIndex: 1 })
+
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: userIdObj, category: 'vocabulary' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
 
     return topics.map((topic) => {
       const p = progressMap.get(String(topic._id))
       const topicObj = topic.toObject()
       return {
         ...topicObj,
-        isCompleted: p?.isCompleted || false,
-        isActive: p?.isActive || false,
-        point: p?.point || 0,
-        isResult: p ? p.point > 0 : false,
+        isCompleted: p?.status === 'passed',
+        isActive: true,
+        point: p?.progress || 0,
+        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0 || p.status === 'passed')),
+        isVipRequired: topicObj.isVipRequired !== undefined ? topicObj.isVipRequired : true,
+      } as unknown as ITopicVocabularyUserResponse
+    })
+  }
+
+  // (USER) Lấy danh sách các chủ đề từ vựng kèm tiến độ người dùng
+  static async getTopicsByLevel(userId: string, level: string): Promise<ITopicVocabularyUserResponse[]> {
+    const topics = await VocabularyTopic.find({
+      level: level as any,
+      isActive: true
+    }).sort({ orderIndex: 1 })
+
+    // Lấy bản ghi tốt nhất từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'vocabulary' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
+
+    return topics.map((topic) => {
+      const p = progressMap.get(String(topic._id))
+      const topicObj = topic.toObject()
+      return {
+        ...topicObj,
+        isCompleted: p?.status === 'passed',
+        isActive: true,
+        point: p?.progress || 0,
+        isResult: p ? p.progress > 0 : false,
         isVipRequired: topicObj.isVipRequired !== undefined ? topicObj.isVipRequired : true,
       } as unknown as ITopicVocabularyUserResponse
     })
@@ -547,6 +580,10 @@ export class VocabularyService {
     const point = Math.round(((correctCount / (quizResults.length || 1)) * 100) * 100) / 100
     const progress = point // Với vocab, point chính là progress
 
+    // Lấy tags của các câu sai để làm weakPoints
+    // const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
+    const weakPoints = Array.from([])
+
     // Lưu qua StudyService (Unified)
     const history = await StudyService.saveStudyResult({
       userId,
@@ -559,7 +596,8 @@ export class VocabularyService {
       studyTime: studyTimeSeconds,
       resultId, // Lưu ID vào Progress/History
       correctAnswers: correctCount,
-      totalQuestions: quizResults.length
+      totalQuestions: quizResults.length,
+      weakPoints
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
@@ -570,62 +608,73 @@ export class VocabularyService {
 
   // (USER) Lấy tiến độ của một chủ đề từ vựng cụ thể
   static async getVocabularyUserProgress(vocabularyTopicId: string, userId: string) {
-    return await UserProgress.findOne({
+    return await StudyHistory.findOne({
       lessonId: new mongoose.Types.ObjectId(vocabularyTopicId),
       userId: new mongoose.Types.ObjectId(userId),
       category: 'vocabulary'
-    });
+    }).sort({ progress: -1, createdAt: -1 });
   }
 
   // (USER) Lấy kết quả quiz của chủ đề
-  static async getVocabularyResult(vocabularyTopicId: string, userId: string): Promise<any[]> {
-    const progress = await UserProgress.findOne({
+  static async getVocabularyResult(vocabularyTopicId: string, userId: string): Promise<any> {
+    const history = await StudyHistory.findOne({
       lessonId: new mongoose.Types.ObjectId(vocabularyTopicId),
       userId: new mongoose.Types.ObjectId(userId),
       category: 'vocabulary'
-    });
-    if (!progress) throw new ErrorHandler('Tiến độ học tập không tồn tại', 404);
+    }).sort({ progress: -1, createdAt: -1 });
+    if (!history) throw new ErrorHandler('Tiến độ học tập không tồn tại', 404);
 
-    if (!progress.resultId || progress.resultId.length === 0) return [];
+    let detailedResults = []
+    if (history.resultId && history.resultId.length > 0) {
+      const results = await QuizResult.find({ _id: { $in: history.resultId } })
+        .populate({ path: 'quizId', select: 'question answer type' })
+        .sort({ questionNumber: 1 })
+        .lean();
 
-    const results = await QuizResult.find({ _id: { $in: progress.resultId } })
-      .populate({ path: 'quizId', select: 'question answer type' })
-      .sort({ questionNumber: 1 })
-      .lean();
+      detailedResults = results.map(r => ({
+        ...r,
+        question: (r.quizId as any)?.question ?? null,
+        correctAnswer: (r.quizId as any)?.answer ?? null,
+        type: (r.quizId as any)?.type ?? null,
+      }));
+    }
 
-    return results.map(r => ({
-      ...r,
-      question: (r.quizId as any)?.question ?? null,
-      correctAnswer: (r.quizId as any)?.answer ?? null,
-      type: (r.quizId as any)?.type ?? null,
-    }));
+    return {
+      ...history.toObject(),
+      result: detailedResults
+    }
   }
 
   // (USER) Lấy tổng quan học từ vựng (Dashboard)
   static async getVocabularyOverview(userId: string) {
-    const [topics, progresses] = await Promise.all([
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const [topics, progressesAggregation] = await Promise.all([
       VocabularyTopic.find({ isActive: true }).select('_id name vocabularies').lean(),
-      UserProgress.find({ userId, category: 'vocabulary' }).lean()
+      StudyHistory.aggregate([
+        { $match: { userId: userObjectId, category: 'vocabulary' } },
+        { $sort: { progress: -1, createdAt: -1 } },
+        { $group: { _id: "$lessonId", best: { $first: "$$ROOT" }, totalTime: { $sum: "$duration" } } }
+      ])
     ])
 
     const activeTopicIds = new Set(topics.map(t => String(t._id)))
-    const activeProgresses = progresses.filter((p: any) => activeTopicIds.has(String(p.lessonId)))
+    const activeProgresses = progressesAggregation.filter(p => activeTopicIds.has(String(p._id)))
 
     const completedTopicIds = new Set(
-      activeProgresses.filter(p => p.isCompleted).map(p => String(p.lessonId))
+      activeProgresses.filter(p => p.best.status === 'passed').map(p => String(p._id))
     )
     const learnedWords = topics
       .filter(t => completedTopicIds.has(String(t._id)))
       .reduce((sum, t: any) => sum + (Array.isArray(t.vocabularies) ? t.vocabularies.length : 0), 0)
 
-    const completedTopics = activeProgresses.filter(p => p.isCompleted).length
+    const completedTopics = activeProgresses.filter(p => p.best.status === 'passed').length
     const totalTopics = topics.length
-    const learnedProgresses = activeProgresses.filter((p: any) => (p.resultId?.length || 0) > 0 || (p.point || 0) > 0 || p.isCompleted)
+    const learnedProgresses = activeProgresses.filter(p => (p.best.resultId?.length || 0) > 0 || (p.best.progress || 0) > 0 || p.best.status === 'passed')
     const avgScore = learnedProgresses.length
-      ? Math.round((learnedProgresses.reduce((s: number, p: any) => s + (p.point || 0), 0) / learnedProgresses.length) * 100) / 100
+      ? Math.round((learnedProgresses.reduce((s: number, p: any) => s + (p.best.progress || 0), 0) / learnedProgresses.length) * 100) / 100
       : 0
-    const totalScore = Math.round(activeProgresses.reduce((s: number, p: any) => s + (p.point || 0), 0) * 100) / 100
-    const totalTime = activeProgresses.reduce((sum: number, p: any) => sum + (p.studyTime || 0), 0)
+    const totalScore = Math.round(activeProgresses.reduce((s: number, p: any) => s + (p.best.progress || 0), 0) * 100) / 100
+    const totalTime = activeProgresses.reduce((sum: number, p: any) => sum + (p.totalTime || 0), 0)
 
     return { learnedWords, completedTopics, totalTopics, avgScore, totalScore, totalTime }
   }

@@ -1,6 +1,6 @@
 'use client'
 import { formatDate, getTime } from "@/libs/utils"
-import { IListeningProgress } from "@/types/listening"
+import { IListeningProgress } from "@/features/listening/types"
 import Link from "next/link"
 import { useState } from "react"
 import { ContentStateDisplay, ContentStateType } from "@/components/common/ContentStateDisplay"

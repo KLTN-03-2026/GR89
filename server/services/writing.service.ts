@@ -1,5 +1,4 @@
 import { IWriting, writingModel, IWritingPaginateResult } from "../models/writing.model";
-import { UserProgress } from "../models/userProgress.model";
 import { StudyHistory } from "../models/studyHistory.model";
 import { StudyService } from "./study.service";
 import { AIProvider } from "../providers/ai.provider";
@@ -246,33 +245,30 @@ export class WritingService {
   // (ADMIN) Lấy thống kê tổng quan về Writing
   static async getOverviewStats(): Promise<any> {
     const totalLessons = await writingModel.countDocuments();
-    const activeLessons = await UserProgress.countDocuments({ category: 'writing', isActive: true });
+    const activeLessons = await writingModel.countDocuments({ isActive: true });
     const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalProgressRecords = await UserProgress.countDocuments({ category: 'writing' });
-    const completedProgressRecords = await UserProgress.countDocuments({ category: 'writing', isCompleted: true });
+    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'writing' });
+    const completedProgressRecords = await StudyHistory.countDocuments({ category: 'writing', status: 'passed' });
 
-    // Tính tỷ lệ hoàn thành
     const completionRate = totalProgressRecords > 0
       ? Math.round((completedProgressRecords / totalProgressRecords) * 100)
       : 0
 
-    // Tính lượt học tháng này
     const currentMonth = new Date()
     currentMonth.setDate(1)
     currentMonth.setHours(0, 0, 0, 0)
 
-    const monthlyLearns = await UserProgress.countDocuments({
+    const monthlyLearns = await StudyHistory.countDocuments({
       category: 'writing',
-      updatedAt: { $gte: currentMonth }
+      createdAt: { $gte: currentMonth }
     })
 
-    // Tính lượt học tháng trước để so sánh
     const lastMonth = new Date(currentMonth)
     lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-    const lastMonthLearns = await UserProgress.countDocuments({
+    const lastMonthLearns = await StudyHistory.countDocuments({
       category: 'writing',
-      updatedAt: {
+      createdAt: {
         $gte: lastMonth,
         $lt: currentMonth
       }
@@ -283,10 +279,12 @@ export class WritingService {
       ? Math.round(((monthlyLearns - lastMonthLearns) / lastMonthLearns) * 100)
       : monthlyLearns > 0 ? 100 : 0
 
-    // Tính điểm trung bình
-    const avgWritingScore = await UserProgress.aggregate([
-      { $match: { category: 'writing', point: { $gt: 0 } } },
-      { $group: { _id: null, avgScore: { $avg: '$point' } } }
+    // Tính điểm trung bình (lấy điểm cao nhất của mỗi user/bài học rồi tính trung bình)
+    const avgWritingScore = await StudyHistory.aggregate([
+      { $match: { category: 'writing', progress: { $gt: 0 } } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: { userId: "$userId", lessonId: "$lessonId" }, best: { $first: "$progress" } } },
+      { $group: { _id: null, avgScore: { $avg: '$best' } } }
     ]);
 
     return {
@@ -312,35 +310,24 @@ export class WritingService {
   static async getWritingListByUser(userId: string): Promise<IWriting[]> {
     const writings = await writingModel.find({ isActive: true }).sort({ orderIndex: 1 });
 
-    // Tự động mở bài đầu tiên
-    const firstWriting = await writingModel.findOne({ isActive: true }).sort({ orderIndex: 1 })
-    if (firstWriting) {
-      const exists = await UserProgress.findOne({ userId, lessonId: firstWriting._id, category: 'writing' })
-      if (!exists) {
-        await UserProgress.create({
-          userId,
-          lessonId: firstWriting._id,
-          category: 'writing',
-          isActive: true,
-          isCompleted: false,
-          progress: 0
-        })
-      }
-    }
-
-    const progresses = await UserProgress.find({ userId, category: 'writing' })
-    const progressMap = new Map(progresses.map(p => [String(p.lessonId), p]))
+    // Lấy bản ghi tốt nhất từ StudyHistory
+    const progresses = await StudyHistory.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'writing' } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+    ])
+    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
 
     return writings.map((writing) => {
       const p = progressMap.get(String(writing._id));
       const writingObj = writing.toObject()
       return {
         ...writingObj,
-        isCompleted: p?.isCompleted || false,
-        isActive: p?.isActive || false,
+        isCompleted: p?.status === 'passed',
+        isActive: true,
         progress: p?.progress || 0,
-        point: p?.point || 0,
-        isResult: !!(p && (((p as any).resultData && Object.keys((p as any).resultData).length > 0) || (p.point || 0) > 0)),
+        point: p?.progress || 0,
+        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
         isVipRequired: writingObj.isVipRequired !== undefined ? writingObj.isVipRequired : true,
       } as unknown as IWriting;
     });
@@ -353,9 +340,13 @@ export class WritingService {
     return writing
   }
 
-  // (USER) Lấy tiến độ của người dùng theo ID bài viết
-  static async getUserProgress(userId: string, writingId: string) {
-    return await UserProgress.findOne({ userId, lessonId: writingId, category: 'writing' })
+  // (USER) Lấy kết quả tốt nhất của người dùng theo ID bài viết
+  static async getWritingBestResult(userId: string, writingId: string) {
+    return await StudyHistory.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      lessonId: new mongoose.Types.ObjectId(writingId),
+      category: 'writing'
+    }).sort({ progress: -1, createdAt: -1 });
   }
 
   // (USER) AI chấm điểm và đánh giá bài viết
@@ -431,14 +422,24 @@ export class WritingService {
 
   // (USER) Lấy kết quả bài viết
   static async getWritingResult(userId: string, writingId: string): Promise<any> {
-    const progress = await UserProgress.findOne({ userId, lessonId: writingId, category: 'writing' })
-    const history = await StudyHistory.findOne({ userId, lessonId: writingId, category: 'writing' }).sort({ createdAt: -1 })
+    const history = await StudyHistory.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      lessonId: new mongoose.Types.ObjectId(writingId),
+      category: 'writing'
+    }).sort({ progress: -1, createdAt: -1 })
 
-    if (!progress) throw new ErrorHandler('Kết quả bài viết không tồn tại', 404)
+    if (!history) throw new ErrorHandler('Kết quả bài viết không tồn tại', 404)
+
+    // Load detailed result from WritingUser if exists
+    let detailedResult = null;
+    if (history.resultId && history.resultId.length > 0) {
+      const WritingUser = mongoose.model('WritingUser');
+      detailedResult = await WritingUser.findById(history.resultId[0]).lean();
+    }
 
     return {
-      ...progress.toObject(),
-      result: history?.resultData || null
+      ...history.toObject(),
+      result: detailedResult
     }
   }
 
