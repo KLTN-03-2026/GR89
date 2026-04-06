@@ -622,27 +622,23 @@ export class VocabularyService {
       userId: new mongoose.Types.ObjectId(userId),
       category: 'vocabulary'
     }).sort({ progress: -1, createdAt: -1 });
+
     if (!history) throw new ErrorHandler('Tiến độ học tập không tồn tại', 404);
 
-    let detailedResults = []
-    if (history.resultId && history.resultId.length > 0) {
-      const results = await QuizResult.find({ _id: { $in: history.resultId } })
-        .populate({ path: 'quizId', select: 'question answer type' })
-        .sort({ questionNumber: 1 })
-        .lean();
+    if (!history.resultId || history.resultId.length === 0) return []
 
-      detailedResults = results.map(r => ({
-        ...r,
-        question: (r.quizId as any)?.question ?? null,
-        correctAnswer: (r.quizId as any)?.answer ?? null,
-        type: (r.quizId as any)?.type ?? null,
-      }));
-    }
+    const results = await QuizResult.find({ _id: { $in: history.resultId } })
+      .populate({ path: 'quizId', select: 'question answer explanation' })
+      .sort({ questionNumber: 1 })
+      .lean()
 
-    return {
-      ...history.toObject(),
-      result: detailedResults
-    }
+    return results.map(r => ({
+      questionNumber: r.questionNumber,
+      question: (r.quizId as any)?.question ?? '',
+      userAnswer: r.userAnswer ?? '',
+      correctAnswer: (r.quizId as any)?.answer ?? '',
+      explanation: (r.quizId as any)?.explanation ?? '',
+    }))
   }
 
   // (USER) Lấy tổng quan học từ vựng (Dashboard)

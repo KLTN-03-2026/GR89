@@ -29,7 +29,7 @@ export class UserProgressService {
         $match: {
           userId: userIdObj,
           category,
-          lessonId: { $in: activeIds.map(id => new mongoose.Types.ObjectId(id as string)) }
+          lessonId: { $in: activeIds.map((id: string) => new mongoose.Types.ObjectId(id as string)) }
         }
       },
       { $sort: { progress: -1, createdAt: -1 } },
@@ -44,7 +44,7 @@ export class UserProgressService {
 
     // Tính tổng thời gian học từ tất cả các lần (History)
     const timeAggregation = await StudyHistory.aggregate([
-      { $match: { userId: userIdObj, category, lessonId: { $in: activeIds.map(id => new mongoose.Types.ObjectId(id as string)) } } },
+      { $match: { userId: userIdObj, category, lessonId: { $in: activeIds.length > 0 ? activeIds.map((id: string) => new mongoose.Types.ObjectId(id as string)) : [] } } },
       { $group: { _id: null, totalStudyTime: { $sum: "$duration" } } }
     ])
     const totalStudyTime = timeAggregation[0]?.totalStudyTime || 0
@@ -57,7 +57,7 @@ export class UserProgressService {
     const lastHistory = await StudyHistory.findOne({
       userId: userIdObj,
       category,
-      lessonId: { $in: activeIds.map(id => new mongoose.Types.ObjectId(id as string)) }
+      lessonId: { $in: activeIds.length > 0 ? activeIds.map((id: string) => new mongoose.Types.ObjectId(id as string)) : [] }
     })
       .sort({ createdAt: -1 })
       .populate({

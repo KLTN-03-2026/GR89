@@ -2,7 +2,6 @@ import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { Request, Response, NextFunction } from "express";
 import ErrorHandler from "../utils/ErrorHandler";
 import { ReadingService } from "../services/reading.service";
-import fs from "fs";
 import { IReading, IVocabularyReading } from "../models/reading.model";
 import { IQuiz } from "../models/quiz.model";
 import { IQuizResult } from "../models/quizzResult.model";

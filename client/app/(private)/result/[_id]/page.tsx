@@ -1,6 +1,6 @@
 import { ResultPage } from '@/features/result'
 import { fetchServer } from '@/libs/apis/fetch-server'
-import { IQuizResult } from '@/types'
+import { IQuizResult } from '@/features/quizz'
 
 export default async function page({
   params,

@@ -447,8 +447,8 @@ export class ReadingService {
     const progress = Math.round(((correctCount / (quizResults.length || 1)) * 100) * 100) / 100
 
     // Lấy tags của các câu sai để làm weakPoints
-    const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
-    const weakPoints = Array.from(new Set(incorrectQuizzes.flatMap(q => q.tags || [])))
+    // const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
+    const weakPoints = Array.from([])
 
     // Lưu qua StudyService (Unified)
     const history = await StudyService.saveStudyResult({
@@ -478,35 +478,28 @@ export class ReadingService {
 
   // (USER) Lấy kết quả bài đọc
   static async getReadingResult(userId: string, readingId: string): Promise<any> {
-    // Lấy bản ghi tốt nhất (điểm cao nhất và mới nhất)
     const history = await StudyHistory.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(readingId),
+      userId: new mongoose.Types.ObjectId(userId),
       category: 'reading'
-    }).sort({ progress: -1, createdAt: -1 })
+    }).sort({ progress: -1, createdAt: -1 });
 
-    if (!history) throw new ErrorHandler('Kết quả bài đọc không tồn tại', 404)
+    if (!history) throw new ErrorHandler('Tiến độ học tập không tồn tại', 404);
 
-    // Nếu có resultId (Quizz), load từ QuizResult
-    let detailedResults = []
-    if (history.resultId && history.resultId.length > 0) {
-      const results = await QuizResult.find({ _id: { $in: history.resultId } })
-        .populate({ path: 'quizId', select: 'question answer type' })
-        .sort({ questionNumber: 1 })
-        .lean();
+    if (!history.resultId || history.resultId.length === 0) return []
 
-      detailedResults = results.map(r => ({
-        ...r,
-        question: (r.quizId as any)?.question ?? null,
-        correctAnswer: (r.quizId as any)?.answer ?? null,
-        type: (r.quizId as any)?.type ?? null,
-      }))
-    }
+    const results = await QuizResult.find({ _id: { $in: history.resultId } })
+      .populate({ path: 'quizId', select: 'question answer explanation' })
+      .sort({ questionNumber: 1 })
+      .lean()
 
-    return {
-      ...history.toObject(),
-      result: detailedResults
-    }
+    return results.map(r => ({
+      questionNumber: r.questionNumber,
+      question: (r.quizId as any)?.question ?? '',
+      userAnswer: r.userAnswer ?? '',
+      correctAnswer: (r.quizId as any)?.answer ?? '',
+      explanation: (r.quizId as any)?.explanation ?? '',
+    }))
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
@@ -536,7 +529,7 @@ export class ReadingService {
   static async updateReading(id: string, reading: IReading) {
     const payload: any = { ...reading }
     if ((payload as any).image && typeof (payload as any).image === 'string') {
-      payload.image = new mongoose.Types.ObjectId((payload as any).image)
+      payload.image = new mongoose.Types.ObjectId(payload.image)
     }
     const updatedReading = await Reading.findByIdAndUpdate(id, payload, { new: true })
     if (!updatedReading) throw new ErrorHandler('Bài đọc không tồn tại', 404)
