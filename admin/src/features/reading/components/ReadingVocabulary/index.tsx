@@ -1,0 +1,1 @@
+export { ReadingVocabularyMain } from './ReadingVocabularyMain'

@@ -1,0 +1,6 @@
+export { WritingPage } from './components/topics/WritingPage'
+export { WritingHeader } from './components/topics/WritingHeader'
+export { WritingTopic } from './components/topics/WritingTopic'
+export { WritingLesson } from './components/lesson/WritingLesson'
+export { ResultWritingPage } from './components/lesson/ResultWritingPage'
+export { getWritingData, getWritingLesson, getWritingResult } from './services/writingService'

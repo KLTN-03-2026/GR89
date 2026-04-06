@@ -1,0 +1,216 @@
+'use client'
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { createListening } from '@/features/listening/services/api'
+import { Plus, Music, FileText, Headphones, Info, Layers, X, Save, CheckCircle2, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'react-toastify'
+import { Media } from '@/features/Media/types'
+import { DialogSelectAudio } from './DialogSelectAudio'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Button } from '@/components/ui/button'
+import { SheetFooter } from '@/components/ui/sheet'
+
+export function DialogAddListening({ callback }: { callback: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [data, setData] = useState({
+    title: "",
+    description: "",
+    audio: "",
+    subtitle: "",
+    level: "A1",
+  })
+  const [selectedAudio, setSelectedAudio] = useState<Media | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleSelectAudio = (audio: Media) => {
+    setSelectedAudio(audio)
+    setData(prev => ({ ...prev, audio: audio.url }))
+  }
+
+  const handleCreateListening = async () => {
+    if (!data.title.trim() || !data.description.trim() || !selectedAudio || !data.subtitle.trim() || !data.level) {
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+      return
+    }
+
+    setLoading(true)
+    try {
+      await createListening({
+        ...data,
+        audio: selectedAudio._id
+      } as any)
+      callback()
+      toast.success('Tạo bài nghe thành công')
+      setOpen(false)
+      setData({
+        title: "",
+        description: "",
+        audio: "",
+        subtitle: "",
+        level: "A1",
+      })
+      setSelectedAudio(null)
+    } catch (error) {
+      toast.error('Đã có lỗi xảy ra')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 gap-2 h-11 px-6 rounded-xl font-bold transition-all active:scale-95">
+          <Plus className="h-5 w-5" />
+          Thêm bài nghe mới
+        </Button>
+      </SheetTrigger>
+
+      <SheetContent className="sm:max-w-3xl flex flex-col p-0 border-l">
+        <SheetHeader className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-zinc-100 rounded-lg text-zinc-900">
+              <Headphones className="w-6 h-6" />
+            </div>
+            <div>
+              <SheetTitle className="text-xl font-bold text-zinc-900">Thiết Kế Bài Nghe</SheetTitle>
+              <SheetDescription className="text-zinc-500 text-sm mt-1">
+                Tạo bài tập nghe hiểu với âm thanh và phụ đề song ngữ.
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <Separator />
+
+        <ScrollArea className="flex-1">
+          <div className="p-6 space-y-8">
+            {/* Thông tin cơ bản */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-zinc-900 font-bold uppercase text-xs">
+                <Info className="h-4 w-4" />
+                Thông Tin Cơ Bản
+              </div>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-3 space-y-2">
+                  <Label className="text-xs font-bold text-zinc-500 uppercase">
+                    Tiêu đề bài nghe <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="VD: English Conversation at the Airport..."
+                    value={data.title}
+                    onChange={(e) => setData({ ...data, title: e.target.value })}
+                    className="h-11 bg-white border-zinc-200 rounded-lg font-medium"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-zinc-500 uppercase">
+                    Trình độ <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select value={data.level} onValueChange={(value) => setData({ ...data, level: value })}>
+                    <SelectTrigger className="h-11 bg-white border-zinc-200 rounded-lg font-medium">
+                      <SelectValue placeholder="Chọn" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].map((lvl) => (
+                        <SelectItem key={lvl} value={lvl}>{lvl}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="col-span-4 space-y-2">
+                  <Label className="text-xs font-bold text-zinc-500 uppercase">
+                    Mô tả bài nghe <span className="text-rose-500">*</span>
+                  </Label>
+                  <Textarea
+                    placeholder="Nhập mô tả ngắn gọn..."
+                    value={data.description}
+                    onChange={(e) => setData({ ...data, description: e.target.value })}
+                    className="bg-white border-zinc-200 rounded-lg font-medium min-h-[80px] resize-none"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* Audio Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-zinc-900 font-bold uppercase text-xs">
+                <Music className="h-4 w-4" />
+                Tệp Âm Thanh
+              </div>
+              <div className="p-6 bg-zinc-50 rounded-lg border border-zinc-200 flex flex-col items-center gap-4">
+                <DialogSelectAudio onSelect={handleSelectAudio}>
+                  <Button variant="outline" className="h-11 px-6 rounded-lg border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-900 font-bold gap-2">
+                    <Music className="w-4 h-4" />
+                    {selectedAudio ? "Thay Đổi Âm Thanh" : "Chọn Audio Từ Thư Viện"}
+                  </Button>
+                </DialogSelectAudio>
+
+                {selectedAudio && (
+                  <div className="flex flex-col items-center gap-3 w-full max-w-md">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-lg border border-zinc-200 w-full overflow-hidden">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      <p className="text-sm font-medium text-zinc-600 truncate">{selectedAudio.publicId || selectedAudio.url.split('/').pop()}</p>
+                    </div>
+                    <audio src={selectedAudio.url} controls className="w-full h-10" />
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Subtitle Section */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-zinc-900 font-bold uppercase text-xs">
+                <Layers className="h-4 w-4" />
+                Phụ Đề & Kịch Bản
+              </div>
+              <div className="space-y-4">
+                <Label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-1.5">
+                  <FileText className="h-4 w-4" /> Nội dung phụ đề (.SRT / .VTT) <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea
+                  placeholder="1&#10;00:00:00,000 --> 00:00:02,000&#10;Hello, welcome to English class!"
+                  value={data.subtitle}
+                  onChange={(e) => setData({ ...data, subtitle: e.target.value })}
+                  className="min-h-[300px] font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
+                />
+              </div>
+            </section>
+          </div>
+        </ScrollArea>
+
+        <Separator />
+
+        <SheetFooter className="p-6 bg-white border-t">
+          <div className="flex items-center justify-end gap-3 w-full">
+            <SheetClose asChild>
+              <Button variant="outline" className="h-11 px-6 rounded-lg font-bold" disabled={loading}>
+                Hủy Bỏ
+              </Button>
+            </SheetClose>
+            <Button className="h-11 px-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-bold" onClick={handleCreateListening} disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Đang Xử Lý...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Lưu Bài Nghe
+                </>
+              )}
+            </Button>
+          </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  )
+}

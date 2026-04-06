@@ -1,0 +1,5 @@
+export { SpeakingPage } from './components/topics/SpeakingPage'
+export { SpeakingHeader } from './components/topics/SpeakingHeader'
+export { SpeakingTopic } from './components/topics/SpeakingTopic'
+export { SpeakingLesson } from './components/lesson/SpeakingLesson'
+export { getSpeakingData, getSpeakingLesson } from './services/speakingService'

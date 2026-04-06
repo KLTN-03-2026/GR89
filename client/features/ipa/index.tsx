@@ -1,0 +1,6 @@
+export { IpaPage } from './components/topics/IpaPage'
+export { HeaderIpaLearning } from './components/lesson/HeaderIpaLearning'
+export { IpaLearning } from './components/lesson/IpaLearning'
+export { QuizzIPA } from './components/lesson/QuizzIPA'
+export { getIpaData } from './services/ipaService'
+export type { IIpa } from './types'

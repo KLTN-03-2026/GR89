@@ -1,0 +1,2 @@
+// Vocabulary hooks
+export {}

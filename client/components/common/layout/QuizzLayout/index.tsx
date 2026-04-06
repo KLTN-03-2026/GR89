@@ -1,0 +1,1 @@
+export { HeaderQuizzLayout } from './HeaderQuizzLayout'

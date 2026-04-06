@@ -1,0 +1,1 @@
+export { UserDetailScoresMain } from './UserDetailScoresMain'
