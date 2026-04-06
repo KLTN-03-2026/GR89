@@ -312,12 +312,7 @@ export function SheetAddVocabulary({ topicId, callback }: { topicId: string, cal
                                   form.setValue("image", image._id || "")
                                   setImageUrl(image.url)
                                 }}
-                              >
-                                <div className="w-full h-32 border-2 border-dashed border-zinc-200 rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-zinc-100 hover:border-zinc-400 transition-all cursor-pointer">
-                                  <ImageIcon className="w-6 h-6 text-zinc-400" />
-                                  <p className="text-xs font-bold text-zinc-400 uppercase">Chọn ảnh minh họa</p>
-                                </div>
-                              </DialogImageToMedia>
+                              />
                             ) : (
                               <div className="relative w-full h-40 rounded-lg overflow-hidden border border-zinc-200">
                                 <Image
@@ -332,9 +327,7 @@ export function SheetAddVocabulary({ topicId, callback }: { topicId: string, cal
                                       form.setValue("image", image._id || "")
                                       setImageUrl(image.url)
                                     }}
-                                  >
-                                    <Button type="button" variant="secondary" className="rounded-lg font-bold">Thay đổi ảnh</Button>
-                                  </DialogImageToMedia>
+                                  />
                                 </div>
                               </div>
                             )}
