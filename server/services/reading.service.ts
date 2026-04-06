@@ -484,7 +484,7 @@ export class ReadingService {
   }
 
   // (USER) Lấy kết quả bài đọc
-  static async getReadingResult(userId: string, readingId: string): Promise<any> {
+  static async getReadingResult(userId: string, readingId: string): Promise<any[]> {
     const progress = await UserProgress.findOne({ userId, lessonId: readingId, category: 'reading' })
     if (!progress) throw new ErrorHandler('Kết quả bài đọc không tồn tại', 404)
 
@@ -495,24 +495,18 @@ export class ReadingService {
         .sort({ questionNumber: 1 })
         .lean();
 
-      return {
-        ...progress.toObject(),
-        result: results.map(r => ({
-          ...r,
-          question: (r.quizId as any)?.question ?? null,
-          correctAnswer: (r.quizId as any)?.answer ?? null,
-          type: (r.quizId as any)?.type ?? null,
-        }))
-      }
+      return results.map(r => ({
+        ...r,
+        question: (r.quizId as any)?.question ?? null,
+        correctAnswer: (r.quizId as any)?.answer ?? null,
+        type: (r.quizId as any)?.type ?? null,
+      }))
     }
 
     // Nếu không, load từ History gần nhất (cho các loại bài cũ hoặc bài không phải quiz)
     const history = await StudyHistory.findOne({ userId, lessonId: readingId, category: 'reading' }).sort({ createdAt: -1 })
 
-    return {
-      ...progress.toObject(),
-      result: history?.resultData || []
-    }
+    return history?.resultData || []
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

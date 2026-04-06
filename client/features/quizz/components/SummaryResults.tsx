@@ -21,10 +21,10 @@ export default function SummaryResults({
 }: SummaryResultsProps) {
   const router = useRouter();
 
-  const totalQuestions = results.length;
-  const correctAnswers = results.filter(result =>
-    result.correctAnswer.toLowerCase().trim() === result.userAnswer.toLowerCase().trim()).length;
-  const percentage = Math.round((correctAnswers / totalQuestions) * 100);
+  const totalQuestions = Array.isArray(results) ? results.length : 0;
+  const correctAnswers = Array.isArray(results) ? results.filter(result =>
+    (result.correctAnswer || "").toLowerCase().trim() === (result.userAnswer || "").toLowerCase().trim()).length : 0;
+  const percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
   const getScoreMessage = () => {
     if (percentage >= 90) return "Xuất sắc! Bạn đã nắm vững kiến thức.";

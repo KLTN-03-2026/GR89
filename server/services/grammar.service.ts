@@ -516,7 +516,7 @@ export class GrammarService {
   }
 
   // (USER) Lấy kết quả bài tập ngữ pháp
-  static async getGrammarResult(userId: string, grammarTopicId: string): Promise<any> {
+  static async getGrammarResult(userId: string, grammarTopicId: string): Promise<any[]> {
     const progress = await UserProgress.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(grammarTopicId),
@@ -531,22 +531,16 @@ export class GrammarService {
         .sort({ questionNumber: 1 })
         .lean();
 
-      return {
-        ...progress.toObject(),
-        result: results.map(r => ({
-          ...r,
-          question: (r.quizId as any)?.question ?? null,
-          correctAnswer: (r.quizId as any)?.answer ?? null,
-          type: (r.quizId as any)?.type ?? null,
-        }))
-      }
+      return results.map(r => ({
+        ...r,
+        question: (r.quizId as any)?.question ?? null,
+        correctAnswer: (r.quizId as any)?.answer ?? null,
+        type: (r.quizId as any)?.type ?? null,
+      }))
     }
 
     const history = await StudyHistory.findOne({ userId, lessonId: grammarTopicId, category: 'grammar' }).sort({ createdAt: -1 })
-    return {
-      ...progress.toObject(),
-      result: history?.resultData || []
-    }
+    return history?.resultData || []
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

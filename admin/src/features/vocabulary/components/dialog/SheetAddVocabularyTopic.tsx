@@ -17,14 +17,14 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import {
-  Plus,
-  Book,
-  Tag,
-  Layers,
-  Image as ImageIcon,
-  Trash2,
-  Save,
+import { 
+  Plus, 
+  Book, 
+  Tag, 
+  Layers, 
+  Image as ImageIcon, 
+  Trash2, 
+  Save, 
   X,
   Loader2,
   Sparkles
@@ -111,7 +111,7 @@ export function SheetAddVocabularyTopic({ callback }: { callback: () => void }) 
                   <Tag className="w-4 h-4" />
                   Thông Tin Cơ Bản
                 </div>
-
+                
                 <div className="grid grid-cols-1 gap-4 bg-zinc-50 p-6 rounded-lg border border-zinc-200">
                   <FormField
                     control={form.control}
@@ -246,18 +246,18 @@ export function SheetAddVocabularyTopic({ callback }: { callback: () => void }) 
         <SheetFooter className="p-6 bg-white border-t">
           <div className="flex items-center justify-end gap-3 w-full">
             <SheetClose asChild>
-              <Button
-                variant="outline"
+              <Button 
+                variant="outline" 
                 className="h-11 px-6 rounded-lg font-bold text-zinc-600"
                 disabled={loading}
               >
                 Hủy Bỏ
               </Button>
             </SheetClose>
-            <Button
+            <Button 
               type="submit"
               form="form-create-vocabulary-topic"
-              disabled={loading}
+              disabled={loading} 
               className="h-11 px-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-bold"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
