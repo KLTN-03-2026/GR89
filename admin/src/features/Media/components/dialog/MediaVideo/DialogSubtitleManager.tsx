@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet"
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Upload, FileText, Download, Trash2, Loader2, Subtitles, AlertCircle, Info, CheckCircle2, History } from 'lucide-react'
+import { Upload, FileText, Download, Trash2, Loader2, Subtitles, AlertCircle, Info, CheckCircle2, History, Save } from 'lucide-react'
 import { Media, MediaSubtitle, MediaSubtitlePreview } from '@/features/Media/types'
 import AuthorizedAxios from '@/lib/apis/authorizrAxios'
 import { isAxiosError } from 'axios'

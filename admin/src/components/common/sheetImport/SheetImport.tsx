@@ -110,8 +110,8 @@ export function SheetImport({
     setProgress({ current: 0, total: 100 })
 
     const tick = setInterval(() => {
-      setProgress((p) => ({ ...p, current: Math.min(p.current + 7, 95) }))
-    }, 300)
+      setProgress((p) => ({ ...p, current: Math.min(p.current + Math.random() * 7, 95) }))
+    }, 500)
 
     try {
       // Support both legacy signature: (file, skipErrors)
