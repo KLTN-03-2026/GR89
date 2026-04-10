@@ -42,7 +42,7 @@ export class UserController {
     res.status(200).json({
       success: true,
       message: "Lấy danh sách người dùng thành công",
-      data: result.docs,
+      data: (result as any).users ?? (result as any).docs ?? [],
       pagination: {
         page: result.page,
         limit: result.limit,

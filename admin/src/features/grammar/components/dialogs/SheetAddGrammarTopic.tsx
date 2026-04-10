@@ -73,7 +73,7 @@ export function SheetAddGrammarTopic({ callback }: Props) {
           Thêm chủ đề mới
         </Button>
       </SheetTrigger>
-      <SheetContent className="sm:max-w-2xl flex flex-col p-0 border-l shadow-2xl">
+      <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
         <SheetHeader className="p-8 pb-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 shadow-inner">
@@ -90,7 +90,7 @@ export function SheetAddGrammarTopic({ callback }: Props) {
 
         <Separator className="bg-gray-100" />
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-8 space-y-10">
             {/* Section: Basic Info */}
             <section className="space-y-6">

@@ -68,7 +68,7 @@ export function DialogUpdateIpaExample({ ipaId, example, callback }: DialogUpdat
       </DropdownMenuItem>
 
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent className="sm:max-w-md flex flex-col p-0">
+        <SheetContent className="h-full sm:max-w-md flex flex-col p-0 overflow-hidden">
           <SheetHeader className="p-6 pb-2">
             <SheetTitle className="flex items-center gap-2 text-xl">
               <div className="p-2 bg-primary/10 rounded-lg">

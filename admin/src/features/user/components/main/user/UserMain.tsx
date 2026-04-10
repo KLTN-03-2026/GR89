@@ -1,5 +1,5 @@
 'use client'
-import { DataTable, PageHeader } from "@/components/common"
+import { DataTable } from "@/components/common"
 import { Card, CardContent } from "@/components/ui/card"
 import { useEffect, useState, useCallback } from "react"
 import { columnsUser } from "../../table/user/UserColumn"
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Search, Users, Filter, X, Plus, UserPlus, Mail, Key, Shield, Info, CheckCircle2, TrendingUp, UserCheck, UserMinus } from "lucide-react"
+import { Loader2, Search, Users, Filter, X, UserPlus, Mail, Key, Shield, Info, CheckCircle2, UserCheck, UserMinus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { getAllUsersPaginated, createUser, type UserQueryParams } from "@/features/user/services/api"
 import { toast } from "react-toastify"
@@ -174,21 +174,21 @@ export function UserMain() {
   const kpiStats = [
     {
       title: "Tổng người dùng",
-      value: stats.total,
+      value: totalActive + totalInactive,
       change: { value: "Hệ thống", isPositive: true },
       icon: Users,
       tone: "rose" as const,
     },
     {
       title: "Đang hoạt động",
-      value: stats.active,
+      value: totalActive,
       change: { value: "Online/Active", isPositive: true },
       icon: UserCheck,
       tone: "emerald" as const,
     },
     {
       title: "Tài khoản khóa",
-      value: stats.inactive,
+      value: totalInactive,
       change: { value: "Bị vô hiệu", isPositive: false },
       icon: UserMinus,
       tone: "amber" as const,
@@ -221,7 +221,7 @@ export function UserMain() {
       <StatsGrid stats={kpiStats} columns={3} />
 
       <Sheet open={openAdd} onOpenChange={setOpenAdd}>
-        <SheetContent className="sm:max-w-xl flex flex-col p-0 border-l shadow-2xl">
+        <SheetContent className="h-full sm:max-w-xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
           <SheetHeader className="p-8 pb-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-rose-50 rounded-2xl text-rose-600 shadow-inner">
@@ -230,7 +230,7 @@ export function UserMain() {
               <div>
                 <SheetTitle className="text-2xl font-black text-gray-900 tracking-tight">Thêm Nhân Viên</SheetTitle>
                 <SheetDescription className="text-gray-500 font-medium mt-1">
-                  Chỉ tạo tài khoản với vai trò "Quản lý nội dung" (Content Manager).
+                  Chỉ tạo tài khoản với vai trò `&quot;`Quản lý nội dung`&quot;` (Content Manager).
                 </SheetDescription>
               </div>
             </div>
@@ -238,7 +238,7 @@ export function UserMain() {
 
           <Separator className="bg-gray-100" />
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0">
             <form
               id="form-add-user"
               className="p-8 space-y-8"
@@ -278,7 +278,7 @@ export function UserMain() {
                   <Info className="w-4 h-4" />
                   Thông Tin Tài Khoản
                 </div>
-                
+
                 <div className="grid gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
                   <div className="space-y-2.5">
                     <Label className="text-xs font-black text-gray-500 uppercase ml-1">Họ và Tên *</Label>
@@ -311,7 +311,7 @@ export function UserMain() {
                   <Shield className="w-4 h-4" />
                   Phân Quyền Hệ Thống
                 </div>
-                
+
                 <div className="bg-amber-50/30 p-6 rounded-[2rem] border border-amber-100/50 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-black text-gray-900">Quản lý nội dung</p>

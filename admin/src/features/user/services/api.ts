@@ -159,21 +159,6 @@ export interface UserPaginationMeta {
   next?: number | null
 }
 
-export interface PaginatedUserResponse {
-  success: boolean
-  message: string
-  data: User[]
-  total: number
-  limit: number
-  pages: number
-  page: number
-  pagingCounter: number
-  hasPrev: boolean
-  hasNext: boolean
-  prev: number | null
-  next: number | null
-}
-
 export interface UserQueryParams {
   page?: number
   limit?: number
@@ -198,17 +183,17 @@ export async function getAllUsersPaginated(
 
   const url = `/user/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
   const res = await AuthorizedAxios.get(url)
-  const payload = res.data as PaginatedUserResponse
+  const payload = res.data as ApiResponse<User[]>
 
   const pagination: UserPaginationMeta = {
-    page: payload.page ?? params?.page ?? 1,
-    limit: payload.limit ?? params?.limit ?? 10,
-    total: payload.total ?? 0,
-    pages: payload.pages ?? 0,
-    hasPrev: payload.hasPrev ?? false,
-    hasNext: payload.hasNext ?? false,
-    prev: payload.prev ?? null,
-    next: payload.next ?? null,
+    page: payload.pagination?.page ?? params?.page ?? 1,
+    limit: payload.pagination?.limit ?? params?.limit ?? 10,
+    total: payload.pagination?.total ?? 0,
+    pages: payload.pagination?.pages ?? 0,
+    hasPrev: payload.pagination?.hasPrev ?? false,
+    hasNext: payload.pagination?.hasNext ?? false,
+    prev: payload.pagination?.prev ?? null,
+    next: payload.pagination?.next ?? null,
   }
 
   return {

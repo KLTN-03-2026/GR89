@@ -21,6 +21,7 @@ export interface IStudyHistory extends Document {
   // Link to detailed result
   resultId?: Schema.Types.ObjectId[];
   resultModel?: string;
+  resultData?: unknown;
 }
 
 const studyHistorySchema = new Schema<IStudyHistory>({
@@ -54,7 +55,8 @@ const studyHistorySchema = new Schema<IStudyHistory>({
   resultModel: {
     type: String,
     enum: ['QuizResult', 'WritingUser', 'SpeakingProgress', 'IpaScoring', 'ListeningProgress']
-  }
+  },
+  resultData: { type: Schema.Types.Mixed }
 }, { timestamps: true });
 
 // Index for fast query by AI

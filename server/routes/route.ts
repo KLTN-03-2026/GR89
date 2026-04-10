@@ -18,6 +18,7 @@ import { paymentRoutes } from './payment.routes'
 import { couponRoutes } from './coupon.routes'
 import { chatbotRoutes } from './chatbot.routes'
 import { roadmapRoutes } from './roadmap.routes'
+import { reportRoutes } from './report.routes'
 
 const router = express.Router()
 
@@ -41,6 +42,7 @@ router.use('/payment', paymentRoutes)
 router.use('/coupon', couponRoutes)
 router.use('/chatbot', chatbotRoutes)
 router.use('/roadmap', roadmapRoutes)
+router.use('/report', reportRoutes)
 
 // ✅ ROOT ENDPOINT
 router.get('/', (req, res) => {

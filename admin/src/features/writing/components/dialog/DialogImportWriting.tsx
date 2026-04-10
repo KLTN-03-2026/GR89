@@ -87,7 +87,7 @@ export function DialogImportWriting({ callback }: { callback?: () => void }) {
           Import Writing
         </Button>
       </SheetTrigger>
-      <SheetContent className="sm:max-w-2xl flex flex-col p-0 border-l shadow-2xl">
+      <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
         <SheetHeader className="p-8 pb-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-2xl text-primary shadow-inner">
@@ -104,7 +104,7 @@ export function DialogImportWriting({ callback }: { callback?: () => void }) {
 
         <Separator className="bg-gray-100" />
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-8 space-y-10">
             {/* Hướng dẫn & Template */}
             <section className="space-y-6">

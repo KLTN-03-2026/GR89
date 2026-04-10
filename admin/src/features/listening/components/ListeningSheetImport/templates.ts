@@ -9,6 +9,14 @@ export function buildExcelTemplateWorkbook() {
       level: 'A1',
       audioID: 'media_id_for_audio',
       subtitle: 'This is the subtitle of the lesson.',
+      subtitleVi: 'Đây là phụ đề tiếng Việt của bài nghe.',
+      quizJson: JSON.stringify([
+        {
+          question: 'What is the main topic?',
+          options: ['Travel', 'Food', 'Education', 'Sports'],
+          answer: 'Education'
+        }
+      ]),
       isActive: 'true',
       isVipRequired: 'false',
       orderIndex: 1
@@ -29,6 +37,14 @@ export function buildJsonTemplateData() {
       description: 'Sample listening lesson description',
       audio: 'media_id_for_audio',
       subtitle: 'This is the subtitle of the lesson.',
+      subtitleVi: 'Đây là phụ đề tiếng Việt của bài nghe.',
+      quiz: [
+        {
+          question: 'What is the main topic?',
+          options: ['Travel', 'Food', 'Education', 'Sports'],
+          answer: 'Education'
+        }
+      ],
       level: 'A1',
       isVipRequired: false,
       isActive: true,

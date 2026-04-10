@@ -62,7 +62,8 @@ export const mapSpeechAceResponseToSpeakingResult = (
   return {
     overallScore,
     words,
-    averageScore
+    averageScore,
+    aiFeedback: (data as any)?.aiFeedback ? String((data as any).aiFeedback) : undefined,
   }
 }
 

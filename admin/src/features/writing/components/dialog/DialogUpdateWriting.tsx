@@ -79,7 +79,7 @@ export function DialogUpdateWriting({ callback, writing, isOpen, setIsOpen }: pr
 
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
-      <SheetContent className="sm:max-w-3xl flex flex-col p-0 border-l shadow-2xl">
+      <SheetContent className="h-full sm:max-w-3xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
         <SheetHeader className="p-8 pb-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-amber-50 rounded-2xl text-amber-600 shadow-inner">
@@ -96,7 +96,7 @@ export function DialogUpdateWriting({ callback, writing, isOpen, setIsOpen }: pr
 
         <Separator className="bg-gray-100" />
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-8 space-y-10">
             {/* Thông tin cơ bản */}
             <section className="space-y-6">

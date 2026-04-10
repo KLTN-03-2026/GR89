@@ -173,13 +173,64 @@ export class ListeningController {
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
+  // (ADMIN) Danh sách câu quiz (ListeningQuiz) của một bài nghe
+  static getListeningQuizzes = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params
+    const data = await ListeningService.getListeningQuizzes(id)
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách câu quiz thành công',
+      data,
+    })
+  })
+
+  // (ADMIN) Thêm một câu quiz
+  static addListeningQuiz = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params
+    const { question, options, answer } = req.body
+    if (!question || !Array.isArray(options) || options.length === 0 || !answer) {
+      return next(new ErrorHandler('Thiếu question, options hoặc answer không hợp lệ', 400))
+    }
+    const data = await ListeningService.addListeningQuiz(id, { question, options, answer })
+    res.status(201).json({
+      success: true,
+      message: 'Thêm câu quiz thành công',
+      data,
+    })
+  })
+
+  // (ADMIN) Cập nhật một câu quiz
+  static updateListeningQuizItem = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id, quizId } = req.params
+    const { question, options, answer } = req.body
+    if (!question || !Array.isArray(options) || options.length === 0 || !answer) {
+      return next(new ErrorHandler('Thiếu question, options hoặc answer không hợp lệ', 400))
+    }
+    const data = await ListeningService.updateListeningQuizItem(id, quizId, { question, options, answer })
+    res.status(200).json({
+      success: true,
+      message: 'Cập nhật câu quiz thành công',
+      data,
+    })
+  })
+
+  // (ADMIN) Xóa một câu quiz
+  static deleteListeningQuizItem = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id, quizId } = req.params
+    await ListeningService.deleteListeningQuizItem(id, quizId)
+    res.status(200).json({
+      success: true,
+      message: 'Xóa câu quiz thành công',
+    })
+  })
+
   // (ADMIN) Tạo bài nghe mới
   static createListening = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { title, description, audio, subtitle, level } = req.body
-    if (!title || !description || !audio || !subtitle || !level) {
+    const { title, description, audio, subtitle, subtitleVi, level, quiz } = req.body
+    if (!title || !description || !audio || !subtitle || !subtitleVi || !level) {
       return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400))
     }
-    const listening = await ListeningService.createListening({ title, description, audio, subtitle, level, createdBy: req.user?._id as string } as unknown as IListening)
+    const listening = await ListeningService.createListening({ title, description, audio, subtitle, subtitleVi, level, quiz, createdBy: req.user?._id as string } as unknown as IListening)
     res.status(201).json({
       success: true,
       message: 'Tạo bài nghe thành công',

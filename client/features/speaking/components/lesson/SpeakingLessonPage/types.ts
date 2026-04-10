@@ -26,6 +26,7 @@ export interface SpeechAceResponse {
     word_score_list?: SpeechAceWordScore[]
   }
   overall_score?: number
+  aiFeedback?: string
 }
 
 export interface AssessmentWordResult {
@@ -42,6 +43,7 @@ export interface AssessmentResult {
   overallScore: number
   words: AssessmentWordResult[]
   averageScore: number
+  aiFeedback?: string
 }
 
 export interface SentenceEvaluation {
@@ -50,6 +52,7 @@ export interface SentenceEvaluation {
   audioBlob?: File
   words?: AssessmentWordResult[]
   sentence?: string
+  aiFeedback?: string
 }
 
 export interface SpeakingLessonPageProps {

@@ -14,7 +14,7 @@ import {
 import { toast } from 'react-toastify'
 import IpaScoring from './IpaScoring'
 import { saveHighestIpaScore } from '@/features/ipa/services/ipaApi'
-import { IIpa, IIpaScoringResult } from '@/types'
+import { IIpa, IIpaScoringResult } from '@/features/ipa/types'
 import { useStudySession } from '@/libs/hooks/useStudySession'
 import IpaLessonScore from './IpaLessonScore'
 import ResultIpaQuiz from './ResultIpaQuiz'
@@ -29,6 +29,7 @@ interface QuizResult {
   question: QuizQuestion
   result: IIpaScoringResult
   score: number
+  audioBlob?: Blob
 }
 
 interface QuizzIPAProps {
@@ -41,6 +42,7 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
   const [quizResults, setQuizResults] = useState<QuizResult[]>([])
   const [showResults, setShowResults] = useState(false)
   const [currentResult, setCurrentResult] = useState<IIpaScoringResult | null>(null)
+  const [currentAudioBlob, setCurrentAudioBlob] = useState<Blob | null>(null)
 
   const questions: QuizQuestion[] = ipa?.examples || []
   const totalQuestions = questions.length
@@ -79,7 +81,8 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
       const newCurrentResult = {
         question: currentQuestion,
         result: currentResult as IIpaScoringResult,
-        score: avgScoreCurrentResult
+        score: avgScoreCurrentResult,
+        audioBlob: currentAudioBlob || undefined,
       }
       if (quizResults.length > currentQuestionIndex) {
         setQuizResults(prev => {
@@ -92,9 +95,11 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
       }
 
       setCurrentResult(null)
+      setCurrentAudioBlob(null)
       const prevResult = quizResults.find(r => r.question.word === currentQuestion.word)
       if (prevResult) {
         setCurrentResult(prevResult.result)
+        setCurrentAudioBlob(prevResult.audioBlob || null)
       }
     } else {
       handleFinishQuiz()
@@ -105,10 +110,12 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1)
       setCurrentResult(null)
+      setCurrentAudioBlob(null)
       const prevQuestion = questions[currentQuestionIndex - 1]
       const prevResult = quizResults.find(r => r.question.word === prevQuestion.word)
       if (prevResult) {
         setCurrentResult(prevResult.result)
+        setCurrentAudioBlob(prevResult.audioBlob || null)
       }
     }
   }
@@ -120,7 +127,8 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
     const newCurrentResult = {
       question: currentQuestion,
       result: currentResult as IIpaScoringResult,
-      score: avgScoreCurrentResult
+      score: avgScoreCurrentResult,
+      audioBlob: currentAudioBlob || undefined,
     }
 
     setQuizResults(prev => [...prev, newCurrentResult as unknown as QuizResult])
@@ -136,6 +144,7 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
     setQuizResults([])
     setShowResults(false)
     setCurrentResult(null)
+    setCurrentAudioBlob(null)
     startSession()
   }
 
@@ -162,18 +171,15 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Progress Bar */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <span>Câu {currentQuestionIndex + 1} / {totalQuestions}</span>
-          <span>{Math.round(progress)}%</span>
+    <>
+      <Card className="border-0 shadow-none max-w-3xl mx-auto p-10">
+        <div className="space-y-2 mb-5">
+          <div className="flex items-center justify-between text-sm text-slate-600">
+            <span>Câu {currentQuestionIndex + 1} / {totalQuestions}</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <Progress value={progress} className="h-2" />
         </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
-      {/* Focus Card */}
-      <Card className="border border-slate-200 shadow-2xl">
         <CardHeader className="pb-2">
           <div className="flex flex-col items-center text-center gap-3">
             <CardTitle className="text-5xl font-extrabold text-slate-900 tracking-tight">
@@ -199,17 +205,25 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
           <div className="flex flex-col gap-4 items-center justify-center">
             {currentResult
               ? <>
-                <IpaLessonScore phoneScoreList={currentResult} />
+                <IpaLessonScore phoneScoreList={currentResult} recordedAudioBlob={currentAudioBlob} />
                 <Button
                   variant="outline"
-                  onClick={() => setCurrentResult(null)}
+                  onClick={() => {
+                    setCurrentResult(null)
+                    setCurrentAudioBlob(null)
+                  }}
                   className="border-slate-200"
                 >
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Làm lại
                 </Button>
               </>
-              : <IpaScoring referenceText={currentQuestion.word} setResult={setCurrentResult} />
+              : <IpaScoring
+                referenceText={currentQuestion.word}
+                setResult={setCurrentResult}
+                ipaId={ipa._id}
+                onRecorded={setCurrentAudioBlob}
+              />
 
             }
           </div>
@@ -248,6 +262,6 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </>
   )
 }

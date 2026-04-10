@@ -62,7 +62,7 @@ export function RoleMain() {
       </div>
 
       <Sheet open={openAdd} onOpenChange={setOpenAdd}>
-        <SheetContent className="sm:max-w-xl flex flex-col p-0 border-l shadow-2xl">
+        <SheetContent className="h-full sm:max-w-xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
           <SheetHeader className="p-8 pb-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600 shadow-inner">
@@ -79,7 +79,7 @@ export function RoleMain() {
 
           <Separator className="bg-gray-100" />
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0">
             <form
               id="form-add-role"
               className="p-8 space-y-8"

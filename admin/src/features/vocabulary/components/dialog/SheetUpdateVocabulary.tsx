@@ -122,7 +122,7 @@ export function SheetUpdateVocabulary({ isOpen, setIsOpen, vocabulary, onSuccess
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-2xl flex flex-col p-0 border-l">
+      <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 border-l overflow-hidden">
         <SheetHeader className="p-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-zinc-100 rounded-lg text-zinc-900">
@@ -139,7 +139,7 @@ export function SheetUpdateVocabulary({ isOpen, setIsOpen, vocabulary, onSuccess
 
         <Separator />
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <Form {...form}>
             <form id="form-update-vocabulary" onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-8">
               {/* Section: Word & Phonetic */}

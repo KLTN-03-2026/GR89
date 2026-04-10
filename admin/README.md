@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# English Master Admin
 
-## Getting Started
+Ứng dụng quản trị dành cho đội ngũ vận hành hệ thống English Master.
 
-First, run the development server:
+## Vai trò trong hệ thống
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Quản trị toàn bộ nội dung học tập theo từng kỹ năng.
+- Theo dõi hoạt động hệ thống qua dashboard, báo cáo và thống kê.
+- Vận hành nghiệp vụ thương mại gồm gói học, khuyến mãi và thanh toán.
+- Quản lý tài khoản, phân quyền và dữ liệu nền tảng.
+
+## Phân hệ chức năng quản trị
+
+- **Quản lý nội dung học tập**
+  - Vocabulary, Grammar, Listening, Reading, Writing, IPA, Speaking.
+  - CRUD bài học, quản lý trạng thái hiển thị, nội dung VIP, sắp xếp thứ tự.
+  - Quản lý quiz, ví dụ, nội dung đi kèm theo từng module.
+- **Import/Export dữ liệu**
+  - Hỗ trợ nhập/xuất dữ liệu qua JSON/Excel ở nhiều phân hệ.
+  - Kiểm tra dữ liệu đầu vào trước khi ghi nhận.
+- **Quản lý media**
+  - Upload/xóa media đơn lẻ và hàng loạt.
+  - Quản lý video và subtitle.
+- **Quản lý lộ trình (Roadmap)**
+  - Tạo/chỉnh sửa topic lộ trình.
+  - Gắn bài học vào topic và sắp xếp thứ tự hiển thị.
+- **Quản lý người dùng và phân quyền**
+  - Quản lý danh sách tài khoản.
+  - Cập nhật trạng thái hoạt động và thông tin vai trò.
+- **Billing và doanh thu**
+  - Quản lý `plan` và `coupon`.
+  - Theo dõi giao dịch `payment`.
+- **Dashboard - Báo cáo - Thống kê**
+  - Tổng quan KPI vận hành.
+  - Báo cáo theo thời gian, danh mục và nguồn doanh thu.
+
+## Nhóm API mà Admin sử dụng
+
+Admin chủ yếu làm việc với các nhóm API:
+
+- `admin`, `report`
+- `user`, `user-scores`
+- `vocabulary`, `grammar`, `reading`, `listening`, `writing`, `ipa`, `speaking`
+- `roadmap`, `media`, `entertainment`
+- `plan`, `coupon`, `payment`
+
+Chi tiết endpoint xem tại [`../server/README.md`](../server/README.md).
+
+## Cấu trúc mã nguồn chính
+
+```text
+admin/
+  src/app/        # Route và layout trang quản trị
+  src/features/   # Tổ chức theo module nghiệp vụ
+  src/components/ # Thành phần UI dùng chung
+  src/lib/        # API clients, tiện ích
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Liên quan
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Backend API: `../server`
+- Ứng dụng người học: `../client`

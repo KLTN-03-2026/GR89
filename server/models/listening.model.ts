@@ -2,10 +2,13 @@ import mongoose, { Schema, Document } from "mongoose";
 import mongoosePaginate from 'mongoose-paginate-v2';
 
 export interface IListening extends Document {
+  /** Tham chiếu tới collection ListeningQuiz (lượt 1 — trắc nghiệm ý chính) */
+  quizzes?: mongoose.Types.ObjectId[]
   title: string
   description: string
   audio: mongoose.Types.ObjectId
   subtitle: string
+  subtitleVi: string
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
   isActive: boolean
   isVipRequired: boolean
@@ -34,10 +37,15 @@ export interface IListeningModel extends mongoose.Model<IListening> {
 }
 
 const listeningSchema = new Schema<IListening>({
+  quizzes: {
+    type: [{ type: Schema.Types.ObjectId, ref: 'ListeningQuiz' }],
+    default: [],
+  },
   title: { type: String, required: true, unique: true, trim: true },
   description: { type: String, required: true, trim: true },
   audio: { type: Schema.Types.ObjectId, ref: 'Media', required: true },
   subtitle: { type: String, required: true },
+  subtitleVi: { type: String, required: true },
   level: {
     type: String,
     enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
@@ -57,7 +65,7 @@ const listeningSchema = new Schema<IListening>({
 }, { timestamps: true })
 
 // Thêm indexes cho search và sort
-listeningSchema.index({ title: 'text', description: 'text', subtitle: 'text' }); // Text search
+listeningSchema.index({ title: 'text', description: 'text', subtitle: 'text', subtitleVi: 'text' }); // Text search
 listeningSchema.index({ isActive: 1 });
 listeningSchema.index({ orderIndex: 1 });
 listeningSchema.index({ createdAt: -1 });

@@ -197,7 +197,7 @@ export function SheetImport({
         </Button>
       </SheetTrigger>
 
-      <SheetContent side="right" className="sm:max-w-3xl flex flex-col p-0 border-l">
+      <SheetContent side="right" className="h-full sm:max-w-3xl flex flex-col p-0 border-l overflow-hidden">
         <SheetHeader className="p-6">
           <div className="space-y-1">
             <SheetTitle className="text-xl font-bold text-zinc-900">{title}</SheetTitle>

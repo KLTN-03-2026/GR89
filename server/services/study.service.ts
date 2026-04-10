@@ -55,8 +55,9 @@ export class StudyService {
     };
 
     const resultModel = getResultModel(category);
-    const finalResultId = resultId.length > 0 ? resultId : (resultData && Object.keys(resultData).length > 0 ? [new Types.ObjectId()] : []);
-    const finalResultModel = resultId.length > 0 ? resultModel : (resultData && Object.keys(resultData).length > 0 ? 'StudyHistory' : resultModel);
+    const hasResultId = Array.isArray(resultId) && resultId.length > 0;
+    const finalResultId = hasResultId ? resultId : [];
+    const finalResultModel = hasResultId ? resultModel : undefined;
 
     // Lưu vào StudyHistory (Tạo mới mỗi lần làm)
     const history = await StudyHistory.create({
@@ -70,8 +71,9 @@ export class StudyService {
       totalQuestions,
       weakPoints,
       status: isCompleted ? 'passed' : 'failed',
-      resultId: finalResultId,
-      resultModel: finalResultModel
+      ...(finalResultId.length > 0 ? { resultId: finalResultId } : {}),
+      ...(finalResultModel ? { resultModel: finalResultModel } : {}),
+      ...(resultData !== undefined ? { resultData } : {}),
     });
 
     return history;

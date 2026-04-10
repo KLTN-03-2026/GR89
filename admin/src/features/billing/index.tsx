@@ -1,6 +1,5 @@
-export { PlansMain } from "./PlansMain/PlansMain"
-export { PaymentsMain } from "./PaymentsMain/PaymentsMain"
-export { CouponsMain } from "./CouponsMain/CouponsMain"
-
-
-
+export { PlansMain } from "./components/plans/main/PlansMain"
+export { PaymentsMain } from "./components/payments/main/PaymentsMain"
+export { CouponsMain } from "./components/coupons/main/CouponsMain"
+export { SheetAddPlan } from "./components/dialogs/SheetAddPlan"
+export { SheetUpdatePlan } from "./components/dialogs/SheetUpdatePlan"

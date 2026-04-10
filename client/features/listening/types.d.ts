@@ -1,9 +1,15 @@
 export interface IListening {
+  quiz?: {
+    question: string
+    options: string[]
+    answer: string
+  }[]
   _id: string;
   title: string;
   description: string;
   audio: string;
   subtitle: string;
+  subtitleVi?: string;
   isActive: boolean;
   isVipRequired?: boolean;
   isCompleted: boolean;

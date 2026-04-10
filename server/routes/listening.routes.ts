@@ -22,6 +22,10 @@ router.get('/user/:id', authenticateTokenUser, checkVipContentUser('listening'),
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 router.post('/create', authenticateTokenAdmin, requireRole(['admin', 'content']), ListeningController.createListening)
+router.get('/:id/quizzes', authenticateTokenAdmin, requireRole(['admin', 'content']), ListeningController.getListeningQuizzes)
+router.post('/:id/quizzes', authenticateTokenAdmin, requireRole(['admin', 'content']), ListeningController.addListeningQuiz)
+router.put('/:id/quizzes/:quizId', authenticateTokenAdmin, requireRole(['admin', 'content']), ListeningController.updateListeningQuizItem)
+router.delete('/:id/quizzes/:quizId', authenticateTokenAdmin, requireRole(['admin', 'content']), ListeningController.deleteListeningQuizItem)
 router.get('/:id', ListeningController.getListeningById)
 router.put('/:id', authenticateTokenAdmin, requireRole(['admin', 'content']), ListeningController.updateListening)
 router.delete('/:id', authenticateTokenAdmin, requireRole(['admin', 'content']), ListeningController.deleteListening)

@@ -14,7 +14,6 @@ import {
   MessageSquare,
   TrendingUp,
   Award,
-  Bookmark,
   DollarSign,
   PlayCircle,
   Clock,
@@ -92,7 +91,7 @@ export default function AdminOverview() {
     },
     {
       title: "Doanh Thu",
-      value: `${data.kpis.totalRevenue.toLocaleString()}đ`,
+      value: `${Math.round(data.kpis.totalRevenue || 0).toLocaleString('vi-VN')}đ`,
       change: `${data.kpis.growth.revenue >= 0 ? '+' : ''}${data.kpis.growth.revenue}%`,
       icon: DollarSign,
       colorClass: "text-emerald-600",

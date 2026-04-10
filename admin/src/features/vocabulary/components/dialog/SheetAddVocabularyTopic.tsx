@@ -82,7 +82,7 @@ export function SheetAddVocabularyTopic({ callback }: { callback: () => void }) 
           Thêm chủ đề mới
         </Button>
       </SheetTrigger>
-      <SheetContent className="sm:max-w-2xl flex flex-col p-0 border-l">
+      <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 border-l overflow-hidden">
         <SheetHeader className="p-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-zinc-100 rounded-lg text-zinc-900">
@@ -99,7 +99,7 @@ export function SheetAddVocabularyTopic({ callback }: { callback: () => void }) 
 
         <Separator />
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <Form {...form}>
             <form id="form-create-vocabulary-topic" onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-8">
               {/* Section: Basic Info */}

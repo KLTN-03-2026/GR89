@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { updateListening } from '@/features/listening/services/api'
+import { updateListening, DataListening } from '@/features/listening/services/api'
 import { Music, FileText, Info, Layers, Save, CheckCircle2, Edit3, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
@@ -24,11 +24,13 @@ interface Props {
 }
 
 export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }: Props) {
+  const countSentences = (text: string) => text.trim().split(/(?<=[.!?])\s+/).filter(Boolean).length
   const [data, setData] = useState({
     title: "",
     description: "",
     audio: "",
     subtitle: "",
+    subtitleVi: "",
     level: "A1",
   })
   const [selectedAudio, setSelectedAudio] = useState<Media | null>(null)
@@ -41,6 +43,7 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
         description: listening.description || "",
         audio: typeof listening.audio === 'string' ? listening.audio : listening.audio?._id || "",
         subtitle: listening.subtitle || "",
+        subtitleVi: listening.subtitleVi || "",
         level: listening.level || "A1",
       })
       // Set selectedAudio if audio is an object, otherwise null
@@ -58,17 +61,25 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
   }
 
   const handleUpdateListening = async () => {
-    if (!data.title.trim() || !data.description.trim() || !selectedAudio || !data.subtitle.trim() || !data.level) {
+    if (!data.title.trim() || !data.description.trim() || !selectedAudio || !data.subtitle.trim() || !data.subtitleVi.trim() || !data.level) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+      return
+    }
+    if (countSentences(data.subtitle) !== countSentences(data.subtitleVi)) {
+      toast.error('Số lượng câu phụ đề tiếng Anh và tiếng Việt phải bằng nhau')
       return
     }
 
     setLoading(true)
     try {
       await updateListening(listening._id, {
-        ...data,
+        title: data.title,
+        description: data.description,
+        subtitle: data.subtitle,
+        subtitleVi: data.subtitleVi,
+        level: data.level as DataListening['level'],
         audio: selectedAudio._id
-      } as any)
+      })
       callback()
       toast.success('Cập nhật bài nghe thành công')
       setIsOpen(false)
@@ -81,7 +92,7 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetContent className="sm:max-w-3xl flex flex-col p-0 border-l">
+      <SheetContent className="h-full sm:max-w-3xl flex flex-col p-0 border-l overflow-hidden">
         <SheetHeader className="p-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-zinc-100 rounded-lg text-zinc-900">
@@ -98,7 +109,7 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
 
         <Separator />
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-6 space-y-8">
             {/* Thông tin cơ bản */}
             <section className="space-y-4">
@@ -191,6 +202,19 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
                   onChange={(e) => setData({ ...data, subtitle: e.target.value })}
                   className="min-h-[300px] font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
                 />
+                <Label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-1.5">
+                  <FileText className="h-4 w-4" /> Phụ đề tiếng Việt <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea
+                  placeholder="Xin chào, chào mừng bạn đến với lớp tiếng Anh!"
+                  value={data.subtitleVi}
+                  onChange={(e) => setData({ ...data, subtitleVi: e.target.value })}
+                  className="min-h-[200px] font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
+                />
+
+                <p className="text-xs text-zinc-500 leading-relaxed rounded-lg border border-dashed border-zinc-200 bg-zinc-50/80 p-3">
+                  Quiz trắc nghiệm (lượt 1) quản lý tại trang riêng: menu hành động (⋮) trên danh sách bài nghe → <strong>Quiz lượt 1</strong>.
+                </p>
               </div>
             </section>
           </div>

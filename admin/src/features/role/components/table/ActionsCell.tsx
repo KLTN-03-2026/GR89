@@ -1,6 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Trash2 } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Role } from "@/features/role/types"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
 
 import { SheetUpdateRole } from '../dialog/SheetUpdateRole'
 import {
@@ -25,7 +23,6 @@ import {
 } from "@/components/ui/dialog"
 import { deleteRole } from '../../services/api'
 import { toast } from "react-toastify"
-import { cn } from "@/lib/utils"
 
 export default function ActionsCell({ role, callback }: { role: Role, callback: () => void }) {
   const [openEdit, setOpenEdit] = useState(false)
@@ -43,7 +40,7 @@ export default function ActionsCell({ role, callback }: { role: Role, callback: 
       } else {
         toast.error(response.message || 'Có lỗi xảy ra')
       }
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi xóa vai trò')
     } finally {
       setLoading(false)
@@ -85,7 +82,7 @@ export default function ActionsCell({ role, callback }: { role: Role, callback: 
             </div>
             <DialogTitle className="text-xl font-black text-gray-900">Xác nhận xóa</DialogTitle>
             <DialogDescription className="text-gray-500 font-medium pt-2">
-              Bạn có chắc muốn xóa vai trò <span className="text-rose-600 font-bold">"{role.name}"</span>?
+              Bạn có chắc muốn xóa vai trò <span className="text-rose-600 font-bold">&quot;{role.name}&quot;</span>?
               Hành động này không thể hoàn tác và sẽ ảnh hưởng đến các người dùng hiện tại.
             </DialogDescription>
           </DialogHeader>

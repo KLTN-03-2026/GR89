@@ -16,9 +16,11 @@ export function ListeningSheetImport({ callback }: { callback?: () => void }) {
       description="Tải lên Excel/JSON để import danh sách bài nghe."
       triggerLabel="Import"
       excelTemplateHint="1 sheet: Listenings"
-      jsonTemplateHint="Mảng lessons với audioUrl/subtitle"
+      jsonTemplateHint="Mảng lessons với audio/subtitle/subtitleVi/quiz(optional)"
       quickGuideTips={[
-        'JSON: mảng [{ title, description, audio, subtitle, isActive, isVipRequired }].',
+        'JSON: mảng [{ title, description, audio, subtitle, subtitleVi, quiz, isActive, isVipRequired }].',
+        'quiz là mảng [{ question, options[], answer }], answer phải nằm trong options.',
+        'Số lượng câu của subtitle và subtitleVi phải bằng nhau.',
         'Sử dụng Media ID (ObjectID) cho trường audio.',
         'Hệ thống sẽ cập nhật nếu trùng Title, ngược lại sẽ tạo mới.'
       ]}

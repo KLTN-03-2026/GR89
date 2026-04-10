@@ -44,7 +44,7 @@ export function DialogAddReadingVocabulary({ readingId, callback }: { readingId:
           Thêm từ vựng
         </Button>
       </SheetTrigger>
-      <SheetContent className="sm:max-w-md flex flex-col p-0">
+      <SheetContent className="h-full sm:max-w-md flex flex-col p-0 overflow-hidden">
         <SheetHeader className="p-6 pb-2">
           <SheetTitle className="flex items-center gap-2 text-xl">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -57,7 +57,7 @@ export function DialogAddReadingVocabulary({ readingId, callback }: { readingId:
 
         <Separator />
 
-        <ScrollArea className="flex-1 px-6 py-4">
+        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
           <div className="space-y-5 pb-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

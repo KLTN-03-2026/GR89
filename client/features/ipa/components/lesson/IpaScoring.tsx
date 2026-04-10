@@ -3,17 +3,21 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Mic, MicOff } from 'lucide-react'
 import { toast } from 'react-toastify'
-import { IIpaScoringResult } from '@/types'
+import { IIpaScoringResult } from '@/features/ipa/types'
 import { assessIpaPronunciation } from '@/features/ipa/services/ipaApi'
 
 interface IpaScoringProps {
   referenceText: string
   setResult: (result: IIpaScoringResult) => void
+  ipaId: string
+  onRecorded?: (audioBlob: Blob) => void
 }
 
 export default function IpaScoring({
   referenceText,
-  setResult
+  setResult,
+  ipaId,
+  onRecorded
 }: IpaScoringProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [isAssessing, setIsAssessing] = useState(false)
@@ -63,7 +67,7 @@ export default function IpaScoring({
 
         const mimeType = recorder.mimeType || 'audio/webm'
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
-        // const audioFile = new File([audioBlob], `ipa-recording-${Date.now()}.webm`, { type: mimeType })
+        onRecorded?.(audioBlob)
 
         if (audioBlob.size === 0) {
           toast.error('Không phát hiện thấy giọng nói vui lòng thử lại')
@@ -72,9 +76,9 @@ export default function IpaScoring({
         }
 
         /*GỌI API CHẤM ĐIỂM PHÁT ÂM TẠI ĐÂY */
-        await assessIpaPronunciation(referenceText, new File([audioBlob], `ipa-recording-${Date.now()}.webm`, { type: mimeType }))
+        await assessIpaPronunciation(referenceText, new File([audioBlob], `ipa-recording-${Date.now()}.webm`, { type: mimeType }), ipaId)
           .then(res => {
-            setResult(res.data)
+            setResult(res.data as IIpaScoringResult)
           })
           .finally(() => {
             setIsAssessing(false)

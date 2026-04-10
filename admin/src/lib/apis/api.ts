@@ -49,6 +49,66 @@ export async function getAdminDashboardOverview(): Promise<Response<AdminOvervie
   return response.data as Response<AdminOverview>
 }
 
+export interface DashboardReportResponse {
+  filters: {
+    startDate: string
+    endDate: string
+    category: "all" | "grammar" | "vocabulary" | "reading" | "listening" | "speaking" | "ipa" | "writing"
+  }
+  kpis: {
+    revenue: number
+    revenueGrowth: number
+    activeUsers: number
+    activeUsersGrowth: number
+    completedLessons: number
+    studyHours: number
+  }
+  topLessons: Array<{
+    lessonId: string
+    title: string
+    category: string
+    attempts: number
+    completionRate: number
+    avgProgress: number
+  }>
+  revenueByProvider: Array<{
+    provider: string
+    users: number
+    revenue: number
+    share: number
+  }>
+  revenueByPlan: Array<{
+    planId: string
+    planName: string
+    revenue: number
+    paidCount: number
+    totalDiscount: number
+  }>
+  categoryStats: Array<{
+    category: string
+    attempts: number
+    completed: number
+    completionRate: number
+    avgProgress: number
+    studyHours: number
+  }>
+}
+
+export interface ReportQueryParams {
+  startDate?: string
+  endDate?: string
+  category?: "all" | "grammar" | "vocabulary" | "reading" | "listening" | "speaking" | "ipa" | "writing"
+}
+
+export async function getDashboardReport(params?: ReportQueryParams): Promise<Response<DashboardReportResponse>> {
+  const query = new URLSearchParams()
+  if (params?.startDate) query.append('startDate', params.startDate)
+  if (params?.endDate) query.append('endDate', params.endDate)
+  if (params?.category) query.append('category', params.category)
+  const response = await AuthorizedAxios.get(`/report/dashboard${query.toString() ? `?${query.toString()}` : ''}`)
+  return response.data as Response<DashboardReportResponse>
+}
+
 
 /*=============== QUIZ ==============*/
 //get quiz list

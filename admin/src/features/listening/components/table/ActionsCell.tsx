@@ -2,7 +2,8 @@
 import { Listening } from '@/features/listening/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, Loader2, MoreHorizontal, Pencil, Trash2, Crown } from "lucide-react"
+import { Eye, EyeOff, Loader2, ListChecks, MoreHorizontal, Pencil, Trash2, Crown } from "lucide-react"
+import { useRouter } from 'next/navigation'
 import { deleteListening, toggleListeningVipStatus, updateListeningStatus } from '@/features/listening/services/api'
 import { toast } from 'react-toastify'
 import { useState } from 'react'
@@ -18,6 +19,7 @@ interface props {
 }
 
 export default function ActionsCell({ listening, allListenings, callback, onSwap }: props) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isOpenUpdateListening, setIsOpenUpdateListening] = useState(false)
   const [openDelete, setOpenDelete] = useState(false)
@@ -109,6 +111,17 @@ export default function ActionsCell({ listening, allListenings, callback, onSwap
             >
               <Pencil className="h-4 w-4" />
               Sửa
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                router.push(`/content/listening/quiz/${listening._id}`)
+              }}
+              disabled={isLoading}
+            >
+              <ListChecks className="h-4 w-4" />
+              Quiz lượt 1
             </DropdownMenuItem>
 
             <DropdownMenuItem

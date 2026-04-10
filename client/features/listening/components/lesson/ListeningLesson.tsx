@@ -1,9 +1,8 @@
 'use client'
 import HeaderLesson from './HeaderLesson'
-import TranscriptListeningLesson from './TranscriptListeningLesson'
-import { IListening } from '@/types'
+import { DictationStepWithVi } from './DictationStepWithVi'
+import { IListening } from '@/features/listening/types'
 import { ContentStateDisplay, ContentStateType } from '@/components/common/ContentStateDisplay'
-import { AudioSection } from '@/components/common/medias'
 
 interface ListeningLessonProps {
   listening: IListening
@@ -46,8 +45,16 @@ export function ListeningLesson({ listening, error }: ListeningLessonProps) {
       />
 
       <div className='space-y-4'>
-        <AudioSection audioUrl={listening?.audio || ''} />
-        <TranscriptListeningLesson subtitle={listening?.subtitle} _id={listening._id} />
+        <DictationStepWithVi
+          lessonId={listening._id}
+          audioUrl={listening?.audio || ''}
+          subtitleEn={listening?.subtitle || ''}
+          subtitleVi={listening?.subtitleVi || ''}
+          title={listening?.title || 'Luyện nghe chép chính tả'}
+          onComplete={() => {
+            // Bước này hiện chỉ hiển thị kết quả trong UI, chưa cần xử lý thêm ở parent.
+          }}
+        />
       </div>
     </div>
   )

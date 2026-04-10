@@ -1,7 +1,7 @@
 'use client'
 
+import { IIpa } from "../../types";
 import LessonIpa from "./LessonIpa";
-import { IIpa } from "@/types";
 
 interface IpaLearningProps {
   ipaData: IIpa

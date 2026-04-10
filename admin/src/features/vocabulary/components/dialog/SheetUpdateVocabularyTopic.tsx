@@ -91,7 +91,7 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
   }
 
   return (
-    <SheetContent className="sm:max-w-2xl flex flex-col p-0 border-l shadow-2xl">
+    <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
       <SheetHeader className="p-8 pb-4">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-zinc-50 rounded-2xl text-zinc-900 shadow-inner">
@@ -108,7 +108,7 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
 
       <Separator className="bg-gray-100" />
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <Form {...form}>
           <form id="form-update-vocabulary-topic" onSubmit={form.handleSubmit(onSubmit)} className="p-8 space-y-10">
             {/* Section: Basic Info */}

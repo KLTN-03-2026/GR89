@@ -9,6 +9,7 @@ import { Media, MediaSubtitlePreview } from '../models/media.model';
 import { SpeechAceProvider } from '../providers/speechace.provider';
 import { User } from "../models/user.model";
 import { StreakService } from "./streak.service";
+import { AIProvider } from "../providers/ai.provider";
 
 interface ISpeakingData extends ISpeaking {
   progress: number
@@ -466,6 +467,57 @@ export class SpeakingService {
       language: 'en-us'
     })
 
+    // Generate simple Vietnamese feedback via AI (non-blocking)
+    let aiFeedback = ""
+    try {
+      const textScore = result?.text_score
+      const wordScoreList = textScore?.word_score_list || []
+      const weakWords = (wordScoreList as any[])
+        .filter((w: any) => (w?.quality_score ?? 0) < 80)
+        .map((w: any) => String(w?.word || "").trim())
+        .filter(Boolean)
+        .slice(0, 6)
+
+      const weakPhones = (wordScoreList as any[])
+        .flatMap((w: any) => (Array.isArray(w?.phone_score_list) ? w.phone_score_list : []))
+        .map((p: any) => ({ phone: String(p?.phone || p?.phoneme || ""), quality_score: Number(p?.quality_score ?? p?.score ?? 0) || 0 }))
+        .filter((p: any) => !!p.phone)
+        .sort((a: any, b: any) => a.quality_score - b.quality_score)
+        .slice(0, 2)
+
+      const overallScore = Math.round(
+        textScore?.speechace_score?.pronunciation ??
+        textScore?.overall_score ??
+        result?.overall_score ??
+        0
+      )
+
+      const systemPrompt = [
+        "Bạn là huấn luyện viên Speaking tiếng Anh.",
+        "Trả lời tiếng Việt, chỉ 1 dòng, tổng <= 160 ký tự.",
+        "Luật theo overallScore:",
+        "- overallScore >= 80: chỉ khen ngắn (2-6 từ). KHÔNG góp ý.",
+        "- 60 <= overallScore < 80: khen ngắn + 1 gợi ý chỉnh sửa (ưu tiên âm yếu nhất/nhịp điệu), dễ làm theo.",
+        "- overallScore < 60: 1 gợi ý chỉnh sửa ngắn (không cần khen).",
+        "Không chấm điểm. Không emoji. Không ngoặc kép."
+      ].join("\n")
+
+      const userPrompt = JSON.stringify({
+        type: "speaking_pronunciation_feedback",
+        referenceText: text.trim(),
+        overallScore,
+        weakWords,
+        weakPhones,
+      })
+
+      aiFeedback = await AIProvider.chat([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ])
+    } catch {
+      aiFeedback = ""
+    }
+
     // Nếu có userId và speakingId thì lưu kết quả
     if (userId && speakingId) {
       const speaking = await Speaking.findById(speakingId)
@@ -493,7 +545,10 @@ export class SpeakingService {
       }
     }
 
-    return result
+    return {
+      ...result,
+      aiFeedback,
+    }
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

@@ -100,11 +100,26 @@ export async function getListeningById(id: string): Promise<ApiResponse<Listenin
   return response.data as ApiResponse<Listening>
 }
 
-interface DataListening {
+export interface ListeningQuizItem {
+  question: string
+  options: string[]
+  answer: string
+}
+
+export interface ListeningQuizDoc extends ListeningQuizItem {
+  _id: string
+  listeningId: string
+  orderIndex: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface DataListening {
   title: string
   description: string
   audio: string // media id
   subtitle: string
+  subtitleVi: string
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
 }
 
@@ -116,6 +131,34 @@ export async function createListening(data: DataListening): Promise<ApiResponse<
 export async function updateListening(id: string, data: DataListening): Promise<ApiResponse<Listening>> {
   const response = await AuthorizedAxios.put(`/listening/${id}`, data)
   return response.data as ApiResponse<Listening>
+}
+
+/*=============== LISTENING QUIZZES (separate collection) ==============*/
+export async function getListeningQuizzes(id: string): Promise<ApiResponse<ListeningQuizDoc[]>> {
+  const response = await AuthorizedAxios.get(`/listening/${id}/quizzes`)
+  return response.data as ApiResponse<ListeningQuizDoc[]>
+}
+
+export async function addListeningQuiz(
+  id: string,
+  item: ListeningQuizItem
+): Promise<ApiResponse<ListeningQuizDoc>> {
+  const response = await AuthorizedAxios.post(`/listening/${id}/quizzes`, item)
+  return response.data as ApiResponse<ListeningQuizDoc>
+}
+
+export async function updateListeningQuizItem(
+  id: string,
+  quizId: string,
+  item: ListeningQuizItem
+): Promise<ApiResponse<ListeningQuizDoc>> {
+  const response = await AuthorizedAxios.put(`/listening/${id}/quizzes/${quizId}`, item)
+  return response.data as ApiResponse<ListeningQuizDoc>
+}
+
+export async function deleteListeningQuizItem(id: string, quizId: string): Promise<ApiResponse<unknown>> {
+  const response = await AuthorizedAxios.delete(`/listening/${id}/quizzes/${quizId}`)
+  return response.data as ApiResponse<unknown>
 }
 
 export async function deleteListening(id: string): Promise<ApiResponse<Listening>> {
@@ -166,14 +209,26 @@ export async function exportListeningExcel(): Promise<Blob> {
 }
 
 export async function importListeningJson(
-  listenings: any[],
+  listenings: Record<string, unknown>[],
   skipErrors: boolean = false
-): Promise<ApiResponse<any>> {
+): Promise<ApiResponse<{
+  created?: number
+  updated?: number
+  total?: number
+  skipped?: number
+  errors?: Array<{ index: number; reason: string }>
+}>> {
   const response = await AuthorizedAxios.post('/listening/import-json', {
     listenings,
     skipErrors,
   })
-  return response.data as ApiResponse<any>
+  return response.data as ApiResponse<{
+    created?: number
+    updated?: number
+    total?: number
+    skipped?: number
+    errors?: Array<{ index: number; reason: string }>
+  }>
 }
 
 /*=============== LISTENING STATISTICS ==============*/

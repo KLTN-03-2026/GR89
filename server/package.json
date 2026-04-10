@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint '**/*.ts' --fix",
     "dev": "ts-node-dev --respawn --transpile-only server.ts",
-    "test:chatbot": "ts-node --transpile-only scripts/test-chatbot.ts"
+    "test:chatbot": "ts-node --transpile-only scripts/test-chatbot.ts",
+    "runGGForm": "ts-node --transpile-only runGGForm.ts"
   },
   "author": "Thanh Lam",
   "license": "ISC",

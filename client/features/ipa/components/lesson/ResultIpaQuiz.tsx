@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, AlertTriangle, XCircle, Award, Volume2 } from 'lucide-react'
-import { IIpaScoringResult } from '@/types'
+import { CheckCircle2, AlertTriangle, XCircle, Award, Volume2, MessageSquareText } from 'lucide-react'
+import { IIpaScoringResult } from '../../types'
 
 interface QuizQuestion {
   word: string
@@ -14,6 +15,7 @@ interface QuizResult {
   question: QuizQuestion
   result: IIpaScoringResult
   score: number
+  audioBlob?: Blob
 }
 
 interface ResultIpaQuizProps {
@@ -46,9 +48,20 @@ export default function ResultIpaQuiz({ results, onRetry }: ResultIpaQuizProps) 
     return { label: 'Cần cải thiện', color: 'destructive' as const }
   }
 
+  const playRecordedAudio = (audioBlob?: Blob) => {
+    if (!audioBlob) return
+    const url = URL.createObjectURL(audioBlob)
+    const audio = new Audio(url)
+    audio.onended = () => URL.revokeObjectURL(url)
+    audio.onerror = () => URL.revokeObjectURL(url)
+    audio.play().catch(() => {
+      URL.revokeObjectURL(url)
+    })
+  }
+
   return (
     <div className="space-y-6 max-h-[80vh] overflow-auto pr-1">
-      <Card className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl sticky top-0 z-10">
+      <Card className="bg-gradient-to-r from-slate-950 via-slate-800 to-indigo-900 text-white shadow-2xl sticky top-0 z-10 rounded-2xl border-0">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <CardTitle className="text-2xl font-bold flex items-center gap-2">
@@ -72,7 +85,7 @@ export default function ResultIpaQuiz({ results, onRetry }: ResultIpaQuizProps) 
         </CardHeader>
       </Card>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
         {results.map((item, idx) => {
           const badge = getBadge(item.score)
           const isHigh = item.score >= 80
@@ -80,7 +93,7 @@ export default function ResultIpaQuiz({ results, onRetry }: ResultIpaQuizProps) 
           return (
             <Card
               key={`${item.question.word}-${idx}`}
-              className="border border-slate-100 shadow-sm hover:shadow-lg transition rounded-2xl"
+              className="border border-slate-100 shadow-sm hover:shadow-xl transition rounded-2xl bg-gradient-to-b from-white to-slate-50/60"
             >
               <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
                 <div>
@@ -116,6 +129,26 @@ export default function ResultIpaQuiz({ results, onRetry }: ResultIpaQuizProps) 
                     {isHigh ? 'Âm này rất ổn' : isMedium ? 'Âm tạm ổn, cần luyện thêm' : 'Âm cần cải thiện đáng kể'}
                   </span>
                 </div>
+                {!!item.audioBlob && (
+                  <button
+                    onClick={() => playRecordedAudio(item.audioBlob)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-white shadow-sm"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                    Nghe lại giọng của bạn
+                  </button>
+                )}
+                {item.result.aiFeedback && (
+                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-700">
+                      <MessageSquareText className="h-3.5 w-3.5 text-indigo-600" />
+                      Gợi ý
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600 whitespace-pre-line">
+                      {item.result.aiFeedback}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )
@@ -123,13 +156,19 @@ export default function ResultIpaQuiz({ results, onRetry }: ResultIpaQuizProps) 
       </div>
 
       {onRetry && (
-        <div className="text-center">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           <button
             onClick={onRetry}
-            className="px-6 py-3 rounded-full bg-slate-900 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
+            className="px-6 py-3 rounded-full bg-gradient-to-r from-slate-900 to-indigo-900 text-white font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition"
           >
             Làm lại bài kiểm tra
           </button>
+          <Link
+            href="/study/ipa"
+            className="px-6 py-3 rounded-full border border-slate-300 bg-white text-slate-700 font-semibold shadow-sm hover:bg-slate-50 hover:-translate-y-0.5 transition"
+          >
+            Trở về IPA
+          </Link>
         </div>
       )}
     </div>

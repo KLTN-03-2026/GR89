@@ -28,11 +28,11 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
     )
   }
 
-  if (!result) {
+  if (!result || !result.listeningId) {
     return (
       <ContentStateDisplay
         type="empty"
-        message="Không tìm thấy kết quả"
+        message="Không tìm thấy dữ liệu kết quả"
         backUrl="/skills/listening"
         showBackButton={true}
         variant="fullscreen"
@@ -40,115 +40,128 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
     )
   }
 
-  const subtitles = result.listeningId.subtitle.split(' ')
+  const subtitleText = result.listeningId.subtitle || ''
+  const subtitles = subtitleText.trim().length > 0 ? subtitleText.split(/\s+/) : []
   const wrongs = result.result.filter(r => !r.isCorrect)
   const displayedWrongs = showAllMistakes ? wrongs : wrongs.slice(0, 8)
   const hasMore = wrongs.length > 8
-  const wpm = subtitles.length / result.time * 60
+  const wpm = result.time > 0 ? (subtitles.length / result.time) * 60 : 0
+
+  const tone =
+    result.progress >= 80
+      ? { title: 'Xuất sắc!', color: 'text-emerald-600', sub: 'Bạn đã nghe và chép rất chính xác.' }
+      : result.progress >= 50
+        ? { title: 'Khá tốt!', color: 'text-amber-600', sub: 'Bạn đang tiến bộ, hãy luyện thêm để tăng độ chính xác.' }
+        : { title: 'Cố gắng thêm!', color: 'text-rose-600', sub: 'Làm lại bài và tập trung vào các từ sai bên dưới.' }
 
   return (
     <div className="mx-auto max-w-6xl p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Kết quả cao nhất</h1>
-          <p className="text-sm text-gray-500 mt-1">Chủ đề: {result.listeningId.title}</p>
+      <div className="rounded-2xl overflow-hidden border border-indigo-100 shadow-sm">
+        <div className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 px-6 py-6 text-white">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Kết quả bài nghe</h1>
+              <p className="text-indigo-100 mt-1">Chủ đề: {result.listeningId.title}</p>
+            </div>
+            <Link href="/skills/listening" className="text-sm bg-white/15 hover:bg-white/25 transition px-3 py-1.5 rounded-lg">
+              Về danh sách
+            </Link>
+          </div>
         </div>
-        <Link href="/skills/listening" className="text-indigo-600 hover:underline">← Quay lại danh sách</Link>
+        <div className="bg-white p-5 border-t border-indigo-100">
+          <p className={`text-xl font-bold ${tone.color}`}>{tone.title}</p>
+          <p className="text-sm text-gray-600 mt-1">{tone.sub}</p>
+        </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { label: 'Điểm', value: `${result.point}/${result.result.length}` },
-          { label: 'Chính xác', value: `${result.progress}%` },
+          { label: 'Độ chính xác', value: `${result.progress}%` },
           { label: 'Thời gian', value: getTime(result.time) },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl bg-white/90 dark:bg-gray-900/40 p-5 shadow-sm">
+          <div key={s.label} className="rounded-xl bg-white p-5 border border-gray-200 shadow-sm">
             <div className="text-gray-500 text-sm">{s.label}</div>
             <div className="text-2xl font-semibold mt-1">{s.value}</div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left: mistakes preview + meta */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="rounded-xl bg-white/90 dark:bg-gray-900/40 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Các từ sai</h2>
-              <span className="text-sm text-gray-500">Tổng: {wrongs.length}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 rounded-xl bg-white p-5 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Các từ cần cải thiện</h2>
+            <span className="text-sm text-gray-500">Tổng lỗi: {wrongs.length}</span>
+          </div>
+          {wrongs.length === 0 ? (
+            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <p className="font-semibold text-emerald-700">Hoàn hảo! Bạn không có từ sai.</p>
             </div>
-            {wrongs.length === 0 ? (
-              <div className="mt-4 text-center py-8">
-                <div className="text-6xl mb-4">🎉</div>
-                <p className="text-lg font-semibold text-green-600 mb-2">Hoàn hảo!</p>
-                <p className="text-sm text-gray-500">Bạn đã gõ đúng tất cả các từ. Thật tuyệt vời!</p>
+          ) : (
+            <>
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                {displayedWrongs.map((w, i) => {
+                  const correctWord = subtitles[w.index] || ''
+                  return (
+                    <div key={i} className="flex items-center gap-2 rounded-lg border border-gray-100 p-2">
+                      <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 line-through">{w.text.trim() || '(-)'}</span>
+                      <span className="text-gray-400">→</span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">{correctWord}</span>
+                    </div>
+                  )
+                })}
               </div>
-            ) : (
-              <>
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2 text-sm">
-                  {displayedWrongs.map((w, i) => {
-                    const correctWord = subtitles[w.index] || ''
-                    return (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 line-through">{w.text.trim() || '(-)'}</span>
-                        <span className="text-gray-400">→</span>
-                        <span className="px-2 py-0.5 rounded bg-green-50 text-green-700">{correctWord}</span>
-                      </div>
-                    )
-                  })}
+              {hasMore && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={() => setShowAllMistakes(!showAllMistakes)}
+                    className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                  >
+                    {showAllMistakes ? 'Thu gọn' : `Xem thêm ${wrongs.length - 8} lỗi`}
+                  </button>
                 </div>
-                {hasMore && (
-                  <div className="mt-5 flex justify-end">
-                    <button
-                      onClick={() => setShowAllMistakes(!showAllMistakes)}
-                      className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                    >
-                      {showAllMistakes ? 'Thu gọn' : `Xem thêm ${wrongs.length - 8} lỗi`}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          <div className="rounded-xl bg-white/90 dark:bg-gray-900/40 p-5 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2">Thông tin phiên luyện</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-gray-500">Ngày đạt</div>
-                <div className="font-medium">{formatDate(result.date)}</div>
-              </div>
-              <div>
-                <div className="text-gray-500">Tốc độ gõ (ước tính)</div>
-                <div className="font-medium">{Math.round(wpm)} WPM</div>
-              </div>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Right: Accuracy donut + actions */}
-        <div className="rounded-xl bg-white/90 dark:bg-gray-900/40 p-6 shadow-sm flex flex-col items-center justify-center">
+        <div className="rounded-xl bg-white p-6 border border-gray-200 shadow-sm flex flex-col items-center">
           <div className="relative">
-            <svg viewBox="0 0 36 36" className="w-44 h-44">
+            <svg viewBox="0 0 36 36" className="w-40 h-40">
               <path className="text-gray-200" stroke="currentColor" strokeWidth="4" fill="none" d="M18 2a16 16 0 110 32 16 16 0 010-32z" />
-              <path className="text-indigo-600" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"
-                strokeDasharray={`${result.progress}, 100`} d="M18 2a16 16 0 110 32 16 16 0 010-32z" />
+              <path
+                className="text-indigo-600"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={`${Math.max(0, Math.min(100, result.progress))}, 100`}
+                d="M18 2a16 16 0 110 32 16 16 0 010-32z"
+              />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <div className="text-3xl font-bold text-indigo-700">{result.progress}%</div>
-                <div className="text-xs text-gray-500">Chính xác</div>
+                <div className="text-xs text-gray-500">Độ chính xác</div>
               </div>
             </div>
           </div>
-          <div className="mt-4 flex gap-2">
-            <Link href={`/skills/listening/${result.listeningId._id}`} className="inline-flex">
-              <button className="px-3 py-2 rounded-md bg-indigo-600 text-white text-sm">Làm lại chủ đề</button>
+          <div className="mt-5 w-full space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Ngày đạt</span>
+              <span className="font-medium">{formatDate(result.date)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Tốc độ gõ</span>
+              <span className="font-medium">{Math.round(wpm)} WPM</span>
+            </div>
+          </div>
+          <div className="mt-5 flex w-full gap-2">
+            <Link href={`/skills/listening/${result.listeningId._id}`} className="flex-1">
+              <button className="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Làm lại</button>
             </Link>
-            <Link href="/skills/listening" className="inline-flex">
-              <button className="px-3 py-2 rounded-md border text-sm">Quay lại</button>
+            <Link href="/skills/listening" className="flex-1">
+              <button className="w-full px-3 py-2 rounded-lg border text-sm font-medium">Danh sách</button>
             </Link>
           </div>
         </div>
@@ -156,4 +169,3 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
     </div>
   )
 }
-

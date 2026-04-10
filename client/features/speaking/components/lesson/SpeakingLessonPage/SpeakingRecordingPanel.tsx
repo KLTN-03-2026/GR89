@@ -4,7 +4,7 @@ import type { MutableRefObject, Dispatch, SetStateAction } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { RecordingSection } from '@/components/common/medias'
-import { Mic, ChevronRight, CheckCircle, RotateCcw } from 'lucide-react'
+import { Mic, ChevronRight, CheckCircle, RotateCcw, Sparkles, Volume2 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { assessSpeakingPronunciation, saveHighestSpeakingScore } from '@/features/speaking/services/speakingApi'
 import type { StudySessionPayload } from '@/libs/apis/types'
@@ -103,7 +103,8 @@ export function SpeakingRecordingPanel({
             score: currentScore,
             audioBlob: audioFile,
             words: assessmentResult.words,
-            sentence: currentSubtitle.english || ''
+            sentence: currentSubtitle.english || '',
+            aiFeedback: assessmentResult.aiFeedback
           }
           : r)
         : [...prev, {
@@ -111,7 +112,8 @@ export function SpeakingRecordingPanel({
           score: currentScore,
           audioBlob: audioFile,
           words: assessmentResult.words,
-          sentence: currentSubtitle.english || ''
+          sentence: currentSubtitle.english || '',
+          aiFeedback: assessmentResult.aiFeedback
         }]
 
       sentenceResultsRef.current = updated
@@ -159,7 +161,8 @@ export function SpeakingRecordingPanel({
         score: currentScore,
         audioBlob: audioFile,
         words: assessmentResult.words,
-        sentence: currentSubtitle.english || ''
+        sentence: currentSubtitle.english || '',
+        aiFeedback: assessmentResult.aiFeedback
       }
 
       if (existingIndex >= 0) {
@@ -243,6 +246,17 @@ export function SpeakingRecordingPanel({
     setLocalAudioBlob(null)
   }
 
+  const playRecordedAudio = () => {
+    if (!localAudioBlob) return
+    const url = URL.createObjectURL(localAudioBlob)
+    const audio = new Audio(url)
+    audio.onended = () => URL.revokeObjectURL(url)
+    audio.onerror = () => URL.revokeObjectURL(url)
+    audio.play().catch(() => {
+      URL.revokeObjectURL(url)
+    })
+  }
+
   const hasNextSentence = currentSubtitleIndex < (lessonSubtitlesLength || 0) - 1
 
   if (!assessmentResult) {
@@ -267,7 +281,7 @@ export function SpeakingRecordingPanel({
 
   return (
     <div className="px-6 pb-6">
-      <Card className="w-full">
+      <Card className="w-full rounded-2xl border-slate-200 shadow-lg">
         <CardContent className="pt-6">
           <div className="space-y-6">
             <div className="space-y-3">
@@ -297,13 +311,34 @@ export function SpeakingRecordingPanel({
               <div className="text-sm text-gray-500 mt-2">Điểm trung bình</div>
             </div>
 
+            {!!assessmentResult.aiFeedback && (
+              <div className="rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50 to-white p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                  <Sparkles className="h-4 w-4 text-indigo-600" />
+                  Gợi ý luyện tập
+                </div>
+                <div className="mt-2 text-sm text-slate-700 whitespace-pre-line">
+                  {assessmentResult.aiFeedback}
+                </div>
+              </div>
+            )}
+
+            {!!localAudioBlob && (
+              <div className="flex justify-center">
+                <Button onClick={playRecordedAudio} variant="outline" className="flex items-center gap-2 rounded-xl border-slate-300 hover:bg-slate-50">
+                  <Volume2 className="w-4 h-4" />
+                  Nghe lại giọng của bạn
+                </Button>
+              </div>
+            )}
+
             <div className="flex items-center justify-center gap-4 pt-4">
-              <Button onClick={handleRetryAssessment} variant="outline" className="flex items-center gap-2">
+              <Button onClick={handleRetryAssessment} variant="outline" className="flex items-center gap-2 rounded-xl">
                 <RotateCcw className="w-4 h-4" />
                 Làm lại
               </Button>
               {hasNextSentence ? (
-                <Button onClick={handleNextSentence} variant="default" className="flex items-center gap-2">
+                <Button onClick={handleNextSentence} variant="default" className="flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800">
                   Tiếp theo
                   <ChevronRight className="w-4 h-4" />
                 </Button>

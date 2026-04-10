@@ -113,7 +113,7 @@ export function SheetAddLesson({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-3xl flex flex-col p-0 border-l shadow-2xl">
+      <SheetContent className="h-full sm:max-w-3xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
         <SheetHeader className="p-8 pb-4">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-amber-50 rounded-2xl text-amber-600 shadow-inner">
@@ -161,7 +161,7 @@ export function SheetAddLesson({
 
             {/* Lessons List area */}
             <div className="flex-1 bg-gray-50/50 rounded-[2rem] border border-gray-100 overflow-hidden flex flex-col min-h-0">
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="p-6 space-y-3">
                   {isFetchingLessons ? (
                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-4 animate-pulse">

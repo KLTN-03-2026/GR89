@@ -11,10 +11,12 @@ interface ApiResponse<T = unknown> {
 
 export async function assessIpaPronunciation(
   referenceText: string,
-  audio: File
+  audio: File,
+  ipaId: string
 ): Promise<ApiResponse<unknown>> {
   const formData = new FormData()
   formData.append('referenceText', referenceText)
+  formData.append('ipaId', ipaId)
   formData.append('audio', audio)
 
   const response = await authorizedAxios.post<ApiResponse<unknown>>(

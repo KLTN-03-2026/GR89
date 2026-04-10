@@ -1,5 +1,8 @@
-import React from 'react'
+'use client'
 
+import React, { useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
+import { getDashboardReport, type DashboardReportResponse, type ReportQueryParams } from '@/lib/apis/api'
 import { PageHeader } from '@/components/common/shared/PageHeader'
 import { StatsGrid } from '@/components/common/shared/StatsGrid'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,56 +11,92 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Download, Calendar, Users, BookOpen, Video, DollarSign } from 'lucide-react'
+import { Calendar, Users, BookOpen, Video, DollarSign, RefreshCcw, Loader2 } from 'lucide-react'
 
-export default function page() {
+type CategoryFilter = NonNullable<ReportQueryParams['category']>
+
+const getDefaultDates = () => {
+  const end = new Date()
+  const start = new Date(end.getTime() - 1000 * 60 * 60 * 24 * 29)
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  }
+}
+
+export default function Page() {
+  const defaultDates = useMemo(() => getDefaultDates(), [])
+  const [startDate, setStartDate] = useState(defaultDates.startDate)
+  const [endDate, setEndDate] = useState(defaultDates.endDate)
+  const [category, setCategory] = useState<CategoryFilter>('all')
+  const [loading, setLoading] = useState(false)
+  const [report, setReport] = useState<DashboardReportResponse | null>(null)
+
+  const formatVnd = (value: number) => `${Math.round(value || 0).toLocaleString('vi-VN')} ₫`
+
+  const fetchReport = async (params?: ReportQueryParams) => {
+    setLoading(true)
+    try {
+      const res = await getDashboardReport(params || { startDate, endDate, category })
+      if (res.success && res.data) {
+        setReport(res.data)
+      } else {
+        toast.error(res.message || 'Không tải được dữ liệu báo cáo')
+      }
+    } catch {
+      toast.error('Không tải được dữ liệu báo cáo')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchReport({ startDate: defaultDates.startDate, endDate: defaultDates.endDate, category: 'all' })
+  }, [defaultDates.endDate, defaultDates.startDate])
+
   const stats = [
     {
-      title: 'Doanh thu (tháng)',
-      value: '₫128,450,000',
-      change: { value: '+8.2% so với tháng trước', isPositive: true },
+      title: 'Doanh thu',
+      value: formatVnd(report?.kpis.revenue || 0),
+      change: {
+        value: `${(report?.kpis.revenueGrowth || 0) >= 0 ? '+' : ''}${report?.kpis.revenueGrowth || 0}% so với kỳ trước`,
+        isPositive: (report?.kpis.revenueGrowth || 0) >= 0,
+      },
       icon: DollarSign,
     },
     {
       title: 'Người dùng hoạt động',
-      value: '3,284',
-      change: { value: '+3.1% tháng này', isPositive: true },
+      value: report?.kpis.activeUsers || 0,
+      change: {
+        value: `${(report?.kpis.activeUsersGrowth || 0) >= 0 ? '+' : ''}${report?.kpis.activeUsersGrowth || 0}% so với kỳ trước`,
+        isPositive: (report?.kpis.activeUsersGrowth || 0) >= 0,
+      },
       icon: Users,
     },
     {
-      title: 'Bài học đã hoàn thành',
-      value: '2,146',
-      change: { value: '+1.4% tuần này', isPositive: true },
+      title: 'Bài học hoàn thành',
+      value: report?.kpis.completedLessons || 0,
+      change: { value: 'Theo bộ lọc hiện tại', isPositive: true },
       icon: BookOpen,
     },
     {
-      title: 'Giờ học qua video',
-      value: '4,912h',
-      change: { value: '-0.6% tuần này', isPositive: false },
+      title: 'Tổng giờ học',
+      value: `${report?.kpis.studyHours || 0}h`,
+      change: { value: 'Theo bộ lọc hiện tại', isPositive: true },
       icon: Video,
     },
-  ]
-
-  const topLessons = [
-    { title: 'Ngữ pháp: Thì hiện tại hoàn thành', category: 'Grammar', views: 12450, completion: '78%' },
-    { title: 'Từ vựng: Travel', category: 'Vocabulary', views: 9320, completion: '64%' },
-    { title: 'Listening: Daily Conversation 03', category: 'Listening', views: 8760, completion: '72%' },
-    { title: 'IPA: Vowel Sounds', category: 'IPA', views: 6540, completion: '69%' },
-  ]
-
-  const acquisition = [
-    { source: 'Organic Search', users: 2140, conv: '5.2%' },
-    { source: 'Social (Facebook)', users: 1680, conv: '3.1%' },
-    { source: 'Referral', users: 940, conv: '6.8%' },
-    { source: 'Ads', users: 720, conv: '2.4%' },
   ]
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Báo cáo và phân tích"
-        subtitle="Phân tích số liệu kinh doanh và hiệu suất học tập theo khoảng thời gian."
-        primaryAction={{ label: 'Xuất báo cáo', icon: <Download className="w-4 h-4" /> }}
+        subtitle="Báo cáo kinh doanh và hiệu suất học tập theo thời gian thực."
+        primaryAction={{
+          label: 'Làm mới',
+          icon: loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />,
+          onClick: () => fetchReport(),
+        }}
       />
 
       <Card>
@@ -71,19 +110,19 @@ export default function page() {
               <Label>Ngày bắt đầu</Label>
               <div className="relative">
                 <Calendar className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
-                <Input type="date" className="pl-8" defaultValue={new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 10)} />
+                <Input type="date" className="pl-8" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Ngày kết thúc</Label>
               <div className="relative">
                 <Calendar className="w-4 h-4 absolute left-2 top-1/2 -translate-y-1/2 text-gray-500" />
-                <Input type="date" className="pl-8" defaultValue={new Date().toISOString().slice(0, 10)} />
+                <Input type="date" className="pl-8" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Danh mục</Label>
-              <Select defaultValue="all">
+              <Select value={category} onValueChange={(v: CategoryFilter) => setCategory(v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn danh mục" />
                 </SelectTrigger>
@@ -100,8 +139,22 @@ export default function page() {
               </Select>
             </div>
             <div className="flex items-end gap-3">
-              <Button className="w-full">Áp dụng</Button>
-              <Button variant="outline" className="w-full">Đặt lại</Button>
+              <Button className="w-full" disabled={loading} onClick={() => fetchReport()}>
+                {loading ? 'Đang tải...' : 'Áp dụng'}
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={loading}
+                onClick={() => {
+                  setStartDate(defaultDates.startDate)
+                  setEndDate(defaultDates.endDate)
+                  setCategory('all')
+                  fetchReport({ startDate: defaultDates.startDate, endDate: defaultDates.endDate, category: 'all' })
+                }}
+              >
+                Đặt lại
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -111,12 +164,9 @@ export default function page() {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Bài học nổi bật</CardTitle>
-              <CardDescription>Hiệu suất theo lượt xem và hoàn thành</CardDescription>
-            </div>
-            <Button variant="outline" size="sm">Tải CSV</Button>
+          <CardHeader>
+            <CardTitle>Bài học nổi bật</CardTitle>
+            <CardDescription>Theo lượt học và tỷ lệ hoàn thành</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -124,60 +174,111 @@ export default function page() {
                 <TableRow>
                   <TableHead>Bài học</TableHead>
                   <TableHead>Danh mục</TableHead>
-                  <TableHead>Lượt xem</TableHead>
+                  <TableHead>Lượt học</TableHead>
                   <TableHead>Hoàn thành</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topLessons.map((l, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell className="font-medium">{l.title}</TableCell>
-                    <TableCell>{l.category}</TableCell>
-                    <TableCell>{l.views.toLocaleString('vi-VN')}</TableCell>
+                {(report?.topLessons || []).map((item) => (
+                  <TableRow key={`${item.category}-${item.lessonId}`}>
+                    <TableCell className="font-medium">{item.title}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>{item.attempts.toLocaleString('vi-VN')}</TableCell>
                     <TableCell>
-                      <span className="text-gray-900 font-medium mr-2">{l.completion}</span>
-                      <ProgressBar value={parseInt(l.completion)} />
+                      <span className="text-gray-900 font-medium mr-2">{item.completionRate}%</span>
+                      <ProgressBar value={item.completionRate} />
                     </TableCell>
                   </TableRow>
                 ))}
+                {!report?.topLessons?.length && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-gray-500">
+                      Chưa có dữ liệu
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Kênh thu hút người dùng</CardTitle>
-              <CardDescription>So sánh số người dùng và tỉ lệ chuyển đổi</CardDescription>
-            </div>
-            <Button variant="outline" size="sm">Tải CSV</Button>
+          <CardHeader>
+            <CardTitle>Doanh thu theo cổng thanh toán</CardTitle>
+            <CardDescription>So sánh doanh thu và tỉ trọng từng provider</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nguồn</TableHead>
-                  <TableHead>Người dùng</TableHead>
-                  <TableHead>Chuyển đổi</TableHead>
+                  <TableHead>Provider</TableHead>
+                  <TableHead>Người mua</TableHead>
+                  <TableHead>Doanh thu</TableHead>
+                  <TableHead>Tỉ trọng</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {acquisition.map((a, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell className="font-medium">{a.source}</TableCell>
-                    <TableCell>{a.users.toLocaleString('vi-VN')}</TableCell>
+                {(report?.revenueByProvider || []).map((item) => (
+                  <TableRow key={item.provider}>
+                    <TableCell className="font-medium">{item.provider.toUpperCase()}</TableCell>
+                    <TableCell>{item.users.toLocaleString('vi-VN')}</TableCell>
+                    <TableCell>{formatVnd(item.revenue)}</TableCell>
                     <TableCell>
-                      <span className="text-gray-900 font-medium mr-2">{a.conv}</span>
-                      <ProgressBar value={parseFloat(a.conv)} />
+                      <span className="text-gray-900 font-medium mr-2">{item.share}%</span>
+                      <ProgressBar value={item.share} />
                     </TableCell>
                   </TableRow>
                 ))}
+                {!report?.revenueByProvider?.length && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-gray-500">
+                      Chưa có dữ liệu
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Thống kê theo kỹ năng</CardTitle>
+          <CardDescription>Tổng hợp lượt học, hoàn thành, điểm trung bình và giờ học</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Kỹ năng</TableHead>
+                <TableHead>Lượt học</TableHead>
+                <TableHead>Hoàn thành</TableHead>
+                <TableHead>Điểm TB</TableHead>
+                <TableHead>Giờ học</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(report?.categoryStats || []).map((item) => (
+                <TableRow key={item.category}>
+                  <TableCell className="font-medium">{item.category}</TableCell>
+                  <TableCell>{item.attempts.toLocaleString('vi-VN')}</TableCell>
+                  <TableCell>{item.completionRate}%</TableCell>
+                  <TableCell>{item.avgProgress}/100</TableCell>
+                  <TableCell>{item.studyHours.toLocaleString('vi-VN')}h</TableCell>
+                </TableRow>
+              ))}
+              {!report?.categoryStats?.length && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-gray-500">
+                    Chưa có dữ liệu
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

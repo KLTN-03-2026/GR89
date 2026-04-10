@@ -1,12 +1,11 @@
 import { IIpa, Ipa, IIpaPaginateResult, IExample } from "../models/ipa.model"
-import { IpaScoring } from "../models/ipaScoring.model"
 import { StudyHistory } from "../models/studyHistory.model"
 import { StudyService } from "./study.service"
 import { SpeechAceProvider } from "../providers/speechace.provider"
 import ErrorHandler from "../utils/ErrorHandler"
 import XLSX from 'xlsx'
 import mongoose from "mongoose"
-import { StreakService } from "./streak.service"
+import { AIProvider } from "../providers/ai.provider"
 import { User } from "../models/user.model"
 import { MediaService } from "./media.service"
 
@@ -254,13 +253,10 @@ export class IpaService {
       query.isActive = options.isActive
     }
 
-    const sort: any = {}
-    sort[sortBy] = sortOrder === 'asc' ? 1 : -1
-
     const paginateOptions = {
       page,
       limit,
-      sort,
+      sort: { orderIndex: 1 },
       populate: [
         { path: 'image', select: 'url' },
         { path: 'video', select: 'url' },
@@ -369,6 +365,7 @@ export class IpaService {
       { $sort: { progress: -1, createdAt: -1 } },
       { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
     ])
+
     const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
 
     return ipas.map((ipa) => {
@@ -408,47 +405,64 @@ export class IpaService {
 
     const textScore = result.text_score
     const wordScoreList = textScore.word_score_list || []
-    const overallScore = textScore.quality_score || 0
 
-    // Tạo bản ghi kết quả chi tiết
-    const ipaScoring = await IpaScoring.create({
-      userId,
-      lessonId: ipaId,
-      referenceText: referenceText.trim(),
-      overallScore,
-      accuracyScore: textScore.accuracy_score || 0,
-      fluencyScore: textScore.fluency_score || 0,
-      completenessScore: textScore.completeness_score || 0,
-      words: wordScoreList,
-      totalWords: wordScoreList.length,
-      correctWords: wordScoreList.filter((w: any) => (w.quality_score || 0) >= 80).length,
-      errorWords: wordScoreList.filter((w: any) => (w.quality_score || 0) < 80).length,
-      feedback: overallScore >= 80 ? "Phát âm rất tốt!" : "Cần luyện tập thêm!",
-      detailedFeedback: `Bạn cần chú ý phát âm các từ: ${wordScoreList.filter((w: any) => (w.quality_score || 0) < 80).map((w: any) => w.word).join(', ')}`,
-      gradingSystem: 'HundredMark',
-      granularity: 'Phoneme'
-    })
+    const overallScoreRaw =
+      textScore?.speechace_score?.pronunciation ??
+      textScore?.toeic_score?.pronunciation ??
+      textScore?.pte_score?.pronunciation ??
+      textScore?.quality_score ??
+      0
+    const overallScore = Number(overallScoreRaw) || 0
 
-    // Lưu qua StudyService
-    await StudyService.saveStudyResult({
-      userId,
-      lessonId: ipaId,
-      category: 'ipa',
-      progress: overallScore,
-      point: overallScore,
-      isCompleted: true,
-      studyTime: studyTimeSeconds,
-      resultId: [ipaScoring._id as unknown as mongoose.Types.ObjectId],
-      resultData: ipaScoring.toObject(),
-      correctAnswers: ipaScoring.correctWords,
-      totalQuestions: ipaScoring.totalWords,
-      weakPoints: wordScoreList.filter((w: any) => (w.quality_score || 0) < 80).map((w: any) => w.word)
-    })
+    const phoneScoreList =
+      (Array.isArray((textScore as any)?.phone_score_list) ? (textScore as any).phone_score_list : undefined) ??
+      (Array.isArray((wordScoreList?.[0] as any)?.phone_score_list) ? (wordScoreList[0] as any).phone_score_list : undefined) ??
+      (Array.isArray((wordScoreList?.[0] as any)?.phone_score_list_list) ? (wordScoreList[0] as any).phone_score_list_list : undefined) ??
+      wordScoreList
+        .flatMap((w: any) => (Array.isArray(w?.phone_score_list) ? w.phone_score_list : []))
 
-    // Luôn cập nhật streak khi có tham gia làm bài
-    await StreakService.update(userId)
+    // Ở bước assess chỉ chấm điểm và trả kết quả ngay; chưa lưu history/progress.
 
-    return ipaScoring
+    // Gọi AI để sinh nhận xét chi tiết (tiếng Việt) cho người học
+    let aiFeedback = ""
+    try {
+      const weakPhones = (Array.isArray(phoneScoreList) ? phoneScoreList : [])
+        .map((p: any) => ({ phone: String(p?.phone || ""), quality_score: Number(p?.quality_score) || 0 }))
+        .filter(p => !!p.phone)
+        .sort((a, b) => a.quality_score - b.quality_score)
+        .slice(0, 2)
+
+      const systemPrompt = [
+        "Bạn là giáo viên phát âm tiếng Anh.",
+        "Ngữ cảnh: Bài IPA chỉ có 1 TỪ, mục tiêu là sửa phát âm theo từng ÂM (phoneme).",
+        "Trả lời tiếng Việt, cực ngắn, chỉ 2 dòng, tổng <= 160 ký tự.",
+        "hướng dẫn sửa ÂM yếu nhất (nêu âm + mẹo đặt miệng/lưỡi/ngắt hơi).",
+        "Không chấm điểm. Không ví dụ câu. Không emoji. Không dấu ngoặc kép."
+      ].join("\n")
+
+      const userPrompt = JSON.stringify({
+        type: "ipa_pronunciation_feedback",
+        referenceText: referenceText.trim(),
+        overallScore,
+        weakPhones,
+      })
+
+      aiFeedback = await AIProvider.chat([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ])
+    } catch {
+      // Nếu AI lỗi thì bỏ qua, không chặn kết quả chính
+      aiFeedback = ""
+    }
+
+    // Return the shape the client UI expects (IIpaScoringResult)
+    return {
+      word: referenceText.trim(),
+      quality_score: overallScore,
+      phone_score_list: Array.isArray(phoneScoreList) ? phoneScoreList : [],
+      aiFeedback,
+    }
   }
 
   // (USER) Lấy điểm cao nhất của bài IPA

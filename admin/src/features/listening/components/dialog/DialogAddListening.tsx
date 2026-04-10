@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { createListening } from '@/features/listening/services/api'
-import { Plus, Music, FileText, Headphones, Info, Layers, X, Save, CheckCircle2, Sparkles } from 'lucide-react'
+import { createListening, DataListening } from '@/features/listening/services/api'
+import { Plus, Music, FileText, Headphones, Info, Layers, Save, CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { Media } from '@/features/Media/types'
@@ -16,12 +16,14 @@ import { Button } from '@/components/ui/button'
 import { SheetFooter } from '@/components/ui/sheet'
 
 export function DialogAddListening({ callback }: { callback: () => void }) {
+  const countSentences = (text: string) => text.trim().split(/(?<=[.!?])\s+/).filter(Boolean).length
   const [open, setOpen] = useState(false)
   const [data, setData] = useState({
     title: "",
     description: "",
     audio: "",
     subtitle: "",
+    subtitleVi: "",
     level: "A1",
   })
   const [selectedAudio, setSelectedAudio] = useState<Media | null>(null)
@@ -33,17 +35,25 @@ export function DialogAddListening({ callback }: { callback: () => void }) {
   }
 
   const handleCreateListening = async () => {
-    if (!data.title.trim() || !data.description.trim() || !selectedAudio || !data.subtitle.trim() || !data.level) {
+    if (!data.title.trim() || !data.description.trim() || !selectedAudio || !data.subtitle.trim() || !data.subtitleVi.trim() || !data.level) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
+      return
+    }
+    if (countSentences(data.subtitle) !== countSentences(data.subtitleVi)) {
+      toast.error('Số lượng câu phụ đề tiếng Anh và tiếng Việt phải bằng nhau')
       return
     }
 
     setLoading(true)
     try {
       await createListening({
-        ...data,
+        title: data.title,
+        description: data.description,
+        subtitle: data.subtitle,
+        subtitleVi: data.subtitleVi,
+        level: data.level as DataListening['level'],
         audio: selectedAudio._id
-      } as any)
+      })
       callback()
       toast.success('Tạo bài nghe thành công')
       setOpen(false)
@@ -52,10 +62,11 @@ export function DialogAddListening({ callback }: { callback: () => void }) {
         description: "",
         audio: "",
         subtitle: "",
+        subtitleVi: "",
         level: "A1",
       })
       setSelectedAudio(null)
-    } catch (error) {
+    } catch {
       toast.error('Đã có lỗi xảy ra')
     } finally {
       setLoading(false)
@@ -71,7 +82,7 @@ export function DialogAddListening({ callback }: { callback: () => void }) {
         </Button>
       </SheetTrigger>
 
-      <SheetContent className="sm:max-w-3xl flex flex-col p-0 border-l">
+      <SheetContent className="h-full sm:max-w-3xl flex flex-col p-0 border-l overflow-hidden">
         <SheetHeader className="p-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-zinc-100 rounded-lg text-zinc-900">
@@ -88,7 +99,7 @@ export function DialogAddListening({ callback }: { callback: () => void }) {
 
         <Separator />
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="p-6 space-y-8">
             {/* Thông tin cơ bản */}
             <section className="space-y-4">
@@ -181,6 +192,19 @@ export function DialogAddListening({ callback }: { callback: () => void }) {
                   onChange={(e) => setData({ ...data, subtitle: e.target.value })}
                   className="min-h-[300px] font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
                 />
+                <Label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-1.5">
+                  <FileText className="h-4 w-4" /> Phụ đề tiếng Việt <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea
+                  placeholder="Xin chào, chào mừng bạn đến với lớp tiếng Anh!"
+                  value={data.subtitleVi}
+                  onChange={(e) => setData({ ...data, subtitleVi: e.target.value })}
+                  className="min-h-[200px] font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
+                />
+
+                <p className="text-xs text-zinc-500 leading-relaxed rounded-lg border border-dashed border-zinc-200 bg-zinc-50/80 p-3">
+                  Quiz trắc nghiệm (lượt 1 — nghe hiểu ý chính) được quản lý riêng: sau khi lưu bài, mở menu hành động (⋮) trên dòng bài nghe → <strong>Quiz lượt 1</strong>.
+                </p>
               </div>
             </section>
           </div>

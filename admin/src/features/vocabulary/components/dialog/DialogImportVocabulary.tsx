@@ -91,7 +91,7 @@ export function DialogImportVocabulary({ callback }: DialogImportVocabularyProps
           Import Vocabulary
         </Button>
       </SheetTrigger>
-      <SheetContent className="sm:max-w-2xl flex flex-col p-0">
+      <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 overflow-hidden">
         <SheetHeader className="p-6 pb-2">
           <SheetTitle className="flex items-center gap-2 text-xl">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -104,7 +104,7 @@ export function DialogImportVocabulary({ callback }: DialogImportVocabularyProps
 
         <Separator />
 
-        <ScrollArea className="flex-1 px-6 py-4">
+        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
           <div className="space-y-6 pb-10">
             {/* Hướng dẫn & Template */}
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 space-y-4">

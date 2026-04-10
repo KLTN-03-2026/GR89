@@ -96,7 +96,7 @@ export function DialogIpaExamples({ ipa, callback }: DialogIpaExamplesProps) {
         </Button>
       </SheetTrigger>
 
-      <SheetContent className="sm:max-w-2xl flex flex-col p-0">
+      <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 overflow-hidden">
         <SheetHeader className="p-6 pb-2">
           <SheetTitle className="flex items-center gap-2 text-xl">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -109,7 +109,7 @@ export function DialogIpaExamples({ ipa, callback }: DialogIpaExamplesProps) {
 
         <Separator />
 
-        <ScrollArea className="flex-1 px-6 py-4">
+        <ScrollArea className="flex-1 min-h-0 px-6 py-4">
           <div className="space-y-8 pb-10">
             {/* Add new example section */}
             <div className="space-y-4">
