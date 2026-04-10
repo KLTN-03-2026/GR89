@@ -4,8 +4,35 @@ import { ListeningService } from "../services/listening.service";
 import ErrorHandler from "../utils/ErrorHandler";
 import { IListening } from "../models/listening.model";
 import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
+import { AdminActivityService } from "../services/adminActivity.service";
 
 export class ListeningController {
+  private static async logAdminAction(req: Request, payload: {
+    action: string
+    resourceType: string
+    resourceId?: string
+    description: string
+    metadata?: Record<string, any>
+  }) {
+    try {
+      const adminId = req.user?._id as string
+      const role = (req.user as any)?.role as 'admin' | 'content'
+      if (!adminId || !role || !['admin', 'content'].includes(role)) return
+      await AdminActivityService.logActivity({
+        adminId,
+        adminRole: role,
+        action: payload.action,
+        resourceType: payload.resourceType,
+        resourceId: payload.resourceId,
+        description: payload.description,
+        metadata: payload.metadata,
+        ip: req.ip,
+        userAgent: req.get('user-agent') || undefined
+      })
+    } catch {
+      // Không block luồng chính nếu log thất bại
+    }
+  }
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Xuất dữ liệu Listening ra file Excel
@@ -28,6 +55,12 @@ export class ListeningController {
       listenings,
       userId: String(userId),
       skipErrors: !!skipErrors
+    })
+    await ListeningController.logAdminAction(req, {
+      action: 'import_json',
+      resourceType: 'listening',
+      description: 'Import dữ liệu listening từ JSON',
+      metadata: { total: result.total, created: result.created, updated: result.updated, skipped: result.skipped }
     })
 
     res.status(200).json({
@@ -99,6 +132,12 @@ export class ListeningController {
     }
 
     const result = await ListeningService.updateMultipleListeningStatus(ids, isActive)
+    await ListeningController.logAdminAction(req, {
+      action: 'bulk_update_status',
+      resourceType: 'listening',
+      description: 'Cập nhật trạng thái hàng loạt listening',
+      metadata: { idsCount: ids.length, isActive, updatedCount: result.updatedCount }
+    })
 
     res.status(200).json({
       success: true,
@@ -111,6 +150,12 @@ export class ListeningController {
   static deleteMultipleListening = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { ids } = req.body
     const listenings = await ListeningService.deleteMultipleListening(ids)
+    await ListeningController.logAdminAction(req, {
+      action: 'bulk_delete',
+      resourceType: 'listening',
+      description: 'Xóa hàng loạt listening',
+      metadata: { idsCount: Array.isArray(ids) ? ids.length : 0 }
+    })
     res.status(200).json({
       success: true,
       message: 'Xóa nhiều bài nghe thành công',
@@ -147,9 +192,9 @@ export class ListeningController {
   static doListeningQuiz = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const userId = req.user?._id as string
-    const { time, result, studySession } = req.body
+    const { time, result, studySession, mode } = req.body
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession)
-    const listening = await ListeningService.doListeningQuiz(userId, id, time, result, studyTimeSeconds)
+    const listening = await ListeningService.doListeningQuiz(userId, id, time, result, studyTimeSeconds, mode)
     const { StreakService } = await import('../services/streak.service')
     await StreakService.update(userId)
     res.status(200).json({
@@ -192,6 +237,13 @@ export class ListeningController {
       return next(new ErrorHandler('Thiếu question, options hoặc answer không hợp lệ', 400))
     }
     const data = await ListeningService.addListeningQuiz(id, { question, options, answer })
+    await ListeningController.logAdminAction(req, {
+      action: 'add_quiz_item',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Thêm câu quiz cho listening',
+      metadata: { quizId: String((data as any)?._id || '') }
+    })
     res.status(201).json({
       success: true,
       message: 'Thêm câu quiz thành công',
@@ -207,6 +259,13 @@ export class ListeningController {
       return next(new ErrorHandler('Thiếu question, options hoặc answer không hợp lệ', 400))
     }
     const data = await ListeningService.updateListeningQuizItem(id, quizId, { question, options, answer })
+    await ListeningController.logAdminAction(req, {
+      action: 'update_quiz_item',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Cập nhật câu quiz listening',
+      metadata: { quizId }
+    })
     res.status(200).json({
       success: true,
       message: 'Cập nhật câu quiz thành công',
@@ -218,6 +277,13 @@ export class ListeningController {
   static deleteListeningQuizItem = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id, quizId } = req.params
     await ListeningService.deleteListeningQuizItem(id, quizId)
+    await ListeningController.logAdminAction(req, {
+      action: 'delete_quiz_item',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Xóa câu quiz listening',
+      metadata: { quizId }
+    })
     res.status(200).json({
       success: true,
       message: 'Xóa câu quiz thành công',
@@ -231,6 +297,13 @@ export class ListeningController {
       return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400))
     }
     const listening = await ListeningService.createListening({ title, description, audio, subtitle, subtitleVi, level, quiz, createdBy: req.user?._id as string } as unknown as IListening)
+    await ListeningController.logAdminAction(req, {
+      action: 'create',
+      resourceType: 'listening',
+      resourceId: String((listening as any)?._id || ''),
+      description: 'Tạo mới bài nghe',
+      metadata: { title: (listening as any)?.title, level: (listening as any)?.level }
+    })
     res.status(201).json({
       success: true,
       message: 'Tạo bài nghe thành công',
@@ -242,6 +315,13 @@ export class ListeningController {
   static updateListening = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const listening = await ListeningService.updateListening(id, { ...(req.body || {}), updatedBy: req.user?._id as string })
+    await ListeningController.logAdminAction(req, {
+      action: 'update',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Cập nhật bài nghe',
+      metadata: { updatedFields: Object.keys(req.body || {}) }
+    })
     res.status(200).json({
       success: true,
       message: 'Cập nhật bài nghe thành công',
@@ -253,6 +333,12 @@ export class ListeningController {
   static deleteListening = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const listening = await ListeningService.deleteListening(id)
+    await ListeningController.logAdminAction(req, {
+      action: 'delete',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Xóa bài nghe'
+    })
     res.status(200).json({
       success: true,
       message: 'Xóa bài nghe thành công',
@@ -264,6 +350,13 @@ export class ListeningController {
   static updateListeningStatus = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const listening = await ListeningService.updateListeningStatus(id)
+    await ListeningController.logAdminAction(req, {
+      action: 'toggle_status',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Bật/tắt trạng thái bài nghe',
+      metadata: { isActive: (listening as any)?.isActive }
+    })
     res.status(200).json({
       success: true,
       message: `Đã ${listening.isActive ? 'xuất bản' : 'ẩn'} bài nghe thành công`,
@@ -275,6 +368,13 @@ export class ListeningController {
   static toggleVipStatus = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const listening = await ListeningService.toggleVipStatus(id)
+    await ListeningController.logAdminAction(req, {
+      action: 'toggle_vip',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Bật/tắt VIP cho bài nghe',
+      metadata: { isVipRequired: (listening as any)?.isVipRequired }
+    })
     res.status(200).json({
       success: true,
       message: `Đã ${listening.isVipRequired ? 'bật' : 'tắt'} VIP cho bài nghe này`,
@@ -293,6 +393,13 @@ export class ListeningController {
     }
 
     const result = await ListeningService.swapOrderIndex(id, direction);
+    await ListeningController.logAdminAction(req, {
+      action: 'swap_order',
+      resourceType: 'listening',
+      resourceId: id,
+      description: 'Hoán đổi thứ tự bài nghe',
+      metadata: { direction }
+    })
 
     res.status(200).json({
       success: true,

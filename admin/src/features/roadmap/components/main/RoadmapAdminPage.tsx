@@ -166,7 +166,7 @@ export function RoadmapAdminPage({ topics }: RoadmapAdminPageProps) {
     <div>
       <HeaderRoamap />
 
-      <div className="grid grid-cols-[300px_1fr]">
+      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr]">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTopicDragEnd}>
           <SortableContext
             items={topics.map((topic) => topic._id)}

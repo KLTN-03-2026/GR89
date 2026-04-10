@@ -383,7 +383,9 @@ export class RoadmapTopicService {
       let isActive = true;
 
       if (type === "ipa") {
+
         const item = await Ipa.findById(lesson.lessonId).select("sound soundType isActive").lean();
+        console.log(item)
         if (item) {
           title = item.sound || title;
           description = item.soundType || "";
@@ -391,6 +393,7 @@ export class RoadmapTopicService {
         }
       } else if (type === "grammar") {
         const item = await GrammarTopic.findById(lesson.lessonId).select("title description isActive").lean();
+
         if (item) {
           title = item.title || title;
           description = item.description || "";

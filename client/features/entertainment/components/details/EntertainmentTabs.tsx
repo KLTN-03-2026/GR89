@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import { Info, List, MessageSquare, Play, ThumbsUp, Flag } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -9,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/libs/utils'
 import Link from 'next/link'
 import Image from 'next/image'
-import type { EntertainmentItem } from '../../services/entertainmentApi'
+import type { EntertainmentComment, EntertainmentItem } from '../../services/entertainmentApi'
 
 interface EntertainmentTabsProps {
   activeTab: string
@@ -20,16 +21,54 @@ interface EntertainmentTabsProps {
     type?: 'movie' | 'music' | 'podcast'
   }
   relatedItems: EntertainmentItem[]
+  comments: EntertainmentComment[]
+  loadingComments: boolean
+  submittingComment: boolean
+  onCreateComment: (content: string) => Promise<void>
 }
 
-export function EntertainmentTabs({ activeTab, setActiveTab, detail, relatedItems }: EntertainmentTabsProps) {
+export function EntertainmentTabs({
+  activeTab,
+  setActiveTab,
+  detail,
+  relatedItems,
+  comments,
+  loadingComments,
+  submittingComment,
+  onCreateComment
+}: EntertainmentTabsProps) {
+  const [newComment, setNewComment] = useState('')
+  const commentCount = comments.length
+  const hasEpisodes = relatedItems.length > 0
+
+  const renderedComments = useMemo(() => comments, [comments])
+
+  useEffect(() => {
+    if (!hasEpisodes && activeTab === 'episodes') {
+      setActiveTab('description')
+    }
+  }, [hasEpisodes, activeTab, setActiveTab])
+
+  const formatCommentTime = (value: string) => {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return 'Vừa xong'
+    return date.toLocaleString('vi-VN')
+  }
+
+  const handleSubmitComment = async () => {
+    const content = newComment.trim()
+    if (!content) return
+    await onCreateComment(content)
+    setNewComment('')
+  }
+
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start bg-transparent h-auto p-0 gap-8 border-b border-gray-100 dark:border-gray-800 rounded-none">
           {[
             { id: 'description', label: 'Mô tả', icon: Info },
-            { id: 'episodes', label: 'Danh sách tập', icon: List },
+            ...(hasEpisodes ? [{ id: 'episodes', label: 'Danh sách tập', icon: List }] : []),
             { id: 'comments', label: 'Bình luận', icon: MessageSquare }
           ].map((tab) => (
             <TabsTrigger
@@ -42,7 +81,7 @@ export function EntertainmentTabs({ activeTab, setActiveTab, detail, relatedItem
             >
               <tab.icon className="h-4 w-4 mr-2" />
               {tab.label}
-              {tab.id === 'comments' && <span className="ml-1.5 text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">24</span>}
+              {tab.id === 'comments' && <span className="ml-1.5 text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">{commentCount}</span>}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -76,10 +115,10 @@ export function EntertainmentTabs({ activeTab, setActiveTab, detail, relatedItem
               </div>
             </TabsContent>
 
-            <TabsContent value="episodes" className="pt-6 outline-none">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {relatedItems.length > 0 ? (
-                  relatedItems.map((item, index) => (
+            {hasEpisodes && (
+              <TabsContent value="episodes" className="pt-6 outline-none">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {relatedItems.map((item, index) => (
                     <Link
                       key={item._id}
                       href={`/entertainment/${detail.type}s/${item._id}`}
@@ -112,15 +151,10 @@ export function EntertainmentTabs({ activeTab, setActiveTab, detail, relatedItem
                         </div>
                       </div>
                     </Link>
-                  ))
-                ) : (
-                  <div className="text-gray-500 italic col-span-full text-center py-12 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-                    <List className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    Chưa có danh sách các tập phim khác.
-                  </div>
-                )}
-              </div>
-            </TabsContent>
+                  ))}
+                </div>
+              </TabsContent>
+            )}
 
             <TabsContent value="comments" className="pt-6 outline-none space-y-8">
               <div className="flex gap-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800">
@@ -131,41 +165,49 @@ export function EntertainmentTabs({ activeTab, setActiveTab, detail, relatedItem
                 <div className="flex-1 space-y-3">
                   <Textarea
                     placeholder="Viết bình luận của bạn..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
                     className="min-h-[80px] border-none bg-transparent focus-visible:ring-0 p-0 resize-none placeholder:text-gray-400"
                   />
                   <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-800">
                     <div className="flex items-center gap-1">
                       {/* Emoji/Format options could go here */}
                     </div>
-                    <Button size="sm" className="rounded-full px-5 bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-md shadow-blue-500/20">
-                      Bình luận
+                    <Button
+                      size="sm"
+                      disabled={submittingComment || !newComment.trim()}
+                      onClick={() => void handleSubmitComment()}
+                      className="rounded-full px-5 bg-blue-600 hover:bg-blue-700 transition-all active:scale-95 shadow-md shadow-blue-500/20"
+                    >
+                      {submittingComment ? 'Đang gửi...' : 'Bình luận'}
                     </Button>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-6 pt-2">
-                {[
-                  { user: 'Nguyễn Văn A', time: '2 giờ trước', text: 'Nội dung rất hay và bổ ích, cảm ơn tác giả!', likes: 12 },
-                  { user: 'Trần Thị B', time: '5 giờ trước', text: 'Video chất lượng, mong chờ các tập tiếp theo.', likes: 8 },
-                  { user: 'Lê Minh C', time: '1 ngày trước', text: 'Phần giải thích từ vựng rất chi tiết, giúp mình học nhanh hơn.', likes: 24 }
-                ].map((comment, i) => (
-                  <div key={i} className="flex gap-4 group">
+                {loadingComments ? (
+                  <p className="text-sm text-gray-500 italic">Đang tải bình luận...</p>
+                ) : renderedComments.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">Chưa có bình luận nào. Hãy là người đầu tiên bình luận.</p>
+                ) : (
+                  renderedComments.map((comment) => (
+                  <div key={comment._id} className="flex gap-4 group">
                     <Avatar className="h-10 w-10 border border-gray-100 dark:border-gray-800 shadow-sm">
-                      <AvatarImage src={`https://ui-avatars.com/api/?name=${comment.user}&background=random`} />
-                      <AvatarFallback>{comment.user[0]}</AvatarFallback>
+                      <AvatarImage src={`https://ui-avatars.com/api/?name=${comment.user.fullName}&background=random`} />
+                      <AvatarFallback>{comment.user.fullName?.[0] || 'U'}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">{comment.user}</p>
-                        <span className="text-[10px] text-gray-400">{comment.time}</span>
+                        <p className="text-sm font-bold text-gray-900 dark:text-white">{comment.user.fullName}</p>
+                        <span className="text-[10px] text-gray-400">{formatCommentTime(comment.createdAt)}</span>
                       </div>
                       <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50/50 dark:bg-gray-800/30 p-3 rounded-2xl rounded-tl-none border border-gray-50 dark:border-gray-800/50">
-                        {comment.text}
+                        {comment.content}
                       </p>
                       <div className="flex items-center gap-5 mt-1 px-1">
                         <button className="text-xs text-gray-500 hover:text-blue-600 font-semibold flex items-center gap-1.5 transition-colors">
-                          <ThumbsUp className="h-3.5 w-3.5" /> {comment.likes}
+                          <ThumbsUp className="h-3.5 w-3.5" /> 0
                         </button>
                         <button className="text-xs text-gray-500 hover:text-blue-600 font-semibold transition-colors">
                           Phản hồi
@@ -176,7 +218,7 @@ export function EntertainmentTabs({ activeTab, setActiveTab, detail, relatedItem
                       </div>
                     </div>
                   </div>
-                ))}
+                )))}
               </div>
             </TabsContent>
           </motion.div>

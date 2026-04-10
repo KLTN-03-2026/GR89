@@ -29,8 +29,9 @@ import { useEffect, useState } from "react"
 export function NavUser() {
   const router = useRouter()
   const { isMobile } = useSidebar()
-  const { logout, user } = useAuth()
+  const { logout, user, isLoading } = useAuth()
 
+  console.log(user)
   const [avatarError, setAvatarError] = useState(false)
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function NavUser() {
 
   const defaultAvatar = user?.avatar?.url || "/images/avatar-default.jpg"
 
-  if (!user) {
+  if (!isLoading || !user) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>

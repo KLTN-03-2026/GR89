@@ -68,7 +68,7 @@ export function DictationStepWithVi({
     setIsSavingResult(true)
     try {
       const studySession = getSessionPayload()
-      await doListeningQuiz(lessonId, duration, finalResult, studySession)
+      await doListeningQuiz(lessonId, duration, finalResult, studySession, 'dictation')
       await notifyStreakIncrease()
       setIsResultSaved(true)
       toast.success('Đã lưu kết quả bài nghe')

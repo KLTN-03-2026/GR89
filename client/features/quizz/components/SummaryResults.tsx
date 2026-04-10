@@ -21,9 +21,16 @@ export default function SummaryResults({
 }: SummaryResultsProps) {
   const router = useRouter();
 
+  const normalizeAnswer = (value: string) =>
+    String(value || '')
+      .normalize('NFC')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
   const totalQuestions = Array.isArray(results) ? results.length : 0;
   const correctAnswers = Array.isArray(results) ? results.filter(result =>
-    (result.correctAnswer || "").toLowerCase().trim() === (result.userAnswer || "").toLowerCase().trim()).length : 0;
+    normalizeAnswer(result.correctAnswer || "") === normalizeAnswer(result.userAnswer || "")).length : 0;
   const percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
 
   const getScoreMessage = () => {
@@ -124,7 +131,7 @@ export default function SummaryResults({
                     questionNumber={result.questionNumber}
                     userAnswer={result.userAnswer}
                     correctAnswer={result.correctAnswer}
-                    isCorrect={result.correctAnswer === result.userAnswer}
+                    isCorrect={normalizeAnswer(result.correctAnswer || "") === normalizeAnswer(result.userAnswer || "")}
                     explanation={result.explanation}
                   />
                 </div>

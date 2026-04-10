@@ -114,6 +114,7 @@ const ROUTES_NAME = {
   // Dashboard
   '/dashboard': "Bảng điều khiển",
   '/dashboard/overview': "Tổng quan",
+  '/dashboard/activities': "Lịch sử hoạt động",
   '/dashboard/reports': "Báo cáo",
   '/dashboard/analytics': "Phân tích",
 

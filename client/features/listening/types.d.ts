@@ -7,6 +7,7 @@ export interface IListening {
   _id: string;
   title: string;
   description: string;
+  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
   audio: string;
   subtitle: string;
   subtitleVi?: string;
@@ -20,6 +21,10 @@ export interface IListening {
 export interface IListeningProgress {
   progress: number
   point: number
+  totalQuestions?: number
+  quizPoint?: number
+  quizTotal?: number
+  quizProgress?: number
   time: number
   date: Date
   result: {

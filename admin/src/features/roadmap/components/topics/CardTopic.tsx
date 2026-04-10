@@ -1,9 +1,8 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { GripVertical, Lock, Unlock, Edit, Trash2 } from "lucide-react";
+import { GripVertical, Lock, Unlock, Edit, Trash2, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,8 +85,8 @@ export default function CardTopic({
         style={style}
         className={cn(
           "p-4 cursor-pointer relative group rounded-2xl border transition-all duration-300",
-          isSelected 
-            ? "border-amber-500 bg-amber-50/50 shadow-lg shadow-amber-100/50 -translate-y-0.5" 
+          isSelected
+            ? "border-amber-500 bg-amber-50/50 shadow-lg shadow-amber-100/50 -translate-y-0.5"
             : "border-gray-100 bg-white hover:border-amber-200 hover:bg-gray-50/30"
         )}
         onClick={() => onSelect(topic._id)}
@@ -101,13 +100,13 @@ export default function CardTopic({
           >
             <GripVertical className="w-4 h-4 text-gray-400" />
           </div>
-          
+
           {/* Icon emoji */}
           <div className="flex-shrink-0">
             <div className={cn(
               "w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border transition-all duration-300 shadow-sm",
-              isSelected 
-                ? "bg-white border-amber-200 scale-110 rotate-3" 
+              isSelected
+                ? "bg-white border-amber-200 scale-110 rotate-3"
                 : "bg-gray-50 border-gray-100 group-hover:bg-white group-hover:scale-105"
             )}>
               {topic.icon || '📚'}
@@ -121,7 +120,7 @@ export default function CardTopic({
                 "text-[10px] font-black uppercase tracking-widest",
                 isSelected ? "text-amber-600" : "text-gray-400"
               )}>
-                Chặng {index + 1}
+                Chặng {index}
               </span>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                 <Button
@@ -197,19 +196,19 @@ export default function CardTopic({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-[2rem]">
-            <AlertDialogCancel 
+            <AlertDialogCancel
               disabled={visibilityLoading}
               className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-600"
             >
               Hủy Bỏ
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmVisibility} 
+            <AlertDialogAction
+              onClick={handleConfirmVisibility}
               disabled={visibilityLoading}
               className={cn(
                 "h-11 px-6 rounded-xl font-black shadow-lg transition-all",
-                topic.isActive 
-                  ? "bg-amber-600 hover:bg-amber-700 shadow-amber-200" 
+                topic.isActive
+                  ? "bg-amber-600 hover:bg-amber-700 shadow-amber-200"
                   : "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
               )}
             >

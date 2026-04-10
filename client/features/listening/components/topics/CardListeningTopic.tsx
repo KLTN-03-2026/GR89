@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function CardListeningTopic({ topic }: Props) {
-  const level = (topic as any)?.level as string | undefined
+  const level = (topic as IListening)?.level as string | undefined
   return (
     <Popover>
       <PopoverTrigger className='w-full text-center group'>
@@ -65,7 +65,7 @@ export default function CardListeningTopic({ topic }: Props) {
       </PopoverTrigger>
 
       <EnhancedPopover
-        href={`/skills/listening/${topic._id}`}
+        href={`/skills/listening/quiz/${topic._id}`}
         skill="listening"
         isCompleted={topic.isResult}
         resultId={topic._id}

@@ -25,6 +25,13 @@ export function Quizz({ _id, type, quizzes }: IQuizzCardProps) {
   const { startSession, getSessionPayload } = useStudySession()
   const [showConfirm, setShowConfirm] = useState(false)
 
+  const normalizeAnswer = (value: string) =>
+    String(value || '')
+      .normalize('NFC')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase()
+
   useEffect(() => {
     startSession()
     // Initialize results based on quizzes
@@ -106,6 +113,9 @@ export function Quizz({ _id, type, quizzes }: IQuizzCardProps) {
   }
 
   const onChange = (value: string) => {
+    const normalizedUserAnswer = normalizeAnswer(value)
+    const normalizedCorrectAnswer = normalizeAnswer(quizzes[questionNumber - 1]?.answer || '')
+
     setResults(prev => {
       const newResults = [...prev]
       newResults[questionNumber - 1].userAnswer = value
@@ -113,8 +123,8 @@ export function Quizz({ _id, type, quizzes }: IQuizzCardProps) {
     })
     setQuizResults(prev => {
       const newQuizResults = [...prev]
-      newQuizResults[questionNumber - 1].isCorrect = value.trim().toLocaleLowerCase() === results[questionNumber - 1].correctAnswer.trim().toLocaleLowerCase()
-      newQuizResults[questionNumber - 1].userAnswer = value.trim().toLocaleLowerCase()
+      newQuizResults[questionNumber - 1].isCorrect = normalizedUserAnswer === normalizedCorrectAnswer
+      newQuizResults[questionNumber - 1].userAnswer = normalizedUserAnswer
       return newQuizResults
     })
   }

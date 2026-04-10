@@ -3,8 +3,35 @@ import { CatchAsyncError } from '../middleware/CatchAsyncError'
 import ErrorHandler from '../utils/ErrorHandler'
 import { EntertainmentService } from '../services/entertainment.service'
 import fs from 'fs'
+import { AdminActivityService } from '../services/adminActivity.service'
 
 export class EntertainmentController {
+  private static async logAdminAction(req: Request, payload: {
+    action: string
+    resourceType: string
+    resourceId?: string
+    description: string
+    metadata?: Record<string, any>
+  }) {
+    try {
+      const adminId = req.user?._id as string
+      const role = (req.user as any)?.role as 'admin' | 'content'
+      if (!adminId || !role || !['admin', 'content'].includes(role)) return
+      await AdminActivityService.logActivity({
+        adminId,
+        adminRole: role,
+        action: payload.action,
+        resourceType: payload.resourceType,
+        resourceId: payload.resourceId,
+        description: payload.description,
+        metadata: payload.metadata,
+        ip: req.ip,
+        userAgent: req.get('user-agent') || undefined
+      })
+    } catch {
+      // Không block luồng chính nếu log thất bại
+    }
+  }
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Lấy thống kê tổng quan giải trí
@@ -46,6 +73,12 @@ export class EntertainmentController {
       userId,
       skipErrors: !!skipErrors,
       defaultType
+    })
+    await EntertainmentController.logAdminAction(req, {
+      action: 'import_json',
+      resourceType: 'entertainment',
+      description: 'Import dữ liệu entertainment từ JSON',
+      metadata: { total: result.total, created: result.created, updated: result.updated, skipped: result.skipped }
     })
 
     res.status(200).json({
@@ -99,6 +132,12 @@ export class EntertainmentController {
     }
 
     const result = await EntertainmentService.updateMultipleEntertainmentStatus(ids, status)
+    await EntertainmentController.logAdminAction(req, {
+      action: 'bulk_update_status',
+      resourceType: 'entertainment',
+      description: `Cập nhật trạng thái hàng loạt entertainment`,
+      metadata: { idsCount: ids.length, status, updatedCount: result.updatedCount }
+    })
 
     res.status(200).json({
       success: true,
@@ -111,6 +150,12 @@ export class EntertainmentController {
   static deleteMany = CatchAsyncError(async (req: Request, res: Response) => {
     const { ids } = req.body
     const data = await EntertainmentService.deleteMany(ids)
+    await EntertainmentController.logAdminAction(req, {
+      action: 'bulk_delete',
+      resourceType: 'entertainment',
+      description: 'Xóa hàng loạt entertainment',
+      metadata: { idsCount: Array.isArray(ids) ? ids.length : 0, deletedCount: (data as any)?.deletedCount || 0 }
+    })
     res.status(200).json({ success: true, message: 'Xóa nhiều mục giải trí thành công', data })
   })
 
@@ -135,6 +180,34 @@ export class EntertainmentController {
     res.status(200).json({ success: true, message: 'Lấy chi tiết giải trí thành công', data })
   })
 
+  // (USER) Bật/tắt like cho nội dung giải trí
+  static toggleLike = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user?._id as string
+    if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
+
+    const { id } = req.params
+    const data = await EntertainmentService.toggleLike({ userId, entertainmentId: id })
+    res.status(200).json({ success: true, message: data.liked ? 'Đã thích nội dung' : 'Đã bỏ thích nội dung', data })
+  })
+
+  // (USER) Lấy danh sách bình luận theo nội dung giải trí
+  static getComments = CatchAsyncError(async (req: Request, res: Response) => {
+    const { id } = req.params
+    const data = await EntertainmentService.getComments({ entertainmentId: id })
+    res.status(200).json({ success: true, message: 'Lấy bình luận thành công', data })
+  })
+
+  // (USER) Tạo bình luận mới
+  static createComment = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user?._id as string
+    if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
+
+    const { id } = req.params
+    const { content } = req.body
+    const data = await EntertainmentService.createComment({ userId, entertainmentId: id, content })
+    res.status(201).json({ success: true, message: 'Bình luận thành công', data })
+  })
+
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
   // (ADMIN) Lấy chi tiết giải trí theo ID
@@ -149,6 +222,13 @@ export class EntertainmentController {
     const userId = req.user?._id as string
     if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
     const data = await EntertainmentService.create(req.body, userId)
+    await EntertainmentController.logAdminAction(req, {
+      action: 'create',
+      resourceType: 'entertainment',
+      resourceId: String((data as any)?._id || ''),
+      description: 'Tạo mới entertainment',
+      metadata: { title: (data as any)?.title, type: (data as any)?.type }
+    })
     res.status(201).json({ success: true, message: 'Tạo mục giải trí thành công', data })
   })
 
@@ -156,6 +236,13 @@ export class EntertainmentController {
   static update = CatchAsyncError(async (req: Request, res: Response) => {
     const { id } = req.params
     const data = await EntertainmentService.update(id, req.body)
+    await EntertainmentController.logAdminAction(req, {
+      action: 'update',
+      resourceType: 'entertainment',
+      resourceId: id,
+      description: 'Cập nhật entertainment',
+      metadata: { updatedFields: Object.keys(req.body || {}) }
+    })
     res.status(200).json({ success: true, message: 'Cập nhật mục giải trí thành công', data })
   })
 
@@ -163,6 +250,12 @@ export class EntertainmentController {
   static delete = CatchAsyncError(async (req: Request, res: Response) => {
     const { id } = req.params
     const data = await EntertainmentService.delete(id)
+    await EntertainmentController.logAdminAction(req, {
+      action: 'delete',
+      resourceType: 'entertainment',
+      resourceId: id,
+      description: 'Xóa entertainment'
+    })
     res.status(200).json({ success: true, message: 'Xóa mục giải trí thành công', data })
   })
 
@@ -170,6 +263,13 @@ export class EntertainmentController {
   static toggleVipStatus = CatchAsyncError(async (req: Request, res: Response) => {
     const { id } = req.params
     const data = await EntertainmentService.toggleVipStatus(id)
+    await EntertainmentController.logAdminAction(req, {
+      action: 'toggle_vip',
+      resourceType: 'entertainment',
+      resourceId: id,
+      description: 'Bật/tắt VIP cho entertainment',
+      metadata: { isVipRequired: (data as any)?.isVipRequired }
+    })
     res.status(200).json({ success: true, message: `Đã ${data.isVipRequired ? 'bật' : 'tắt'} yêu cầu VIP thành công`, data })
   })
 
@@ -177,6 +277,13 @@ export class EntertainmentController {
   static toggleStatus = CatchAsyncError(async (req: Request, res: Response) => {
     const { id } = req.params
     const data = await EntertainmentService.toggleStatus(id)
+    await EntertainmentController.logAdminAction(req, {
+      action: 'toggle_status',
+      resourceType: 'entertainment',
+      resourceId: id,
+      description: 'Bật/tắt trạng thái entertainment',
+      metadata: { status: (data as any)?.status }
+    })
     res.status(200).json({ success: true, message: `Đã ${data.status ? 'hiển thị' : 'ẩn'} giải trí thành công`, data })
   })
 }

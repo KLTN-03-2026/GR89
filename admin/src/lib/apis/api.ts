@@ -49,6 +49,51 @@ export async function getAdminDashboardOverview(): Promise<Response<AdminOvervie
   return response.data as Response<AdminOverview>
 }
 
+export interface AdminActivityItem {
+  _id: string
+  adminId?: { _id: string; fullName: string; email: string; role: string }
+  adminRole: 'admin' | 'content'
+  action: string
+  resourceType: string
+  resourceId?: string
+  description: string
+  metadata?: Record<string, unknown>
+  ip?: string
+  userAgent?: string
+  createdAt: string
+}
+
+export interface AdminActivitiesResponse {
+  data: AdminActivityItem[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+  }
+}
+
+export async function getAdminActivities(params?: {
+  page?: number
+  limit?: number
+  action?: string
+  resourceType?: string
+  adminId?: string
+  search?: string
+}): Promise<Response<AdminActivityItem[]>> {
+  const query = new URLSearchParams()
+  if (params?.page) query.append('page', String(params.page))
+  if (params?.limit) query.append('limit', String(params.limit))
+  if (params?.action) query.append('action', params.action)
+  if (params?.resourceType) query.append('resourceType', params.resourceType)
+  if (params?.adminId) query.append('adminId', params.adminId)
+  if (params?.search) query.append('search', params.search)
+  const response = await AuthorizedAxios.get(`/admin/activities${query.toString() ? `?${query.toString()}` : ''}`)
+  return response.data as Response<AdminActivityItem[]>
+}
+
 export interface DashboardReportResponse {
   filters: {
     startDate: string

@@ -2,8 +2,35 @@ import { NextFunction, Request, Response } from "express";
 import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import ErrorHandler from "../utils/ErrorHandler";
 import { RoadmapTopicService } from "../services/roadmapTopic.service";
+import { AdminActivityService } from "../services/adminActivity.service";
 
 export class RoadmapTopicController {
+  private static async logAdminAction(req: Request, payload: {
+    action: string
+    resourceType: string
+    resourceId?: string
+    description: string
+    metadata?: Record<string, any>
+  }) {
+    try {
+      const adminId = req.user?._id as string
+      const role = (req.user as any)?.role as 'admin' | 'content'
+      if (!adminId || !role || !['admin', 'content'].includes(role)) return
+      await AdminActivityService.logActivity({
+        adminId,
+        adminRole: role,
+        action: payload.action,
+        resourceType: payload.resourceType,
+        resourceId: payload.resourceId,
+        description: payload.description,
+        metadata: payload.metadata,
+        ip: req.ip,
+        userAgent: req.get('user-agent') || undefined
+      })
+    } catch {
+      // Không block luồng chính nếu log thất bại
+    }
+  }
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Lấy danh sách bài học theo loại (chưa sử dụng trong roadmap)
@@ -83,6 +110,12 @@ export class RoadmapTopicController {
 
     const topics = req.body?.topics;
     const updatedTopics = await RoadmapTopicService.reorderTopics(topics, userId);
+    await RoadmapTopicController.logAdminAction(req, {
+      action: 'reorder_topics',
+      resourceType: 'roadmap_topic',
+      description: 'Sắp xếp lại thứ tự chủ đề roadmap',
+      metadata: { topicsCount: Array.isArray(topics) ? topics.length : 0 }
+    })
 
     res.status(200).json({
       success: true,
@@ -104,6 +137,13 @@ export class RoadmapTopicController {
     }
 
     const topic = await RoadmapTopicService.reorderLessons(req.params.id, lessons, userId);
+    await RoadmapTopicController.logAdminAction(req, {
+      action: 'reorder_lessons',
+      resourceType: 'roadmap_topic',
+      resourceId: req.params.id,
+      description: 'Sắp xếp lại thứ tự bài học trong roadmap topic',
+      metadata: { lessonsCount: lessons.length }
+    })
 
     res.status(200).json({
       success: true,
@@ -168,6 +208,13 @@ export class RoadmapTopicController {
       icon,
       createdBy: userId,
     });
+    await RoadmapTopicController.logAdminAction(req, {
+      action: 'create',
+      resourceType: 'roadmap_topic',
+      resourceId: String((topic as any)?._id || ''),
+      description: 'Tạo chủ đề roadmap',
+      metadata: { title: (topic as any)?.title }
+    })
 
     res.status(201).json({
       success: true,
@@ -192,6 +239,13 @@ export class RoadmapTopicController {
       orderIndex,
       updatedBy: userId,
     });
+    await RoadmapTopicController.logAdminAction(req, {
+      action: 'update',
+      resourceType: 'roadmap_topic',
+      resourceId: req.params.id,
+      description: 'Cập nhật chủ đề roadmap',
+      metadata: { updatedFields: Object.keys(req.body || {}) }
+    })
 
     res.status(200).json({
       success: true,
@@ -203,6 +257,12 @@ export class RoadmapTopicController {
   // (ADMIN) Xóa chủ đề roadmap
   static deleteTopic = CatchAsyncError(async (req: Request, res: Response) => {
     const topic = await RoadmapTopicService.deleteTopic(req.params.id);
+    await RoadmapTopicController.logAdminAction(req, {
+      action: 'delete',
+      resourceType: 'roadmap_topic',
+      resourceId: req.params.id,
+      description: 'Xóa chủ đề roadmap'
+    })
 
     res.status(200).json({
       success: true,
@@ -228,6 +288,13 @@ export class RoadmapTopicController {
       lessonId,
       updatedBy: userId,
     });
+    await RoadmapTopicController.logAdminAction(req, {
+      action: 'add_lesson',
+      resourceType: 'roadmap_topic',
+      resourceId: req.params.id,
+      description: 'Thêm bài học vào roadmap topic',
+      metadata: { type, lessonId }
+    })
 
     res.status(200).json({
       success: true,
@@ -248,6 +315,13 @@ export class RoadmapTopicController {
       lessonId,
       updatedBy: userId,
     });
+    await RoadmapTopicController.logAdminAction(req, {
+      action: 'remove_lesson',
+      resourceType: 'roadmap_topic',
+      resourceId: topicId,
+      description: 'Xóa bài học khỏi roadmap topic',
+      metadata: { lessonId }
+    })
 
     res.status(200).json({
       success: true,

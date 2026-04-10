@@ -1,6 +1,6 @@
 'use client'
 import HeaderLesson from './HeaderLesson'
-import { DictationStepWithVi } from './DictationStepWithVi'
+import { DictationStepWithVi } from '../dictation/DictationStepWithVi'
 import { IListening } from '@/features/listening/types'
 import { ContentStateDisplay, ContentStateType } from '@/components/common/ContentStateDisplay'
 
@@ -59,3 +59,4 @@ export function ListeningLesson({ listening, error }: ListeningLessonProps) {
     </div>
   )
 }
+

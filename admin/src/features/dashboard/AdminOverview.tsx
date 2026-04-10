@@ -28,6 +28,7 @@ import { getAdminDashboardOverview, AdminOverview as AdminOverviewData } from '@
 import { useAuth } from '@/context/AuthContext'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import Link from 'next/link'
 
 export default function AdminOverview() {
   const { user } = useAuth()
@@ -197,9 +198,11 @@ export default function AdminOverview() {
               </div>
               <CardTitle className="text-xl font-bold text-gray-900">Hoạt động mới nhất</CardTitle>
             </div>
-            <Button variant="ghost" className="text-blue-600 hover:text-blue-700 font-bold">
-              Xem tất cả <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <Link href="/dashboard/activities">
+              <Button variant="ghost" className="text-blue-600 hover:text-blue-700 font-bold">
+                Xem tất cả <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </CardHeader>
           <CardContent className="p-8">
             <div className="space-y-6">

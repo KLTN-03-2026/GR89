@@ -23,6 +23,9 @@ router.delete('/bulk-delete', authenticateTokenAdmin, requireRole(['admin', 'con
 
 router.get('/user/list', authenticateTokenUser, EntertainmentController.getForUser)
 router.get('/user/:id', authenticateTokenUser, checkVipContentUser('entertainment'), EntertainmentController.getForUserDetail)
+router.patch('/user/:id/like', authenticateTokenUser, EntertainmentController.toggleLike)
+router.get('/user/:id/comments', authenticateTokenUser, EntertainmentController.getComments)
+router.post('/user/:id/comments', authenticateTokenUser, EntertainmentController.createComment)
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 

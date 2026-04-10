@@ -1,7 +1,7 @@
 'use client'
 
 import authorizedAxios from '@/libs/apis/authorizedAxios'
-import type { IListeningProgress } from '@/types/listening'
+import type { IListeningProgress } from '@/features/listening/types'
 import type { StudySessionPayload } from '@/libs/apis/types'
 
 interface ApiResponse<T = unknown> {
@@ -20,12 +20,14 @@ export async function doListeningQuiz(
   id: string,
   time: number,
   result: IResult[],
-  studySession?: StudySessionPayload
+  studySession?: StudySessionPayload,
+  mode: 'quiz' | 'dictation' = 'dictation'
 ): Promise<ApiResponse<IListeningProgress>> {
   const response = await authorizedAxios.post<ApiResponse<IListeningProgress>>(`/listening/do/${id}`, {
     time,
     result,
-    studySession
+    studySession,
+    mode
   })
   return response.data
 }

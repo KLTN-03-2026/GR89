@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
+    console.log('vào đây chưa')
     const fetchUser = async () => {
       if (isCurrentPathAuth) {
         setIsLoading(false)
@@ -66,7 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     fetchUser()
-  }, [isCurrentPathAuth]);
+  }, [isCurrentPathAuth, user]);
 
   const loginUser = async (credentials: LoginRequest) => {
     setIsLoading(true)

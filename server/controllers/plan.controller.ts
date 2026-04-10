@@ -4,8 +4,35 @@ import { PlanService, IOptions } from "../services/plan.service";
 import ErrorHandler from "../utils/ErrorHandler";
 import path from "path";
 import fs from "fs";
+import { AdminActivityService } from "../services/adminActivity.service";
 
 export class PlanController {
+  private static async logAdminAction(req: Request, payload: {
+    action: string
+    resourceType: string
+    resourceId?: string
+    description: string
+    metadata?: Record<string, any>
+  }) {
+    try {
+      const adminId = req.user?._id as string
+      const role = (req.user as any)?.role as 'admin' | 'content'
+      if (!adminId || !role || !['admin', 'content'].includes(role)) return
+      await AdminActivityService.logActivity({
+        adminId,
+        adminRole: role,
+        action: payload.action,
+        resourceType: payload.resourceType,
+        resourceId: payload.resourceId,
+        description: payload.description,
+        metadata: payload.metadata,
+        ip: req.ip,
+        userAgent: req.get('user-agent') || undefined
+      })
+    } catch {
+      // Không block luồng chính nếu log thất bại
+    }
+  }
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Xuất danh sách gói dịch vụ ra file Excel
@@ -28,6 +55,12 @@ export class PlanController {
       const skipErrors = String(req.body.skipErrors || "false") === "true";
       const filePath = path.resolve(file.path);
       const result = await PlanService.importPlanData(filePath, userId, skipErrors);
+      await PlanController.logAdminAction(req, {
+        action: 'import_excel',
+        resourceType: 'plan',
+        description: 'Import dữ liệu gói nâng cấp',
+        metadata: { total: result.total, created: result.created, updated: result.updated, errors: result.errors.length }
+      })
 
       try {
         fs.unlinkSync(filePath);
@@ -86,6 +119,12 @@ export class PlanController {
         return next(new ErrorHandler("Trạng thái phải là giá trị boolean", 400));
       }
       const result = await PlanService.updateManyPlansStatus(ids, isActive);
+      await PlanController.logAdminAction(req, {
+        action: 'bulk_update_status',
+        resourceType: 'plan',
+        description: 'Cập nhật trạng thái hàng loạt gói nâng cấp',
+        metadata: { idsCount: ids.length, isActive, updatedCount: result.updatedCount }
+      })
       res.status(200).json({
         success: true,
         message: `Đã cập nhật trạng thái cho ${result.updatedCount} gói dịch vụ thành công`,
@@ -102,6 +141,12 @@ export class PlanController {
         return next(new ErrorHandler("Danh sách ID gói trống", 400));
       }
       const result = await PlanService.deleteManyPlans(ids);
+      await PlanController.logAdminAction(req, {
+        action: 'bulk_delete',
+        resourceType: 'plan',
+        description: 'Xóa hàng loạt gói nâng cấp',
+        metadata: { idsCount: ids.length, deletedCount: result.deletedCount }
+      })
       res.status(200).json({
         success: true,
         message: `Đã xóa ${result.deletedCount} gói dịch vụ thành công`,
@@ -187,6 +232,13 @@ export class PlanController {
       validTo: validTo ? new Date(validTo) : undefined,
       createdBy: userId,
     });
+    await PlanController.logAdminAction(req, {
+      action: 'create',
+      resourceType: 'plan',
+      resourceId: String((plan as any)?._id || ''),
+      description: 'Tạo mới gói nâng cấp',
+      metadata: { name: (plan as any)?.name, billingCycle: (plan as any)?.billingCycle }
+    })
 
     res.status(201).json({
       success: true,
@@ -229,6 +281,13 @@ export class PlanController {
     updateData.updatedBy = userId;
 
     const plan = await PlanService.updatePlan(id, updateData);
+    await PlanController.logAdminAction(req, {
+      action: 'update',
+      resourceType: 'plan',
+      resourceId: id,
+      description: 'Cập nhật gói nâng cấp',
+      metadata: { updatedFields: Object.keys(updateData || {}) }
+    })
     res.status(200).json({
       success: true,
       message: "Cập nhật gói dịch vụ thành công",
@@ -240,6 +299,12 @@ export class PlanController {
   static deletePlan = CatchAsyncError(async (req: Request, res: Response, _next: NextFunction) => {
     const { id } = req.params;
     const plan = await PlanService.deletePlan(id);
+    await PlanController.logAdminAction(req, {
+      action: 'delete',
+      resourceType: 'plan',
+      resourceId: id,
+      description: 'Xóa gói nâng cấp'
+    })
     res.status(200).json({
       success: true,
       message: "Xóa gói dịch vụ thành công",
@@ -252,6 +317,13 @@ export class PlanController {
     async (req: Request, res: Response, _next: NextFunction) => {
       const { id } = req.params;
       const plan = await PlanService.updatePlanStatus(id);
+      await PlanController.logAdminAction(req, {
+        action: 'toggle_status',
+        resourceType: 'plan',
+        resourceId: id,
+        description: 'Bật/tắt trạng thái gói nâng cấp',
+        metadata: { isActive: (plan as any)?.isActive }
+      })
       res.status(200).json({
         success: true,
         message: "Cập nhật trạng thái gói dịch vụ thành công",

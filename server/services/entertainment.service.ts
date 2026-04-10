@@ -5,6 +5,7 @@ import XLSX from 'xlsx'
 import { Media, MediaSubtitlePreview } from '../models/media.model'
 import { EntertainmentInteraction } from '../models/entertainmentInteraction.model'
 import { EntertainmentStats } from '../models/entertainmentStats.model'
+import { EntertainmentComment } from '../models/entertainmentComment.model'
 import { MediaService } from './media.service'
 
 export class EntertainmentService {
@@ -438,7 +439,11 @@ export class EntertainmentService {
       .populate('thumbnailUrl', 'url type format size width height')
     if (!entertainment) throw new ErrorHandler('Entertainment không tồn tại', 404)
 
-    const interaction = await EntertainmentInteraction.findOne({ userId, entertainmentId }).lean()
+    const [interaction, likesCount, commentsCount] = await Promise.all([
+      EntertainmentInteraction.findOne({ userId, entertainmentId }).lean(),
+      EntertainmentInteraction.countDocuments({ entertainmentId, liked: true }),
+      EntertainmentComment.countDocuments({ entertainmentId })
+    ])
     const mapped = this.mapEntertainmentDoc(entertainment)
 
     return {
@@ -447,7 +452,85 @@ export class EntertainmentService {
         liked: !!interaction?.liked,
         watched: !!interaction?.watched
       },
+      likesCount,
+      commentsCount,
       isVipRequired: mapped.isVipRequired !== undefined ? mapped.isVipRequired : true
+    }
+  }
+
+  // (USER) Bật/tắt trạng thái like cho entertainment
+  static async toggleLike(options: { userId: string; entertainmentId: string }) {
+    const { userId, entertainmentId } = options
+    const entertainment = await Entertainment.findById(entertainmentId).select('_id')
+    if (!entertainment) throw new ErrorHandler('Entertainment không tồn tại', 404)
+
+    const interaction = await EntertainmentInteraction.findOneAndUpdate(
+      { userId, entertainmentId },
+      { $setOnInsert: { userId, entertainmentId }, $set: { type: entertainment.type || 'movie' } },
+      { upsert: true, new: true }
+    )
+
+    interaction.liked = !interaction.liked
+    await interaction.save()
+
+    const likesCount = await EntertainmentInteraction.countDocuments({ entertainmentId, liked: true })
+    return {
+      liked: interaction.liked,
+      likesCount
+    }
+  }
+
+  // (USER) Lấy danh sách comment theo entertainment
+  static async getComments(options: { entertainmentId: string }) {
+    const { entertainmentId } = options
+    const entertainment = await Entertainment.findById(entertainmentId).select('_id')
+    if (!entertainment) throw new ErrorHandler('Entertainment không tồn tại', 404)
+
+    const comments = await EntertainmentComment.find({ entertainmentId })
+      .populate('userId', 'fullName')
+      .sort({ createdAt: -1 })
+      .lean()
+
+    return comments.map((comment: any) => ({
+      _id: String(comment._id),
+      content: comment.content,
+      createdAt: comment.createdAt,
+      user: {
+        _id: String(comment.userId?._id || ''),
+        fullName: comment.userId?.fullName || 'Người dùng'
+      }
+    }))
+  }
+
+  // (USER) Tạo comment mới cho entertainment
+  static async createComment(options: { userId: string; entertainmentId: string; content: string }) {
+    const { userId, entertainmentId, content } = options
+    const normalizedContent = String(content || '').trim()
+    if (!normalizedContent) throw new ErrorHandler('Nội dung bình luận không được để trống', 400)
+
+    const entertainment = await Entertainment.findById(entertainmentId).select('_id')
+    if (!entertainment) throw new ErrorHandler('Entertainment không tồn tại', 404)
+
+    const created = await EntertainmentComment.create({
+      userId: new mongoose.Types.ObjectId(userId),
+      entertainmentId: new mongoose.Types.ObjectId(entertainmentId),
+      content: normalizedContent
+    })
+
+    const populated = await EntertainmentComment.findById(created._id)
+      .populate('userId', 'fullName')
+      .lean()
+
+    if (!populated) throw new ErrorHandler('Không thể tạo bình luận', 500)
+
+    return {
+      _id: String(populated._id),
+      content: populated.content,
+      createdAt: populated.createdAt,
+      user: {
+        _id: String((populated as any).userId?._id || ''),
+        fullName: (populated as any).userId?.fullName || 'Người dùng'
+      }
     }
   }
 

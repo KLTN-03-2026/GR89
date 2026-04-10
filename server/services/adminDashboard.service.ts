@@ -10,6 +10,7 @@ import { VocabularyTopic } from '../models/vocabularyTopic.model'
 import { Entertainment } from '../models/entertainment.model'
 import { Payment } from '../models/payment.model'
 import { StudyHistory } from '../models/studyHistory.model'
+import { AdminActivity } from '../models/adminActivity.model'
 
 export class AdminDashboardService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -19,7 +20,6 @@ export class AdminDashboardService {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
     const [
       totalUsers,
@@ -88,7 +88,7 @@ export class AdminDashboardService {
     const newUsers = await User.find({ role: { $in: ["user", "content"] } })
       .select("fullName email role createdAt isActive")
       .sort({ createdAt: -1 })
-      .limit(5)
+      .limit(6)
       .lean();
 
     const recentMedia = await Media.find()
@@ -97,33 +97,24 @@ export class AdminDashboardService {
       .limit(5)
       .lean();
 
-    // Lấy các hoạt động thực tế gần đây
-    const [recentPayments, recentIpa, recentReading] = await Promise.all([
-      Payment.find({ status: "paid" }).populate("userId", "fullName").sort({ paymentDate: -1 }).limit(2).lean(),
-      Ipa.find().sort({ createdAt: -1 }).limit(2).lean(),
-      Reading.find().sort({ createdAt: -1 }).limit(2).lean(),
-    ]);
+    // Hoạt động gần đây lấy từ admin activity log
+    const recentActivityLogs = await AdminActivity.find()
+      .populate('adminId', 'fullName')
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean()
 
-    const recentActivities = [
-      ...recentPayments.map((p: any) => ({
-        type: "payment",
-        title: `Thanh toán mới từ ${p.userId?.fullName || 'Người dùng'}`,
-        description: `Gói nâng cấp: ${p.amount.toLocaleString()} VND`,
-        createdAt: p.paymentDate || p.createdAt
-      })),
-      ...recentIpa.map(i => ({
-        type: "lesson",
-        title: `Bài học IPA mới: ${i.sound}`,
-        description: "Vừa được thêm vào hệ thống",
-        createdAt: (i as any).createdAt
-      })),
-      ...recentReading.map(r => ({
-        type: "lesson",
-        title: `Bài đọc mới: ${r.title}`,
-        description: "Vừa được xuất bản",
-        createdAt: (r as any).createdAt
-      }))
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const recentActivities = recentActivityLogs.map((activity: any) => {
+      const actorName = activity.adminId?.fullName || 'Admin'
+      const isLessonType = ['listening', 'entertainment', 'reading', 'grammar', 'vocabulary', 'ipa', 'speaking', 'writing'].includes(activity.resourceType)
+
+      return {
+        type: isLessonType ? 'lesson' : 'admin',
+        title: `${actorName}: ${activity.description}`,
+        description: `${activity.action} · ${activity.resourceType}`,
+        createdAt: activity.createdAt
+      }
+    })
 
     const totalCompletedLessons = completedReadingCount + completedIpaCount + completedGrammarCount + completedListeningCount + completedSpeakingCount + completedWritingCount + completedVocabularyCount;
     const totalLessonsCount = readingLessons + ipaLessons + grammarTopics + listeningLessons + speakingLessons + writingLessons + vocabularyTopics;

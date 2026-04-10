@@ -14,6 +14,16 @@ export interface EntertainmentItem {
   isVipRequired?: boolean
 }
 
+export interface EntertainmentComment {
+  _id: string
+  content: string
+  createdAt: string
+  user: {
+    _id: string
+    fullName: string
+  }
+}
+
 export interface EntertainmentStatsEntry {
   type: EntertainmentType
   totalItems: number
@@ -34,5 +44,20 @@ export async function getEntertainmentStatsForUser(): Promise<ApiResponse<Entert
 
 export async function getEntertainmentList(type: EntertainmentType): Promise<ApiResponse<EntertainmentItem[]>> {
   const response = await authorizedAxios.get<ApiResponse<EntertainmentItem[]>>(`/entertainment/user/list?type=${type}`)
+  return response.data
+}
+
+export async function toggleEntertainmentLike(entertainmentId: string): Promise<ApiResponse<{ liked: boolean; likesCount: number }>> {
+  const response = await authorizedAxios.patch<ApiResponse<{ liked: boolean; likesCount: number }>>(`/entertainment/user/${entertainmentId}/like`)
+  return response.data
+}
+
+export async function getEntertainmentComments(entertainmentId: string): Promise<ApiResponse<EntertainmentComment[]>> {
+  const response = await authorizedAxios.get<ApiResponse<EntertainmentComment[]>>(`/entertainment/user/${entertainmentId}/comments`)
+  return response.data
+}
+
+export async function createEntertainmentComment(entertainmentId: string, content: string): Promise<ApiResponse<EntertainmentComment>> {
+  const response = await authorizedAxios.post<ApiResponse<EntertainmentComment>>(`/entertainment/user/${entertainmentId}/comments`, { content })
   return response.data
 }

@@ -7,7 +7,8 @@
     "lint": "eslint '**/*.ts' --fix",
     "dev": "ts-node-dev --respawn --transpile-only server.ts",
     "test:chatbot": "ts-node --transpile-only scripts/test-chatbot.ts",
-    "runGGForm": "ts-node --transpile-only runGGForm.ts"
+    "runGGForm": "ts-node --transpile-only runGGForm.ts",
+    "runGGForm2": "ts-node --transpile-only runGGForm2.ts"
   },
   "author": "Thanh Lam",
   "license": "ISC",

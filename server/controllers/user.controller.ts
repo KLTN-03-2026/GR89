@@ -3,8 +3,35 @@ import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { UserService } from "../services/user.service";
 import ErrorHandler from "../utils/ErrorHandler";
 import { MediaService } from "../services/media.service";
+import { AdminActivityService } from "../services/adminActivity.service";
 
 export class UserController {
+  private static async logAdminAction(req: Request, payload: {
+    action: string
+    resourceType: string
+    resourceId?: string
+    description: string
+    metadata?: Record<string, any>
+  }) {
+    try {
+      const adminId = req.user?._id as string
+      const role = (req.user as any)?.role as 'admin' | 'content'
+      if (!adminId || !role || !['admin', 'content'].includes(role)) return
+      await AdminActivityService.logActivity({
+        adminId,
+        adminRole: role,
+        action: payload.action,
+        resourceType: payload.resourceType,
+        resourceId: payload.resourceId,
+        description: payload.description,
+        metadata: payload.metadata,
+        ip: req.ip,
+        userAgent: req.get('user-agent') || undefined
+      })
+    } catch {
+      // Không block luồng chính nếu log thất bại
+    }
+  }
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Xuất danh sách người dùng ra file Excel
@@ -68,6 +95,12 @@ export class UserController {
       }
 
       const result = await UserService.updateManyUsersStatus(ids, isActive);
+      await UserController.logAdminAction(req, {
+        action: 'bulk_update_status',
+        resourceType: 'user',
+        description: 'Cập nhật trạng thái hàng loạt người dùng',
+        metadata: { idsCount: ids.length, isActive, updatedCount: result.updatedCount }
+      })
 
       res.status(200).json({
         success: true,
@@ -149,6 +182,13 @@ export class UserController {
     if (typeof isActive !== "boolean") return next(new ErrorHandler("Trạng thái không hợp lệ", 400));
 
     const user = await UserService.updateUserStatus(id, isActive);
+    await UserController.logAdminAction(req, {
+      action: 'update_status',
+      resourceType: 'user',
+      resourceId: id,
+      description: 'Cập nhật trạng thái người dùng',
+      metadata: { isActive }
+    })
 
     res.status(200).json({
       success: true,
@@ -167,6 +207,13 @@ export class UserController {
       return next(new ErrorHandler("Vui lòng điền đầy đủ thông tin", 400));
 
     const user = await UserService.updateUser(id, { fullName, email, role, isActive });
+    await UserController.logAdminAction(req, {
+      action: 'update',
+      resourceType: 'user',
+      resourceId: id,
+      description: 'Cập nhật thông tin người dùng',
+      metadata: { updatedFields: ['fullName', 'email', 'role', 'isActive'] }
+    })
 
     res.status(200).json({
       success: true,
@@ -182,6 +229,12 @@ export class UserController {
     if (!id) return next(new ErrorHandler("Vui lòng cung cấp ID người dùng", 400));
 
     const user = await UserService.deleteUser(id);
+    await UserController.logAdminAction(req, {
+      action: 'delete',
+      resourceType: 'user',
+      resourceId: id,
+      description: 'Xóa người dùng'
+    })
 
     res.status(200).json({
       success: true,

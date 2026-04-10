@@ -46,6 +46,7 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
   const displayedWrongs = showAllMistakes ? wrongs : wrongs.slice(0, 8)
   const hasMore = wrongs.length > 8
   const wpm = result.time > 0 ? (subtitles.length / result.time) * 60 : 0
+  const totalAnswers = result.totalQuestions ?? result.result.length
 
   const tone =
     result.progress >= 80
@@ -74,11 +75,12 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: 'Điểm', value: `${result.point}/${result.result.length}` },
+          { label: 'Điểm quiz', value: `${result.quizPoint ?? 0}/${result.quizTotal ?? 0}` },
+          { label: 'Số câu trả lời đúng', value: `${result.point}/${totalAnswers}` },
           { label: 'Độ chính xác', value: `${result.progress}%` },
-          { label: 'Thời gian', value: getTime(result.time) },
+          { label: 'Thời gian', value: getTime(result.time) }
         ].map((s) => (
           <div key={s.label} className="rounded-xl bg-white p-5 border border-gray-200 shadow-sm">
             <div className="text-gray-500 text-sm">{s.label}</div>
@@ -126,44 +128,44 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
         </div>
 
         <div className="rounded-xl bg-white p-6 border border-gray-200 shadow-sm flex flex-col items-center">
-          <div className="relative">
-            <svg viewBox="0 0 36 36" className="w-40 h-40">
-              <path className="text-gray-200" stroke="currentColor" strokeWidth="4" fill="none" d="M18 2a16 16 0 110 32 16 16 0 010-32z" />
-              <path
-                className="text-indigo-600"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-                strokeLinecap="round"
-                strokeDasharray={`${Math.max(0, Math.min(100, result.progress))}, 100`}
-                d="M18 2a16 16 0 110 32 16 16 0 010-32z"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-700">{result.progress}%</div>
-                <div className="text-xs text-gray-500">Độ chính xác</div>
+            <div className="relative">
+              <svg viewBox="0 0 36 36" className="w-40 h-40">
+                <path className="text-gray-200" stroke="currentColor" strokeWidth="4" fill="none" d="M18 2a16 16 0 110 32 16 16 0 010-32z" />
+                <path
+                  className="text-indigo-600"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${Math.max(0, Math.min(100, result.progress))}, 100`}
+                  d="M18 2a16 16 0 110 32 16 16 0 010-32z"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-indigo-700">{result.progress}%</div>
+                  <div className="text-xs text-gray-500">Độ chính xác</div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="mt-5 w-full space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Ngày đạt</span>
-              <span className="font-medium">{formatDate(result.date)}</span>
+            <div className="mt-5 w-full space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Ngày đạt</span>
+                <span className="font-medium">{formatDate(result.date)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Tốc độ gõ</span>
+                <span className="font-medium">{Math.round(wpm)} WPM</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Tốc độ gõ</span>
-              <span className="font-medium">{Math.round(wpm)} WPM</span>
+            <div className="mt-5 flex w-full gap-2">
+              <Link href={`/skills/listening/${result.listeningId._id}`} className="flex-1">
+                <button className="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Làm lại</button>
+              </Link>
+              <Link href="/skills/listening" className="flex-1">
+                <button className="w-full px-3 py-2 rounded-lg border text-sm font-medium">Danh sách</button>
+              </Link>
             </div>
-          </div>
-          <div className="mt-5 flex w-full gap-2">
-            <Link href={`/skills/listening/${result.listeningId._id}`} className="flex-1">
-              <button className="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Làm lại</button>
-            </Link>
-            <Link href="/skills/listening" className="flex-1">
-              <button className="w-full px-3 py-2 rounded-lg border text-sm font-medium">Danh sách</button>
-            </Link>
-          </div>
         </div>
       </div>
     </div>

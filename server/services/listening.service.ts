@@ -536,13 +536,18 @@ export class ListeningService {
     listeningId: string,
     time: number,
     result: { index: number, text: string, isCorrect: boolean }[],
-    studyTimeSeconds: number = 0
+    studyTimeSeconds: number = 0,
+    mode: 'quiz' | 'dictation' = 'dictation'
   ) {
     const listening = await Listening.findById(listeningId)
     if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
 
     const point = result.filter(r => r.isCorrect).length
-    const progress = Math.round(((point / result.length) * 100) * 100) / 100
+    const totalQuestions = Array.isArray(result) ? result.length : 0
+    const computedProgress = totalQuestions > 0
+      ? Math.round(((point / totalQuestions) * 100) * 100) / 100
+      : 0
+    const progress = mode === 'quiz' ? 0 : computedProgress
     const sessionDuration = Math.max(0, studyTimeSeconds > 0 ? studyTimeSeconds : Number(time) || 0)
 
     // Lưu kết quả qua StudyService (Unified)
@@ -553,11 +558,11 @@ export class ListeningService {
       level: (listening as any).level || 'A1',
       progress,
       point,
-      isCompleted: true, // Chỉ cần có làm là tính hoàn thành
+      isCompleted: mode === 'dictation',
       studyTime: sessionDuration,
-      resultData: result,
+      resultData: { mode, answers: result },
       correctAnswers: point,
-      totalQuestions: result.length
+      totalQuestions
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
@@ -568,11 +573,28 @@ export class ListeningService {
 
   // (USER) Lấy kết quả bài nghe
   static async getListeningResult(userId: string, listeningId: string): Promise<any> {
-    const history = await StudyHistory.findOne({
+    const histories = await StudyHistory.find({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(listeningId),
       category: 'listening'
-    }).sort({ progress: -1, createdAt: -1 })
+    }).sort({ createdAt: -1 })
+
+    const parseMode = (history: any): 'quiz' | 'dictation' => {
+      const raw = history?.resultData
+      if (raw && typeof raw === 'object' && raw.mode === 'quiz') return 'quiz'
+      return 'dictation'
+    }
+
+    const parseAnswers = (history: any): any[] => {
+      const raw = history?.resultData
+      if (Array.isArray(raw)) return raw
+      if (raw && typeof raw === 'object' && Array.isArray(raw.answers)) return raw.answers
+      return []
+    }
+
+    const latestQuizHistory = histories.find((h: any) => parseMode(h) === 'quiz')
+    const latestDictationHistory = histories.find((h: any) => parseMode(h) === 'dictation')
+    const history = latestDictationHistory || histories[0]
 
     if (!history) throw new ErrorHandler('Kết quả bài nghe không tồn tại', 404)
 
@@ -582,7 +604,7 @@ export class ListeningService {
       .populate({ path: 'quizzes', model: 'ListeningQuiz' })
     if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
 
-    const rawResult = Array.isArray((history as any).resultData) ? (history as any).resultData : []
+    const rawResult = parseAnswers(history as any)
     const detailResult = rawResult.filter(
       (item: any) =>
         item &&
@@ -590,12 +612,25 @@ export class ListeningService {
         typeof item.text === 'string' &&
         typeof item.isCorrect === 'boolean'
     )
+    const computedPoint = detailResult.filter((item: any) => item.isCorrect).length
+    const computedProgress = detailResult.length > 0
+      ? Math.round((computedPoint / detailResult.length) * 10000) / 100
+      : Number((history as any).progress || 0)
+    const quizPoint = latestQuizHistory ? Number((latestQuizHistory as any).correctAnswers || 0) : 0
+    const quizTotal = latestQuizHistory ? Number((latestQuizHistory as any).totalQuestions || 0) : 0
+    const quizProgress = quizTotal > 0
+      ? Math.round((quizPoint / quizTotal) * 10000) / 100
+      : 0
 
     const audioUrl = ((listening as any).audio as any)?.url || null
 
     return {
-      progress: Number((history as any).progress || 0),
-      point: Number((history as any).correctAnswers || 0),
+      progress: computedProgress,
+      point: computedPoint,
+      totalQuestions: detailResult.length,
+      quizPoint,
+      quizTotal,
+      quizProgress,
       time: Number((history as any).duration || 0),
       date: (history as any).createdAt,
       result: detailResult,

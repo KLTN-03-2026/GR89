@@ -2,12 +2,18 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { VideoLearningPlayer } from '@/components/common/medias'
-import { getEntertainmentList, EntertainmentItem } from '../../services/entertainmentApi'
+import {
+  getEntertainmentList,
+  EntertainmentItem,
+  EntertainmentComment,
+  toggleEntertainmentLike,
+  getEntertainmentComments,
+  createEntertainmentComment
+} from '../../services/entertainmentApi'
 import { motion } from 'framer-motion'
 import { EntertainmentHeader } from './EntertainmentHeader'
 import { EntertainmentTabs } from './EntertainmentTabs'
 import { EntertainmentSuggested } from './EntertainmentSuggested'
-import { EntertainmentVipBanner } from './EntertainmentVipBanner'
 
 type VideoSubtitleLine = {
   start: number
@@ -29,6 +35,12 @@ export interface EntertainmentDetailResponse {
   thumbnailUrl?: { url: string }
   videoSubtitleList?: VideoSubtitleLine[]
   createdAt?: string
+  likesCount?: number
+  commentsCount?: number
+  userFlags?: {
+    liked?: boolean
+    watched?: boolean
+  }
 }
 
 interface EntertainmentDetailProps {
@@ -40,6 +52,11 @@ export function EntertainmentDetail({ detail }: EntertainmentDetailProps) {
   const [relatedItems, setRelatedItems] = useState<EntertainmentItem[]>([])
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('description')
+  const [liked, setLiked] = useState(!!detail.userFlags?.liked)
+  const [likesCount, setLikesCount] = useState(detail.likesCount || 0)
+  const [comments, setComments] = useState<EntertainmentComment[]>([])
+  const [loadingComments, setLoadingComments] = useState(false)
+  const [submittingComment, setSubmittingComment] = useState(false)
 
   useEffect(() => {
     if (detail.type) {
@@ -53,6 +70,42 @@ export function EntertainmentDetail({ detail }: EntertainmentDetailProps) {
         .finally(() => setLoading(false))
     }
   }, [detail.type, detail._id])
+
+  useEffect(() => {
+    setLiked(!!detail.userFlags?.liked)
+    setLikesCount(detail.likesCount || 0)
+  }, [detail.userFlags?.liked, detail.likesCount])
+
+  useEffect(() => {
+    setLoadingComments(true)
+    getEntertainmentComments(detail._id)
+      .then((res) => {
+        if (res.success) {
+          setComments(res.data)
+        }
+      })
+      .finally(() => setLoadingComments(false))
+  }, [detail._id])
+
+  const handleToggleLike = async () => {
+    const response = await toggleEntertainmentLike(detail._id)
+    if (response.success) {
+      setLiked(response.data.liked)
+      setLikesCount(response.data.likesCount)
+    }
+  }
+
+  const handleCreateComment = async (content: string) => {
+    setSubmittingComment(true)
+    try {
+      const response = await createEntertainmentComment(detail._id, content)
+      if (response.success) {
+        setComments((prev) => [response.data, ...prev])
+      }
+    } finally {
+      setSubmittingComment(false)
+    }
+  }
 
   const categoryLabel = useMemo(() => {
     const labels = {
@@ -70,7 +123,13 @@ export function EntertainmentDetail({ detail }: EntertainmentDetailProps) {
       transition={{ duration: 0.5 }}
       className="max-w-7xl mx-auto space-y-10"
     >
-      <EntertainmentHeader detail={detail} categoryLabel={categoryLabel} />
+      <EntertainmentHeader
+        detail={detail}
+        categoryLabel={categoryLabel}
+        liked={liked}
+        likesCount={likesCount}
+        onToggleLike={handleToggleLike}
+      />
 
       <VideoLearningPlayer
         src={detail.videoUrl?.url || ''}
@@ -83,6 +142,10 @@ export function EntertainmentDetail({ detail }: EntertainmentDetailProps) {
         setActiveTab={setActiveTab}
         detail={detail}
         relatedItems={relatedItems}
+        comments={comments}
+        loadingComments={loadingComments}
+        submittingComment={submittingComment}
+        onCreateComment={handleCreateComment}
       />
 
       <EntertainmentSuggested
@@ -91,7 +154,6 @@ export function EntertainmentDetail({ detail }: EntertainmentDetailProps) {
         type={detail.type}
       />
 
-      <EntertainmentVipBanner />
     </motion.div>
   )
 }

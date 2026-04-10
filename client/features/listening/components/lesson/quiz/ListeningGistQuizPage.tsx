@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import type { IListening } from '@/features/listening/types'
 import { CheckCircle2, ChevronRight, Headphones, HelpCircle, XCircle } from 'lucide-react'
+import { doListeningQuiz } from '@/features/listening/services/listeningApi'
+import { useStudySession } from '@/libs/hooks/useStudySession'
+import { toast } from 'react-toastify'
 
 type QuizItem = { question: string; options: string[]; answer: string }
 
@@ -33,6 +36,8 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
 
   const [answers, setAnswers] = useState<Record<number, string>>({})
   const [submitted, setSubmitted] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const { startSession, getSessionPayload } = useStudySession()
 
   const total = questions.length
   const answeredCount = Object.keys(answers).length
@@ -47,6 +52,33 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
   const handleRetry = () => {
     setAnswers({})
     setSubmitted(false)
+    startSession()
+  }
+
+  const handleSubmit = async () => {
+    if (!allAnswered || submitted || isSaving) return
+
+    setIsSaving(true)
+    try {
+      const quizResultPayload = questions.map((q, idx) => ({
+        index: idx,
+        text: answers[idx] || '',
+        isCorrect: (answers[idx] || '').trim().toLowerCase() === q.answer.trim().toLowerCase()
+      }))
+
+      await doListeningQuiz(
+        listening._id,
+        0,
+        quizResultPayload,
+        getSessionPayload(),
+        'quiz'
+      )
+      setSubmitted(true)
+    } catch {
+      toast.error('Không thể lưu kết quả quiz. Vui lòng thử lại.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -105,21 +137,19 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
             {questions.map((q, idx) => {
               const userAnswer = answers[idx]
               const isCorrect = submitted && userAnswer === q.answer
-              const isWrong = submitted && userAnswer && userAnswer !== q.answer
 
               return (
                 <div key={idx} className="rounded-xl border border-gray-200 p-5 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.03)]">
                   <div className="flex items-start gap-3">
                     <div
-                      className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold ${
-                        submitted
+                      className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold ${submitted
                           ? isCorrect
                             ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-rose-100 text-rose-700'
                           : userAnswer
                             ? 'bg-indigo-100 text-indigo-700'
                             : 'bg-gray-100 text-gray-500'
-                      }`}
+                        }`}
                     >
                       {idx + 1}
                     </div>
@@ -162,9 +192,8 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
                               <XCircle className="w-4 h-4 text-rose-600" />
                             ) : (
                               <span
-                                className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                                  selected ? 'border-indigo-500' : 'border-gray-300'
-                                }`}
+                                className={`w-4 h-4 rounded-full border flex items-center justify-center ${selected ? 'border-indigo-500' : 'border-gray-300'
+                                  }`}
                               >
                                 {selected && <span className="w-2 h-2 rounded-full bg-indigo-500" />}
                               </span>
@@ -183,12 +212,12 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
           <div className="px-6 py-4 border-t border-gray-100 bg-white flex flex-wrap items-center justify-between gap-3">
             {!submitted ? (
               <Button
-                onClick={() => setSubmitted(true)}
-                disabled={!allAnswered}
+                onClick={handleSubmit}
+                disabled={!allAnswered || isSaving}
                 className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 shadow-lg shadow-indigo-200/40 rounded-lg"
               >
                 <ChevronRight className="w-4 h-4 mr-2" />
-                Nộp bài
+                {isSaving ? 'Đang lưu...' : 'Nộp bài'}
               </Button>
             ) : (
               <div className="flex items-center gap-2">
