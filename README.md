@@ -1,4 +1,4 @@
-# English Master - Nền tảng học tiếng Anh thích ứng
+# English Master - Website học tiếng Anh trực tuyến tích hợp AI chấm điểm tự động và chatbot hỗ trợ học tập
 
 English Master là hệ thống học tiếng Anh toàn diện, kết hợp nội dung học theo kỹ năng, chấm điểm tự động và hỗ trợ AI để cá nhân hóa lộ trình học cho từng người dùng.
 
