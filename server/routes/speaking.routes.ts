@@ -19,6 +19,25 @@ router.delete('/admin/multiple', authenticateTokenAdmin, requireRole(['admin', '
 
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 router.get('/user', authenticateTokenUser, SpeakingController.getSpeakingByUser)
+router.post(
+  '/user/:speakingId/:sentenceId/practice',
+  authenticateTokenUser,
+  checkVipContentUser('speaking', 'speakingId'),
+  uploadMemory.single('audio'),
+  handleUploadError,
+  SpeakingController.submitSpeakingSentencePractice
+)
+router.post(
+  '/users/:userId/save-highest-score',
+  authenticateTokenUser,
+  SpeakingController.saveHighestSpeakingScore
+)
+router.get(
+  '/user/:id/result',
+  authenticateTokenUser,
+  checkVipContentUser('speaking'),
+  SpeakingController.getSpeakingResult
+)
 router.get('/user/:id', authenticateTokenUser, checkVipContentUser('speaking'), SpeakingController.getSpeakingByIdForUser)
 router.post('/assess-pronunciation', authenticateTokenUser, uploadMemory.single('audio'), handleUploadError, SpeakingController.assessPronunciationSpeaking)
 

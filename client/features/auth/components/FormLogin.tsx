@@ -1,7 +1,8 @@
 'use client'
 
 import { GoogleIcon, FacebookIconColor } from "@/components/common/icons";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/libs/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TabsContent } from "@/components/ui/tabs";
@@ -127,12 +128,14 @@ export function FormLogin() {
           Google
         </Button>
 
-        <Button
-          variant="outline"
-          className="h-12 border-gray-200 hover:bg-gray-50 transition-all duration-300 bg-transparent"
+        <div
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-12 border-gray-200 hover:bg-gray-50 transition-all duration-300 bg-transparent p-0"
+          )}
         >
           <FacebookLogin
-            className="flex items-center gap-2"
+            className="flex h-full w-full items-center justify-center gap-2 rounded-md"
             appId={process.env.FACEBOOK_API_CLIENT_ID || ''}
             onSuccess={(response) => {
               console.log('Login Success!', response);
@@ -146,9 +149,8 @@ export function FormLogin() {
           >
             <FacebookIconColor />
             Facebook
-
           </FacebookLogin>
-        </Button>
+        </div>
       </div>
 
 

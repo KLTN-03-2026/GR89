@@ -1,7 +1,7 @@
 import 'server-only'
 import { fetchServer } from '@/libs/apis/fetch-server'
 import type { LessonStatsResponse, SpeakingOverview } from '@/libs/apis/api'
-import type { Speaking } from '../types'
+import type { ISpeakingResult, Speaking } from '../types'
 
 export async function getSpeakingData() {
   const [statsOverview, speakings] = await Promise.all([
@@ -36,4 +36,8 @@ export async function getSpeakingData() {
 export async function getSpeakingLesson(_id: string) {
   const speaking = await fetchServer<Speaking>(`/speaking/user/${_id}`)
   return speaking
+}
+
+export async function getSpeakingResult(_id: string) {
+  return fetchServer<ISpeakingResult>(`/speaking/user/${_id}/result`)
 }

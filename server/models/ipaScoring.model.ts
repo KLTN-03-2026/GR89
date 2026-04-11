@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IIpaScoring extends Document {
   userId: Schema.Types.ObjectId;
-  lessonId: Schema.Types.ObjectId;
+  ipaId: Schema.Types.ObjectId;
   referenceText: string;
   overallScore: number;
   accuracyScore: number;
@@ -20,7 +20,7 @@ export interface IIpaScoring extends Document {
 
 const ipaScoringSchema = new Schema<IIpaScoring>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  lessonId: { type: Schema.Types.ObjectId, required: true, index: true },
+  ipaId: { type: Schema.Types.ObjectId, ref: 'Ipa', required: true, index: true },
   referenceText: { type: String, required: true },
   overallScore: { type: Number, default: 0 },
   accuracyScore: { type: Number, default: 0 },
@@ -36,6 +36,6 @@ const ipaScoringSchema = new Schema<IIpaScoring>({
   granularity: { type: String, default: 'Phoneme' }
 }, { timestamps: true });
 
-ipaScoringSchema.index({ userId: 1, lessonId: 1 });
+ipaScoringSchema.index({ userId: 1, ipaId: 1 });
 
 export const IpaScoring = mongoose.model<IIpaScoring>('IpaScoring', ipaScoringSchema);

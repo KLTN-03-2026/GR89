@@ -4,6 +4,8 @@ import { SpeakingService } from '../services/speaking.service';
 import { MediaService } from '../services/media.service';
 import { ISpeaking } from '../models/speaking.model';
 import ErrorHandler from '../utils/ErrorHandler';
+import { UserInfo } from '../services/auth.service';
+import { calculateStudyTimeSeconds } from '../utils/studyTime.util';
 
 export class SpeakingController {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -149,6 +151,71 @@ export class SpeakingController {
       success: true,
       message: 'Lấy chi tiết bài nói thành công',
       data: speaking
+    });
+  });
+
+  // (USER) Thành tích đã lưu (StudyHistory + luyện từng câu)
+  static getSpeakingResult = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const userId = req.user?._id;
+    if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập', 401));
+    const data = await SpeakingService.getSpeakingResult(String(userId), id);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy thành tích bài nói thành công',
+      data,
+    });
+  });
+
+  // (USER) Lưu / chấm lại từng câu khi hoàn thành bài (upload audio)
+  static submitSpeakingSentencePractice = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { speakingId, sentenceId } = req.params;
+    const userId = req.user?._id;
+    const audioFile = req.file as Express.Multer.File;
+
+    if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập', 401));
+    if (!audioFile?.buffer?.length) {
+      return next(new ErrorHandler('Vui lòng gửi file âm thanh', 400));
+    }
+
+    const audioBuffer = Buffer.from(audioFile.buffer);
+    const data = await SpeakingService.submitSentencePractice(
+      String(userId),
+      speakingId,
+      sentenceId,
+      audioBuffer
+    );
+
+    res.status(200).json({
+      success: true,
+      message: data.message,
+      data,
+    });
+  });
+
+  // (USER) Lưu điểm tổng bài nói sau khi hoàn thành
+  static saveHighestSpeakingScore = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as UserInfo;
+    const { userId } = req.params;
+    const { lessonId, score, studySession } = req.body;
+
+    if (!user?._id || !userId || !lessonId || score === undefined) {
+      return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400));
+    }
+    if (String(user._id) !== String(userId)) {
+      return next(new ErrorHandler('Không được phép lưu điểm cho tài khoản khác', 403));
+    }
+    if (typeof score !== 'number' || score < 0 || score > 100) {
+      return next(new ErrorHandler('Điểm số phải là số từ 0 đến 100', 400));
+    }
+
+    const studyTimeSeconds = calculateStudyTimeSeconds(studySession);
+    const result = await SpeakingService.saveHighestScore(user._id, lessonId, score, studyTimeSeconds);
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã lưu tiến độ học tập thành công',
+      data: result,
     });
   });
 

@@ -47,27 +47,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('vào đây chưa')
-    const fetchUser = async () => {
-      if (isCurrentPathAuth) {
-        setIsLoading(false)
-        return;
-      }
-      setIsLoading(true)
-      await getMyProfile()
-        .then((res) => {
-          setUser(res.data as User)
-        })
-        .catch(() => {
-          setUser(null)
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
+    const onAuthPage = currentPath === '/login' || currentPath === '/register'
+    if (onAuthPage) {
+      setIsLoading(false)
+      return
     }
 
-    fetchUser()
-  }, [isCurrentPathAuth, user]);
+    let cancelled = false
+    setIsLoading(true)
+    getMyProfile()
+      .then((res) => {
+        if (!cancelled) setUser(res.data as User)
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentPath])
 
   const loginUser = async (credentials: LoginRequest) => {
     setIsLoading(true)
@@ -86,7 +88,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     onSuccess: async (tokenResponse) => {
       await loginGoogle(tokenResponse.access_token)
         .then(res => {
-          console.log(res)
           setUser(res.data)
           router.push('/dashboard')
           toast.success(res.message)

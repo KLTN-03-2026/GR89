@@ -14,7 +14,7 @@ interface CardSpeakingTopicProps {
 }
 
 export default function CardSpeakingTopic({ topic }: CardSpeakingTopicProps) {
-  const level = (topic as any)?.level as string | undefined
+  const level = (topic as Speaking)?.level as string | undefined
   return (
     <Popover>
       <PopoverTrigger className='w-full text-center group'>
@@ -71,7 +71,7 @@ export default function CardSpeakingTopic({ topic }: CardSpeakingTopicProps) {
       <EnhancedPopover
         href={`/skills/speaking/lesson/${topic._id}`}
         skill="speaking"
-        isCompleted={topic.isCompleted}
+        isCompleted={topic.isCompleted || !!topic.isResult}
         resultId={topic._id}
       />
     </Popover>

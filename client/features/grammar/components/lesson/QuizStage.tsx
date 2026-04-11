@@ -44,8 +44,10 @@ export function QuizStage({
     }
   }
 
+  console.log(question)
+
   return (
-    <motion.section 
+    <motion.section
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-950 p-6 md:p-10 shadow-xl shadow-slate-200/50 dark:shadow-none"
@@ -73,7 +75,7 @@ export function QuizStage({
 
         {/* Progress Bar */}
         <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
-          <motion.div 
+          <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             className="h-full bg-gradient-to-r from-amber-500 to-orange-500"
@@ -87,7 +89,7 @@ export function QuizStage({
           <div className="absolute top-0 left-0 p-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
             <Trophy className="w-24 h-24" />
           </div>
-          
+
           <p className="relative z-10 text-2xl md:text-3xl font-black text-slate-800 dark:text-slate-200 leading-tight tracking-tight">
             {question.question}
           </p>
@@ -109,8 +111,8 @@ export function QuizStage({
                   onClick={() => onSelect(option)}
                   className={cn(
                     "group relative flex items-center justify-between p-5 rounded-2xl border-2 transition-all text-left",
-                    selected 
-                      ? "border-amber-500 bg-amber-50 dark:bg-amber-900/20 shadow-lg shadow-amber-500/10" 
+                    selected
+                      ? "border-amber-500 bg-amber-50 dark:bg-amber-900/20 shadow-lg shadow-amber-500/10"
                       : "border-slate-100 dark:border-slate-800 bg-white dark:bg-gray-950 hover:border-amber-200 dark:hover:border-amber-800"
                   )}
                 >
@@ -128,7 +130,7 @@ export function QuizStage({
                       {option}
                     </span>
                   </div>
-                  
+
                   {selected ? (
                     <CheckCircle2 className="w-6 h-6 text-amber-500" />
                   ) : (
@@ -158,8 +160,8 @@ export function QuizStage({
           size="lg"
           className={cn(
             "rounded-2xl px-10 font-bold gap-2 transition-all active:scale-95 shadow-lg",
-            canNext 
-              ? "bg-amber-600 hover:bg-amber-700 shadow-amber-500/20" 
+            canNext
+              ? "bg-amber-600 hover:bg-amber-700 shadow-amber-500/20"
               : "bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-600 shadow-none cursor-not-allowed"
           )}
           disabled={!canNext}

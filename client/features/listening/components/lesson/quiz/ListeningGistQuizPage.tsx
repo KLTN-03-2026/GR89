@@ -143,12 +143,12 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
                   <div className="flex items-start gap-3">
                     <div
                       className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold ${submitted
-                          ? isCorrect
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-rose-100 text-rose-700'
-                          : userAnswer
-                            ? 'bg-indigo-100 text-indigo-700'
-                            : 'bg-gray-100 text-gray-500'
+                        ? isCorrect
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-rose-100 text-rose-700'
+                        : userAnswer
+                          ? 'bg-indigo-100 text-indigo-700'
+                          : 'bg-gray-100 text-gray-500'
                         }`}
                     >
                       {idx + 1}

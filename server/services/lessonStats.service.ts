@@ -142,8 +142,8 @@ export class LessonStatsService {
   ): Promise<LessonSkillStats> {
     const userObjectId = typeof userId === "string" ? new Types.ObjectId(userId) : userId;
 
-    const [activeLessons, progressesAggregation] = await Promise.all([
-      lessonModel.find({ isActive: true }).select("_id").lean<{ _id: Types.ObjectId }>(),
+    const [activeLessonsRaw, progressesAggregation] = await Promise.all([
+      lessonModel.find({ isActive: true }).select("_id").lean(),
       StudyHistory.aggregate([
         { 
           $match: { 
@@ -152,11 +152,13 @@ export class LessonStatsService {
           } 
         },
         { $sort: { progress: -1, createdAt: -1 } },
-        { $group: { _id: "$lessonId", best: { $first: "$$ROOT" }, totalTime: { $sum: "$duration" } } }
+        { $group: { _id: { $toString: "$lessonId" }, best: { $first: "$$ROOT" }, totalTime: { $sum: "$duration" } } }
       ])
     ]);
 
-    const activeLessonDocs = Array.isArray(activeLessons) ? activeLessons : [];
+    const activeLessonDocs = (Array.isArray(activeLessonsRaw) ? activeLessonsRaw : []) as {
+      _id: Types.ObjectId
+    }[]
     const activeLessonIds = new Set(activeLessonDocs.map(l => String(l._id)));
 
     // Chỉ lấy progress của những bài học còn active

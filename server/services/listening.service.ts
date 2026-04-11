@@ -57,10 +57,10 @@ export class ListeningService {
     const quiz =
       Array.isArray(quizzesPopulated) && quizzesPopulated.length > 0 && typeof (quizzesPopulated[0] as any)?.question === 'string'
         ? quizzesPopulated.map((q: any) => ({
-            question: q.question,
-            options: Array.isArray(q.options) ? q.options : [],
-            answer: q.answer,
-          }))
+          question: q.question,
+          options: Array.isArray(q.options) ? q.options : [],
+          answer: q.answer,
+        }))
         : []
     const { quizzes: _q, quiz: _legacy, ...rest } = listening
     return {

@@ -192,33 +192,33 @@ export function EntertainmentTabs({
                   <p className="text-sm text-gray-500 italic">Chưa có bình luận nào. Hãy là người đầu tiên bình luận.</p>
                 ) : (
                   renderedComments.map((comment) => (
-                  <div key={comment._id} className="flex gap-4 group">
-                    <Avatar className="h-10 w-10 border border-gray-100 dark:border-gray-800 shadow-sm">
-                      <AvatarImage src={`https://ui-avatars.com/api/?name=${comment.user.fullName}&background=random`} />
-                      <AvatarFallback>{comment.user.fullName?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">{comment.user.fullName}</p>
-                        <span className="text-[10px] text-gray-400">{formatCommentTime(comment.createdAt)}</span>
-                      </div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50/50 dark:bg-gray-800/30 p-3 rounded-2xl rounded-tl-none border border-gray-50 dark:border-gray-800/50">
-                        {comment.content}
-                      </p>
-                      <div className="flex items-center gap-5 mt-1 px-1">
-                        <button className="text-xs text-gray-500 hover:text-blue-600 font-semibold flex items-center gap-1.5 transition-colors">
-                          <ThumbsUp className="h-3.5 w-3.5" /> 0
-                        </button>
-                        <button className="text-xs text-gray-500 hover:text-blue-600 font-semibold transition-colors">
-                          Phản hồi
-                        </button>
-                        <button className="text-xs text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
-                          <Flag className="h-3 w-3" />
-                        </button>
+                    <div key={comment._id} className="flex gap-4 group">
+                      <Avatar className="h-10 w-10 border border-gray-100 dark:border-gray-800 shadow-sm">
+                        <AvatarImage src={`https://ui-avatars.com/api/?name=${comment.user.fullName}&background=random`} />
+                        <AvatarFallback>{comment.user.fullName?.[0] || 'U'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{comment.user.fullName}</p>
+                          <span className="text-[10px] text-gray-400">{formatCommentTime(comment.createdAt)}</span>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed bg-gray-50/50 dark:bg-gray-800/30 p-3 rounded-2xl rounded-tl-none border border-gray-50 dark:border-gray-800/50">
+                          {comment.content}
+                        </p>
+                        <div className="flex items-center gap-5 mt-1 px-1">
+                          <button className="text-xs text-gray-500 hover:text-blue-600 font-semibold flex items-center gap-1.5 transition-colors">
+                            <ThumbsUp className="h-3.5 w-3.5" /> 0
+                          </button>
+                          <button className="text-xs text-gray-500 hover:text-blue-600 font-semibold transition-colors">
+                            Phản hồi
+                          </button>
+                          <button className="text-xs text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                            <Flag className="h-3 w-3" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )))}
+                  )))}
               </div>
             </TabsContent>
           </motion.div>

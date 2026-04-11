@@ -31,7 +31,6 @@ export function NavUser() {
   const { isMobile } = useSidebar()
   const { logout, user, isLoading } = useAuth()
 
-  console.log(user)
   const [avatarError, setAvatarError] = useState(false)
 
   useEffect(() => {
@@ -44,7 +43,7 @@ export function NavUser() {
 
   const defaultAvatar = user?.avatar?.url || "/images/avatar-default.jpg"
 
-  if (!isLoading || !user) {
+  if (isLoading || !user) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>

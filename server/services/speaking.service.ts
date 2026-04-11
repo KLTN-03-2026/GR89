@@ -10,6 +10,7 @@ import { SpeechAceProvider } from '../providers/speechace.provider';
 import { User } from "../models/user.model";
 import { StreakService } from "./streak.service";
 import { AIProvider } from "../providers/ai.provider";
+import { SpeakingSentencePractice } from "../models/speakingSentencePractice.model";
 
 interface ISpeakingData extends ISpeaking {
   progress: number
@@ -28,6 +29,38 @@ interface OverviewStats {
 }
 
 export class SpeakingService {
+  private static toUserObjectId(userId: string | mongoose.Types.ObjectId): mongoose.Types.ObjectId {
+    if (userId instanceof mongoose.Types.ObjectId) return userId;
+    return new mongoose.Types.ObjectId(String(userId));
+  }
+
+  /**
+   * Điểm hiển thị từ luyện từng câu: trung bình điểm tốt nhất theo mỗi sentenceIndex (0–100).
+   */
+  private static async getSpeakingProgressFromSentencePractice(
+    userId: string | mongoose.Types.ObjectId,
+    speakingObjectIds: mongoose.Types.ObjectId[]
+  ): Promise<Map<string, number>> {
+    const uid = this.toUserObjectId(userId);
+    if (!speakingObjectIds.length) return new Map();
+    const rows = await SpeakingSentencePractice.aggregate([
+      { $match: { userId: uid, speakingId: { $in: speakingObjectIds } } },
+      {
+        $group: {
+          _id: { sp: "$speakingId", idx: "$sentenceIndex" },
+          best: { $max: "$score" },
+        },
+      },
+      { $group: { _id: "$_id.sp", bests: { $push: "$best" } } },
+      { $project: { _id: 1, avgScore: { $avg: "$bests" } } },
+    ]);
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      m.set(String(r._id), Math.min(100, Math.round(Number(r.avgScore) || 0)));
+    }
+    return m;
+  }
+
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Lấy thống kê tổng quan về Speaking
@@ -408,28 +441,43 @@ export class SpeakingService {
 
   // (USER) Lấy danh sách bài nói cho người dùng
   static async getSpeakingByUser(userId: string): Promise<ISpeakingData[]> {
-    const speakings = await Speaking.find({ isActive: true }).sort({ orderIndex: 1 })
+    const userObjectId = this.toUserObjectId(userId);
+    const speakings = await Speaking.find({ isActive: true }).sort({ orderIndex: 1 });
+    const speakingIds = speakings.map((s) => s._id as mongoose.Types.ObjectId);
 
-    // Lấy bản ghi tốt nhất từ StudyHistory
-    const progresses = await StudyHistory.aggregate([
-      { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'speaking' } },
-      { $sort: { progress: -1, createdAt: -1 } },
-      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
-    ])
-    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
+    const [progresses, sentenceProgressMap] = await Promise.all([
+      StudyHistory.aggregate([
+        { $match: { userId: userObjectId, category: "speaking" } },
+        { $sort: { progress: -1, createdAt: -1 } },
+        { $group: { _id: { $toString: "$lessonId" }, best: { $first: "$$ROOT" } } },
+      ]),
+      this.getSpeakingProgressFromSentencePractice(userObjectId, speakingIds),
+    ]);
+
+    const progressMap = new Map(progresses.map((p: { _id: string; best: any }) => [String(p._id), p.best]));
 
     return speakings.map((speaking: ISpeaking) => {
-      const p = progressMap.get(speaking._id.toString())
+      const sid = String(speaking._id);
+      const best = progressMap.get(sid);
+      const fromHistory = best ? Math.round((Number(best.progress) || 0) * 100) / 100 : 0;
+      const fromSentences = sentenceProgressMap.get(sid) ?? 0;
+      const progress = Math.round(Math.max(fromHistory, fromSentences) * 100) / 100;
+
       return {
         ...speaking.toObject(),
-        progress: p ? Math.round(p.progress * 100) / 100 : 0,
-        point: p?.progress || 0,
-        isCompleted: p?.status === 'passed',
+        progress,
+        point: progress,
+        isCompleted: best?.status === "passed",
         isActive: true,
-        isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
-        isVipRequired: (speaking as any).isVipRequired !== undefined ? (speaking as any).isVipRequired : true,
-      }
-    }) as ISpeakingData[]
+        isResult:
+          !!(
+            best &&
+            ((best.resultId && best.resultId.length > 0) || fromHistory > 0)
+          ) || fromSentences > 0,
+        isVipRequired:
+          (speaking as any).isVipRequired !== undefined ? (speaking as any).isVipRequired : true,
+      };
+    }) as ISpeakingData[];
   }
 
   // (USER) Lấy thông tin chi tiết bài nói theo ID cho người dùng
@@ -442,7 +490,241 @@ export class SpeakingService {
     const speakingObj = speaking.toObject();
     (speakingObj as any).subtitleIds = preview;
 
+    const userObjectId = this.toUserObjectId(userId);
+    const speakingOid = new mongoose.Types.ObjectId(String(id));
+
+    const [best, sentenceProgressMap] = await Promise.all([
+      StudyHistory.findOne({
+        userId: userObjectId,
+        lessonId: speakingOid,
+        category: "speaking",
+      })
+        .sort({ progress: -1, createdAt: -1 })
+        .lean(),
+      this.getSpeakingProgressFromSentencePractice(userObjectId, [speakingOid]),
+    ]);
+
+    const fromHistory = best ? Math.round((Number(best.progress) || 0) * 100) / 100 : 0;
+    const fromSentences = sentenceProgressMap.get(String(speakingOid)) ?? 0;
+    const progress = Math.round(Math.max(fromHistory, fromSentences) * 100) / 100;
+
+    (speakingObj as any).progress = progress;
+    (speakingObj as any).point = progress;
+    (speakingObj as any).isCompleted = best?.status === "passed";
+    (speakingObj as any).isResult =
+      !!(
+        best &&
+        ((best.resultId && best.resultId.length > 0) || fromHistory > 0)
+      ) || fromSentences > 0;
+
     return speakingObj;
+  }
+
+  // (USER) Thành tích / kết quả đã lưu cho một bài nói
+  static async getSpeakingResult(userId: string, speakingId: string): Promise<{
+    progress: number;
+    point: number;
+    bestHistoryProgress: number;
+    status?: string;
+    time: number;
+    date: Date | undefined;
+    sentences: { sentenceIndex: number; bestScore: number; attempts: number; lastAt: Date }[];
+    speakingLesson: Record<string, unknown>;
+  }> {
+    const userOid = this.toUserObjectId(userId);
+    const lessonOid = new mongoose.Types.ObjectId(String(speakingId));
+
+    const speaking = await Speaking.findOne({ _id: speakingId, isActive: true })
+      .select("title description level orderIndex isVipRequired videoUrl")
+      .populate("videoUrl", "url");
+    if (!speaking) throw new ErrorHandler("Bài nói không tồn tại", 404);
+
+    const [bestHistory, sentenceStats] = await Promise.all([
+      StudyHistory.findOne({
+        userId: userOid,
+        lessonId: lessonOid,
+        category: "speaking",
+      })
+        .sort({ progress: -1, createdAt: -1 })
+        .lean(),
+      SpeakingSentencePractice.aggregate([
+        { $match: { userId: userOid, speakingId: lessonOid } },
+        {
+          $group: {
+            _id: "$sentenceIndex",
+            bestScore: { $max: "$score" },
+            attempts: { $sum: 1 },
+            lastAt: { $max: "$createdAt" },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+    ]);
+
+    if (!bestHistory && sentenceStats.length === 0) {
+      throw new ErrorHandler("Chưa có thành tích cho bài này", 404);
+    }
+
+    const fromHistory = bestHistory ? Math.round((Number(bestHistory.progress) || 0) * 100) / 100 : 0;
+    const sentenceAvg = sentenceStats.length
+      ? Math.round(
+          sentenceStats.reduce((s: number, r: { bestScore: number }) => s + r.bestScore, 0) /
+            sentenceStats.length
+        )
+      : 0;
+    const displayProgress = Math.round(Math.max(fromHistory, sentenceAvg) * 100) / 100;
+
+    const sentences = sentenceStats.map(
+      (s: { _id: number; bestScore: number; attempts: number; lastAt: Date }) => ({
+        sentenceIndex: s._id,
+        bestScore: s.bestScore,
+        attempts: s.attempts,
+        lastAt: s.lastAt,
+      })
+    );
+
+    const lastSentenceAt = sentences.length
+      ? sentences.reduce(
+          (latest: Date | undefined, x) =>
+            !latest || new Date(x.lastAt) > new Date(latest) ? x.lastAt : latest,
+          undefined as Date | undefined
+        )
+      : undefined;
+
+    return {
+      progress: displayProgress,
+      point: displayProgress,
+      bestHistoryProgress: fromHistory,
+      status: bestHistory?.status,
+      time: Number(bestHistory?.duration || 0),
+      date: (bestHistory?.createdAt as Date | undefined) || lastSentenceAt,
+      sentences,
+      speakingLesson: speaking.toObject() as unknown as Record<string, unknown>,
+    };
+  }
+
+  /** Lấy câu tiếng Anh theo chỉ số phụ đề preview (0-based). */
+  static async getSubtitleEnglishText(speakingId: string, sentenceIndex: number): Promise<string> {
+    const speaking = await Speaking.findOne({ _id: speakingId, isActive: true }).populate(
+      "videoUrl",
+      "subtitles"
+    );
+    if (!speaking) throw new ErrorHandler("Bài nói không tồn tại", 404);
+    const preview = ((speaking as any).videoUrl as any)?.subtitles?.[0]?.preview as
+      | Array<{ english?: string }>
+      | undefined;
+    if (!preview || sentenceIndex < 0 || sentenceIndex >= preview.length) {
+      throw new ErrorHandler("Câu phụ đề không tồn tại", 404);
+    }
+    const t = String(preview[sentenceIndex].english || "").trim();
+    if (!t) throw new ErrorHandler("Không có nội dung câu để chấm điểm", 400);
+    return t;
+  }
+
+  /** Luyện theo từng câu: chấm điểm + lưu SpeakingSentencePractice (không ghi StudyHistory từng câu). */
+  static async submitSentencePractice(
+    userId: string,
+    speakingId: string,
+    sentenceId: string,
+    audioBuffer: Buffer
+  ): Promise<{ score: number; message: string }> {
+    const sentenceIndex = parseInt(sentenceId, 10);
+    if (Number.isNaN(sentenceIndex) || sentenceIndex < 0) {
+      throw new ErrorHandler("sentenceId không hợp lệ", 400);
+    }
+    const referenceText = await this.getSubtitleEnglishText(speakingId, sentenceIndex);
+    const assessment = await this.assessPronunciationSpeaking(
+      referenceText,
+      audioBuffer,
+      userId,
+      speakingId,
+      0,
+      { persistStudyHistory: false }
+    );
+    const raw =
+      assessment?.overall_metrics?.pronunciation ??
+      assessment?.text_score?.speechace_score?.pronunciation ??
+      assessment?.text_score?.overall_score ??
+      0;
+    const score = Math.round(Number(raw) || 0);
+    const clamped = Math.min(100, Math.max(0, score));
+    await SpeakingSentencePractice.create({
+      userId: new mongoose.Types.ObjectId(userId),
+      speakingId: new mongoose.Types.ObjectId(speakingId),
+      sentenceIndex,
+      score: clamped,
+      referenceText,
+      aiFeedback:
+        typeof assessment?.aiFeedback === "string" ? assessment.aiFeedback : undefined,
+    });
+    return {
+      score: clamped,
+      message: "Đã lưu kết quả luyện nói",
+    };
+  }
+
+  static async saveHighestScore(
+    userId: string,
+    speakingId: string,
+    progress: number,
+    studyTimeSeconds: number = 0
+  ): Promise<{
+    isNewRecord: boolean;
+    currentScore: number;
+    previousBest?: number;
+    progress: {
+      _id: string;
+      userId: string;
+      speakingId: string;
+      point: number;
+      progress: number;
+      isCompleted: boolean;
+      createdAt?: Date;
+      updatedAt?: Date;
+    };
+  }> {
+    const speaking = await Speaking.findById(speakingId).select("level");
+    if (!speaking) throw new ErrorHandler("Bài nói không tồn tại", 404);
+
+    const existingBest = await StudyHistory.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      lessonId: new mongoose.Types.ObjectId(speakingId),
+      category: "speaking",
+    }).sort({ progress: -1, createdAt: -1 });
+
+    const previousBest = existingBest?.progress || 0;
+    const isNewRecord = progress > previousBest;
+    const isCompleted = true;
+
+    const history = await StudyService.saveStudyResult({
+      userId,
+      lessonId: speakingId,
+      category: "speaking",
+      level: (speaking as any).level || "A1",
+      progress,
+      point: progress,
+      isCompleted,
+      studyTime: Math.max(0, studyTimeSeconds),
+      resultData: { score: progress },
+      correctAnswers: progress >= 80 ? 1 : 0,
+      totalQuestions: 1,
+    });
+
+    return {
+      isNewRecord,
+      currentScore: progress,
+      previousBest,
+      progress: {
+        _id: history?._id?.toString() || "",
+        userId,
+        speakingId,
+        point: progress,
+        progress,
+        isCompleted,
+        createdAt: history?.createdAt,
+        updatedAt: history?.createdAt,
+      },
+    };
   }
 
   // (USER) Chấm điểm phát âm bằng AI
@@ -451,8 +733,10 @@ export class SpeakingService {
     audioBuffer: Buffer,
     userId?: string,
     speakingId?: string,
-    studyTimeSeconds: number = 0
+    studyTimeSeconds: number = 0,
+    options?: { persistStudyHistory?: boolean }
   ): Promise<any> {
+    const persistStudyHistory = options?.persistStudyHistory !== false;
     if (!text || !text.trim()) {
       throw new ErrorHandler('Cần có văn bản mẫu', 400)
     }
@@ -518,8 +802,8 @@ export class SpeakingService {
       aiFeedback = ""
     }
 
-    // Nếu có userId và speakingId thì lưu kết quả
-    if (userId && speakingId) {
+    // Nếu có userId và speakingId thì lưu kết quả (có thể tắt khi lưu theo từng câu qua submitSentencePractice)
+    if (userId && speakingId && persistStudyHistory) {
       const speaking = await Speaking.findById(speakingId)
       if (speaking) {
         const score = result.overall_metrics?.pronunciation || 0

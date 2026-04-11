@@ -128,44 +128,44 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
         </div>
 
         <div className="rounded-xl bg-white p-6 border border-gray-200 shadow-sm flex flex-col items-center">
-            <div className="relative">
-              <svg viewBox="0 0 36 36" className="w-40 h-40">
-                <path className="text-gray-200" stroke="currentColor" strokeWidth="4" fill="none" d="M18 2a16 16 0 110 32 16 16 0 010-32z" />
-                <path
-                  className="text-indigo-600"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={`${Math.max(0, Math.min(100, result.progress))}, 100`}
-                  d="M18 2a16 16 0 110 32 16 16 0 010-32z"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-indigo-700">{result.progress}%</div>
-                  <div className="text-xs text-gray-500">Độ chính xác</div>
-                </div>
+          <div className="relative">
+            <svg viewBox="0 0 36 36" className="w-40 h-40">
+              <path className="text-gray-200" stroke="currentColor" strokeWidth="4" fill="none" d="M18 2a16 16 0 110 32 16 16 0 010-32z" />
+              <path
+                className="text-indigo-600"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={`${Math.max(0, Math.min(100, result.progress))}, 100`}
+                d="M18 2a16 16 0 110 32 16 16 0 010-32z"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-indigo-700">{result.progress}%</div>
+                <div className="text-xs text-gray-500">Độ chính xác</div>
               </div>
             </div>
-            <div className="mt-5 w-full space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Ngày đạt</span>
-                <span className="font-medium">{formatDate(result.date)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Tốc độ gõ</span>
-                <span className="font-medium">{Math.round(wpm)} WPM</span>
-              </div>
+          </div>
+          <div className="mt-5 w-full space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Ngày đạt</span>
+              <span className="font-medium">{formatDate(result.date)}</span>
             </div>
-            <div className="mt-5 flex w-full gap-2">
-              <Link href={`/skills/listening/${result.listeningId._id}`} className="flex-1">
-                <button className="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Làm lại</button>
-              </Link>
-              <Link href="/skills/listening" className="flex-1">
-                <button className="w-full px-3 py-2 rounded-lg border text-sm font-medium">Danh sách</button>
-              </Link>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Tốc độ gõ</span>
+              <span className="font-medium">{Math.round(wpm)} WPM</span>
             </div>
+          </div>
+          <div className="mt-5 flex w-full gap-2">
+            <Link href={`/skills/listening/${result.listeningId._id}`} className="flex-1">
+              <button className="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Làm lại</button>
+            </Link>
+            <Link href="/skills/listening" className="flex-1">
+              <button className="w-full px-3 py-2 rounded-lg border text-sm font-medium">Danh sách</button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
