@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 import { GrammarTopic, IGrammarPracticeQuestion, IGrammarSection, IGrammarTopic, IGrammarTopicPaginateResult } from "../models/grammarTopic.model"
-import { Quiz } from "../models/quiz.model"
+import { IQuiz, Quiz } from "../models/quiz.model"
 import { StudyHistory } from "../models/studyHistory.model"
 import { StudyService } from "./study.service"
 import ErrorHandler from "../utils/ErrorHandler"
@@ -8,6 +8,7 @@ import XLSX from 'xlsx'
 import { User } from "../models/user.model"
 import { StreakService } from "./streak.service"
 import { IQuizResult, QuizResult } from "../models/quizzResult.model"
+import { shuffle } from "../utils/shuffle.util"
 
 export interface ICreateGrammarTopicData {
   title: string;
@@ -479,6 +480,32 @@ export class GrammarService {
       }
     })
     return grammarTopicsUser as IGrammarTopicUser[]
+  }
+
+  // (USER) Lấy danh sách câu hỏi quiz của chủ đề (cho trang quiz chung)
+  static async getQuizByGrammarTopicForUser(grammarTopicId: string): Promise<IQuiz[]> {
+    if (!mongoose.Types.ObjectId.isValid(grammarTopicId)) {
+      throw new ErrorHandler("ID chủ đề ngữ pháp không hợp lệ", 400)
+    }
+
+    const topic = await GrammarTopic.findOne({
+      _id: grammarTopicId,
+      isActive: true,
+    }).populate({
+      path: "quizzes",
+      select: "question options answer explanation type",
+    })
+
+    if (!topic) {
+      throw new ErrorHandler("Chủ đề ngữ pháp không tồn tại hoặc đã bị khóa", 404)
+    }
+
+    const quizzes = topic.quizzes
+    if (!quizzes || !Array.isArray(quizzes) || quizzes.length === 0) {
+      return []
+    }
+
+    return shuffle(quizzes as unknown as IQuiz[])
   }
 
   // (USER) Nộp bài kiểm tra ngữ pháp

@@ -2,6 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { GrammarService } from "../services/grammar.service";
 import ErrorHandler from "../utils/ErrorHandler";
+import { UserInfo } from "../services/auth.service";
+import { IQuizResult } from "../models/quizzResult.model";
+import { StreakService } from "../services/streak.service";
+import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
 
 export class GrammarController {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -139,6 +143,44 @@ export class GrammarController {
       });
     }
   );
+
+  // (USER) Lấy danh sách câu hỏi quiz của chủ đề (trang /quizz)
+  static getGrammarQuizForUser = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const { id } = req.params;
+      if (!id) return next(new ErrorHandler("Thiếu ID chủ đề ngữ pháp", 400));
+
+      const quizzes = await GrammarService.getQuizByGrammarTopicForUser(id);
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách câu hỏi quiz ngữ pháp thành công",
+        data: quizzes,
+      });
+    }
+  );
+
+  // (USER) Nộp bài kiểm tra ngữ pháp
+  static doGrammarQuiz = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const { quizResults, studySession } = req.body;
+    const user = req.user as UserInfo;
+    const studyTimeSeconds = calculateStudyTimeSeconds(studySession);
+
+    const grammarProgress = await GrammarService.doGrammarQuiz(
+      id,
+      user._id,
+      quizResults as IQuizResult[],
+      studyTimeSeconds
+    );
+    await StreakService.update(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "Làm bài kiểm tra ngữ pháp thành công",
+      data: grammarProgress,
+    });
+  });
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
@@ -338,7 +380,7 @@ export class GrammarController {
 
   // (ADMIN) Lấy thống kê người dùng
   static getUserStats = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const stats = await GrammarService.getGrammarUserStats()
+    const stats = await GrammarService.getUserStats()
     res.status(200).json({
       success: true,
       message: 'Lấy thống kê người dùng thành công',
@@ -348,8 +390,7 @@ export class GrammarController {
 
   // (ADMIN) Lấy thống kê theo thời gian
   static getTimeSeriesStats = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { period } = req.query
-    const stats = await GrammarService.getGrammarTimeSeriesStats(period as string)
+    const stats = await GrammarService.getTimeSeriesStats()
     res.status(200).json({
       success: true,
       message: 'Lấy thống kê theo thời gian thành công',

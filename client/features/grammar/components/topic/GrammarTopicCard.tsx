@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function GrammarTopicCard({ topic }: Props) {
-  const level = (topic as any)?.level as string | undefined
+  const level = topic?.level as string | undefined
   return (
     <Popover>
       <PopoverTrigger className='w-full text-center group'>

@@ -78,7 +78,7 @@ export function PracticeStage({
   }
 
   return (
-    <motion.section 
+    <motion.section
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-950 p-6 md:p-10 shadow-xl shadow-slate-200/50 dark:shadow-none"
@@ -106,7 +106,7 @@ export function PracticeStage({
 
         {/* Progress Bar */}
         <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
-          <motion.div 
+          <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
@@ -120,7 +120,7 @@ export function PracticeStage({
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
             <HelpCircle className="w-24 h-24" />
           </div>
-          
+
           <div className="relative z-10 space-y-4">
             <p className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 leading-snug">
               {question.question}
@@ -137,11 +137,10 @@ export function PracticeStage({
           </div>
         </div>
 
-        {/* Input/Options Section */}
         <div className="space-y-4">
           <AnimatePresence mode="wait">
             {question.type === 'multiple_choice' ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="grid grid-cols-1 sm:grid-cols-2 gap-3"
@@ -157,8 +156,8 @@ export function PracticeStage({
                       disabled={status !== 'idle'}
                       className={cn(
                         "group relative flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left",
-                        selected 
-                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg shadow-purple-500/10" 
+                        selected
+                          ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 shadow-lg shadow-purple-500/10"
                           : "border-slate-100 dark:border-slate-800 bg-white dark:bg-gray-950 hover:border-purple-200 dark:hover:border-purple-800"
                       )}
                     >
@@ -187,9 +186,9 @@ export function PracticeStage({
                 <input
                   className={cn(
                     "w-full rounded-2xl border-2 bg-white dark:bg-gray-950 px-6 py-4 text-lg font-bold outline-none transition-all",
-                    status === 'correct' ? "border-emerald-500 text-emerald-700" : 
-                    status === 'wrong' ? "border-rose-500 text-rose-700" :
-                    "border-slate-100 dark:border-slate-800 focus:border-purple-500"
+                    status === 'correct' ? "border-emerald-500 text-emerald-700" :
+                      status === 'wrong' ? "border-rose-500 text-rose-700" :
+                        "border-slate-100 dark:border-slate-800 focus:border-purple-500"
                   )}
                   disabled={status === 'correct'}
                   onChange={(e) => onAnswerChange(e.target.value)}
@@ -206,7 +205,7 @@ export function PracticeStage({
           {/* Feedback Messages */}
           <AnimatePresence>
             {status === 'correct' && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-200 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400"
@@ -217,15 +216,23 @@ export function PracticeStage({
             )}
 
             {status === 'wrong' && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="flex items-center gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-200 dark:border-rose-900/30 text-rose-700 dark:text-rose-400"
+                className="flex items-start gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-200 dark:border-rose-900/30 text-rose-700 dark:text-rose-400"
               >
-                <AlertCircle className="w-5 h-5 shrink-0" />
-                <div className="space-y-0.5">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1 space-y-2">
                   <p className="text-sm font-black">Chưa chính xác rồi...</p>
                   <p className="text-xs font-bold opacity-80 italic">Gợi ý: {question.hint}</p>
+                  <div className="mt-2 pt-3 border-t border-rose-200/60 dark:border-rose-800/50">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">
+                      Đáp án đúng
+                    </p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-relaxed not-italic">
+                      {question.answer}
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -258,13 +265,13 @@ export function PracticeStage({
               Làm lại
             </Button>
           )}
-          
+
           <Button
             size="lg"
             className={cn(
               "rounded-2xl px-10 font-bold gap-2 transition-all active:scale-95 shadow-lg",
-              status === 'correct' 
-                ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20" 
+              status === 'correct'
+                ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20"
                 : "bg-purple-600 hover:bg-purple-700 shadow-purple-500/20"
             )}
             disabled={status === 'idle' ? !hasAnswer : false}
@@ -276,7 +283,7 @@ export function PracticeStage({
           >
             {status === 'correct' ? (
               <>
-                <span>{isLast ? 'Qua Quiz' : 'Tiếp theo'}</span>
+                <span>{isLast ? 'Làm bài kiểm tra' : 'Tiếp theo'}</span>
                 <ChevronRight className="h-5 w-5" />
               </>
             ) : (

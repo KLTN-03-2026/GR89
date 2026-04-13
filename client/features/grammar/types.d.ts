@@ -2,11 +2,12 @@ export interface GrammarTopic {
   _id: string
   title: string
   description: string
+  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
   progress: number
   isVipRequired?: boolean
 }
 
-export type StudyStage = 'theory' | 'practice' | 'quiz' | 'result'
+export type StudyStage = 'theory' | 'practice'
 export type PracticeStatus = 'idle' | 'correct' | 'wrong'
 
 export type LessonSection = {

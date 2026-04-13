@@ -2,7 +2,6 @@ import mongoose, { Schema, Document } from "mongoose";
 import mongoosePaginate from 'mongoose-paginate-v2';
 
 export interface IListening extends Document {
-  /** Tham chiếu tới collection ListeningQuiz (lượt 1 — trắc nghiệm ý chính) */
   quizzes?: mongoose.Types.ObjectId[]
   title: string
   description: string
@@ -17,7 +16,6 @@ export interface IListening extends Document {
   updatedBy?: mongoose.Types.ObjectId
 }
 
-// Interface for pagination result
 export interface IListeningPaginateResult {
   listenings: IListening[]
   totalDocs: number

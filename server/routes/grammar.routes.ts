@@ -1,5 +1,6 @@
 import express from "express";
 import { authenticateTokenAdmin, authenticateTokenUser, requireRole } from "../middleware/auth.middleware";
+import { checkVipContentUser } from "../middleware/content.middleware";
 import { GrammarController } from "../controllers/grammar.controller";
 
 const router = express.Router();
@@ -21,6 +22,14 @@ router.delete("/bulk-delete", authenticateTokenAdmin, requireRole(["admin", "con
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
 router.get("/user", authenticateTokenUser, requireRole(["user"]), GrammarController.getAllTopicsByUser);
+router.get("/topic-user/:id/quizzes", authenticateTokenUser, requireRole(["user"]), checkVipContentUser("grammar"), GrammarController.getGrammarQuizForUser);
+router.post(
+  "/quizzes/:id/do",
+  authenticateTokenUser,
+  requireRole(["user"]),
+  checkVipContentUser("grammar"),
+  GrammarController.doGrammarQuiz
+);
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
