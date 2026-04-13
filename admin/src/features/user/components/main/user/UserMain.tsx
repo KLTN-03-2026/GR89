@@ -52,7 +52,6 @@ export function UserMain() {
 
   const fetchStats = useCallback(async () => {
     try {
-      // Fetch active users count
       const activeResponse = await getAllUsersPaginated({
         page: 1,
         limit: 1,
