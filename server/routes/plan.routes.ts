@@ -14,7 +14,6 @@ router.post("/import", authenticateTokenAdmin, requireRole(["admin", "content"])
 
 router.get("/", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.getAllPlans);
 router.put("/bulk/status", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.updateManyPlansStatus);
-router.post("/delete-many", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.deleteManyPlans);
 
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
@@ -25,7 +24,6 @@ router.get("/active", PlanController.getActivePlans);
 router.post("/", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.createPlan);
 router.get("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.getPlanById);
 router.put("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.updatePlan);
-router.delete("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.deletePlan);
 router.put("/:id/status", authenticateTokenAdmin, requireRole(["admin", "content"]), PlanController.updatePlanStatus);
 
 export const planRoutes = router;

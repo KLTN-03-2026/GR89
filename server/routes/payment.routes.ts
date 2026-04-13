@@ -6,7 +6,6 @@ const router = express.Router();
 
 /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
-router.get("/vnpay/callback", PaymentController.vnpayCallback);
 router.post("/vnpay/callback", PaymentController.vnpayCallback);
 
 /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/

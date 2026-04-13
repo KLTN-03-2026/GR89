@@ -53,7 +53,7 @@ export class StreakService {
     if (!user) return { streakLost: false }
 
     if (!user.avatar) user.avatar = new mongoose.Types.ObjectId('69293c75f29d5312d6568881') as any
-    const last = user.lastActiveDate ?? null
+    const last = user.lastLearnDate ?? null
     const now = checkAt
 
     // Nếu đã học hôm nay hoặc hôm qua thì streak còn hiệu lực
@@ -64,13 +64,8 @@ export class StreakService {
     // Nếu không học hôm qua và chuỗi > 0 → Mất chuỗi
     const oldStreak = user.currentStreak > 0 ? user.currentStreak : undefined
 
-    // Cập nhật tất cả thay đổi cùng lúc
     user.lastActiveDate = now
-    if (user.currentStreak > 0) {
-      user.currentStreak = 0
-    }
-
-    // Chỉ save 1 lần với tất cả thay đổi
+    user.currentStreak = 0
     await user.save()
 
     if (oldStreak) {

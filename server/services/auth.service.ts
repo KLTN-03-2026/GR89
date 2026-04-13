@@ -7,6 +7,7 @@ import { sendMail } from '../providers/mailer.provider';
 import bcrypt from 'bcrypt';
 import { StreakService } from './streak.service'
 import axios from 'axios';
+import { Plan } from '../models/plan.model';
 
 interface RegisterData {
   fullName: string;

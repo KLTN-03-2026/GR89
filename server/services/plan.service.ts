@@ -198,35 +198,6 @@ export class PlanService {
     };
   }
 
-  // (ADMIN) Xóa nhiều gói dịch vụ
-  static async deleteManyPlans(
-    ids: string[]
-  ): Promise<{ deletedCount: number; deletedPlans: IPlan[] }> {
-    if (!Array.isArray(ids) || ids.length === 0) {
-      throw new ErrorHandler("Danh sách ID gói trống", 400);
-    }
-
-    const validIds = ids
-      .map((id) => String(id).trim())
-      .filter((id) => id.length > 0 && mongoose.Types.ObjectId.isValid(id));
-
-    if (validIds.length === 0) {
-      throw new ErrorHandler("Không có ID hợp lệ", 400);
-    }
-
-    const plansToDelete = await Plan.find({ _id: { $in: validIds } });
-    if (plansToDelete.length === 0) {
-      throw new ErrorHandler("Không tìm thấy gói nào để xóa", 404);
-    }
-
-    const result = await Plan.deleteMany({ _id: { $in: validIds } });
-
-    return {
-      deletedCount: result.deletedCount || 0,
-      deletedPlans: plansToDelete as IPlan[],
-    };
-  }
-
   // (ADMIN) Import danh sách gói dịch vụ từ file Excel
   static async importPlanData(
     filePath: string,
@@ -446,15 +417,6 @@ export class PlanService {
     }
 
     await plan.save();
-    return plan;
-  }
-
-  // (ADMIN) Xóa gói dịch vụ
-  static async deletePlan(planId: string): Promise<IPlan> {
-    const plan = await Plan.findById(planId);
-    if (!plan) throw new ErrorHandler("Gói dịch vụ không tồn tại", 404);
-
-    await Plan.findByIdAndDelete(planId);
     return plan;
   }
 

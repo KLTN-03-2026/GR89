@@ -33,6 +33,8 @@ export function PaymentsMain() {
   const [limit, setLimit] = useState(10)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
+  const [paidCount, setPaidCount] = useState(0)
+  const [totalRevenue, setTotalRevenue] = useState(0)
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState<string>("all")
   const [provider, setProvider] = useState<string>("all")
@@ -54,6 +56,8 @@ export function PaymentsMain() {
         setLimit(res.pagination.limit)
         setTotal(res.pagination.total)
         setPages(res.pagination.pages)
+        setPaidCount(res.paidCount)
+        setTotalRevenue(res.totalRevenue)
       }).finally(() => {
         setIsLoading(false)
       })
@@ -72,22 +76,15 @@ export function PaymentsMain() {
     fetchPayments(params)
   }, [page, limit, debouncedSearch, sortBy, sortOrder, status, provider, fetchPayments])
 
-  const totalRevenue = useMemo(() => {
-    return payments
-      .filter(p => p.status === 'paid')
-      .reduce((sum, p) => sum + p.amount, 0);
-  }, [payments]);
-
   const formatVnd = useCallback((value: number) => {
     const rounded = Math.round(value || 0)
     return `${rounded.toLocaleString('vi-VN')} ₫`
   }, [])
 
   const kpiStats = useMemo(() => {
-    const paidCount = payments.filter(p => p.status === 'paid').length
     return [
       {
-        title: "Tổng thu (Trang này)",
+        title: "Tổng doanh thu",
         value: formatVnd(totalRevenue),
         change: { value: "Doanh thu", isPositive: true },
         icon: Banknote,
@@ -108,7 +105,7 @@ export function PaymentsMain() {
         tone: "indigo" as const,
       },
     ]
-  }, [payments, total, totalRevenue, formatVnd])
+  }, [total, paidCount, totalRevenue, formatVnd])
 
   return (
     <div className="p-6 space-y-8 bg-gray-50/30 min-h-screen">
@@ -174,6 +171,32 @@ export function PaymentsMain() {
                 <SelectItem value="momo">MoMo</SelectItem>
                 <SelectItem value="stripe">Stripe</SelectItem>
                 <SelectItem value="paypal">PayPal</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={(value) => {
+              setSortBy(value)
+              setPage(1)
+            }}>
+              <SelectTrigger className="h-11 w-[170px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+                <SelectValue placeholder="Sắp xếp theo" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                <SelectItem value="createdAt">Ngày tạo</SelectItem>
+                <SelectItem value="paymentDate">Ngày thanh toán</SelectItem>
+                <SelectItem value="amount">Số tiền</SelectItem>
+                <SelectItem value="status">Trạng thái</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortOrder} onValueChange={(value) => {
+              setSortOrder(value as 'asc' | 'desc')
+              setPage(1)
+            }}>
+              <SelectTrigger className="h-11 w-[150px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+                <SelectValue placeholder="Thứ tự" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                <SelectItem value="desc">Giảm dần</SelectItem>
+                <SelectItem value="asc">Tăng dần</SelectItem>
               </SelectContent>
             </Select>
           </div>

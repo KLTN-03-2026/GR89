@@ -294,7 +294,6 @@ Ghi chú:
 - `GET /:id`
 - `GET /user`
 - `POST /create-url`
-- `GET /vnpay/callback`
 - `POST /vnpay/callback`
 
 ### 18) Chatbot - `/chatbot`

@@ -2,6 +2,7 @@ import { IUser, User, IUserPaginateResult } from "../models/user.model";
 import ErrorHandler from "../utils/ErrorHandler";
 import XLSX from 'xlsx'
 import mongoose from "mongoose";
+import { Plan } from "../models/plan.model";
 
 export class UserService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -265,5 +266,26 @@ export class UserService {
     }
 
     return user;
+  }
+
+  // (USER) MIDDLEWARE KIỂM TRA VIP
+  static async checkVip(userId: string): Promise<void> {
+    const user = await User.findById(userId).select("-password");
+    if (!user) throw new ErrorHandler("Không tìm thấy người dùng", 404);
+    if (user.role === 'user' && user.isVip && user.vipStartDate) {
+      const vipPlan = await Plan.findById(user.vipPlanId)
+      if (!vipPlan) throw new ErrorHandler('Gói vip không tồn tại', 404)
+      if (vipPlan.isActive === false) throw new ErrorHandler('Gói vip đã bị khóa', 403)
+      const durationDays = vipPlan.billingCycle === 'monthly' ? 30
+        : vipPlan.billingCycle === 'yearly' ? 365
+          : 365000 // ~1000 years
+      if (new Date(user.vipStartDate).getTime() + durationDays * 24 * 60 * 60 * 1000 < new Date().getTime()) {
+        user.isVip = false
+        user.vipPlanId = undefined
+        user.vipStartDate = undefined
+        await user.save()
+        throw new ErrorHandler('Gói vip đã hết hạn', 403)
+      }
+    }
   }
 }

@@ -4,10 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/common"
 import { columnsPlans, PlanRow } from "../table/PlansColumn"
-import { Download, Upload, Trash2, Eye, EyeOff, LayoutGrid, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
+import { Download, Upload, Eye, EyeOff, LayoutGrid, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
 import {
   getPlansPaginated,
-  deleteManyPlans,
   updateManyPlansStatus,
   exportPlanExcel,
   importPlanExcel,
@@ -57,7 +56,6 @@ export function PlansMain() {
   const [sortBy] = useState<string>("sortOrder")
   const [sortOrder] = useState<'asc' | 'desc'>('asc')
   const [selectedRows, setSelectedRows] = useState<PlanRow[]>([])
-  const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [openPublishDialog, setOpenPublishDialog] = useState(false)
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
   const [loadingAction, setLoadingAction] = useState(false)
@@ -101,28 +99,6 @@ export function PlansMain() {
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1)
   }, [])
-
-
-  const handleBulkDelete = async () => {
-    if (selectedRows.length === 0) {
-      toast.warning('Vui lòng chọn ít nhất một gói')
-      return
-    }
-
-    setLoadingAction(true)
-    try {
-      await deleteManyPlans(selectedRows.map(r => r._id))
-      toast.success(`Xóa thành công ${selectedRows.length} gói`)
-      setSelectedRows([])
-      setOpenDeleteDialog(false)
-      setRefreshKey(prev => prev + 1)
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Không thể xóa gói')
-    } finally {
-      setLoadingAction(false)
-    }
-  }
 
   const handleBulkStatusUpdate = async () => {
     if (selectedRows.length === 0) {
@@ -273,14 +249,6 @@ export function PlansMain() {
                 >
                   <EyeOff className="w-4 h-4 mr-2" /> Ẩn
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOpenDeleteDialog(true)}
-                  className="h-9 px-4 rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50 font-bold"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" /> Xóa
-                </Button>
                 <div className="h-4 w-[1px] bg-gray-200 mx-1" />
                 <span className="text-xs font-black text-gray-400 px-3 uppercase tracking-tighter">Đã chọn {selectedRows.length}</span>
               </div>
@@ -350,26 +318,6 @@ export function PlansMain() {
           />
         </CardContent>
       </Card>
-
-      {/* Delete Dialog */}
-      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc muốn xóa {selectedRows.length} gói đã chọn? Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)} disabled={loadingAction}>
-              Hủy
-            </Button>
-            <Button variant="destructive" onClick={handleBulkDelete} disabled={loadingAction}>
-              {loadingAction ? 'Đang xóa...' : 'Xóa'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Publish Dialog */}
       <Dialog open={openPublishDialog} onOpenChange={setOpenPublishDialog}>

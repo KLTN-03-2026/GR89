@@ -3,13 +3,14 @@ import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { PaymentService, IPaymentOptions } from "../services/payment.service";
 import ErrorHandler from "../utils/ErrorHandler";
 import { UserInfo } from "../services/auth.service";
+import { Payment } from "../models/payment.model";
 
 export class PaymentController {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (VNPay) Callback xử lý kết quả thanh toán từ VNPay
   static vnpayCallback = CatchAsyncError(async (req: Request, res: Response) => {
-    const vnpParams = req.method === "POST" ? req.body : req.query;
+    const vnpParams = req.body
     const result = await PaymentService.handleVNPayCallback(vnpParams);
 
     res.status(200).json({
@@ -52,6 +53,13 @@ export class PaymentController {
       };
 
       const result = await PaymentService.getAllPaymentsPaginated(options);
+
+
+      const paidCount = await Payment.countDocuments({ status: "paid" });
+      const totalRevenue = await Payment.aggregate([
+        { $match: { status: "paid" } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]);
       res.status(200).json({
         success: true,
         message: "Lấy danh sách giao dịch thành công",
@@ -66,6 +74,8 @@ export class PaymentController {
           next: result.next,
           prev: result.prev,
         },
+        paidCount,
+        totalRevenue: totalRevenue[0]?.total || 0,
       });
     }
   );

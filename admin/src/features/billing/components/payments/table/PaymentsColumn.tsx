@@ -43,7 +43,7 @@ export const columnsPayments: ColumnDef<PaymentRow>[] = [
     enableSorting: false,
     enableHiding: false,
   },
-{
+  {
     accessorKey: "_id",
     header: "Mã GD",
     cell: ({ row }) => (
@@ -57,23 +57,23 @@ export const columnsPayments: ColumnDef<PaymentRow>[] = [
       const user = row.original.userId
       if (typeof user === 'object' && user) {
         return <div>
-          <div className="font-medium">{(user as any).fullName || 'N/A'}</div>
-          <div className="text-xs text-gray-500">{(user as any).email || ''}</div>
+          <div className="font-medium">{user.fullName || 'N/A'}</div>
+          <div className="text-xs text-gray-500">{user.email || ''}</div>
         </div>
       }
       return <span>{typeof user === 'string' ? user : 'N/A'}</span>
     }
   },
-  { 
-    accessorKey: "planId", 
+  {
+    accessorKey: "planId",
     header: "Gói",
     cell: ({ row }) => (
       <span className="font-medium">{row.original.planId}</span>
     )
   },
-  { 
-    accessorKey: "amount", 
-    header: "Số tiền", 
+  {
+    accessorKey: "amount",
+    header: "Số tiền",
     cell: ({ row }) => {
       const payment = row.original
       const roundedAmount = Math.round(payment.amount || 0)
@@ -96,16 +96,16 @@ export const columnsPayments: ColumnDef<PaymentRow>[] = [
       )
     }
   },
-  { 
-    accessorKey: "provider", 
-    header: "Cổng", 
+  {
+    accessorKey: "provider",
+    header: "Cổng",
     cell: ({ row }) => (
       <span className="uppercase font-medium">{row.original.provider}</span>
     )
   },
-  { 
-    accessorKey: "status", 
-    header: "Trạng thái", 
+  {
+    accessorKey: "status",
+    header: "Trạng thái",
     cell: ({ row }) => <StatusBadge status={row.original.status} />
   },
   {

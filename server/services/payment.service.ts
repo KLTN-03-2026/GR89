@@ -131,17 +131,13 @@ export class PaymentService {
     const now = new Date();
     let startDate = now;
 
-    if (user.isVip && user.vipEndDate && user.vipEndDate > now) {
-      startDate = user.vipEndDate;
+    if (user.isVip && user.vipStartDate && user.vipStartDate > now) {
+      startDate = user.vipStartDate;
     }
-
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + durationDays);
 
     user.isVip = true;
     user.vipPlanId = new mongoose.Types.ObjectId(planId);
     user.vipStartDate = user.vipStartDate || now;
-    user.vipEndDate = endDate;
 
     await user.save();
   }
@@ -293,9 +289,8 @@ export class PaymentService {
       vnp_Amount: vnpAmount,
       vnp_IpAddr: ipAddr,
       vnp_TxnRef: String(newPayment._id),
-      vnp_OrderInfo: `Thanh toán gói ${plan.name}${
-        discountAmount > 0 ? ` - Giảm ${discountAmount.toLocaleString("vi-VN")}đ` : ""
-      } - ${finalAmount.toLocaleString("vi-VN")}đ`,
+      vnp_OrderInfo: `Thanh toán gói ${plan.name}${discountAmount > 0 ? ` - Giảm ${discountAmount.toLocaleString("vi-VN")}đ` : ""
+        } - ${finalAmount.toLocaleString("vi-VN")}đ`,
       vnp_OrderType: ProductCode.Other,
       vnp_ReturnUrl: returnUrl,
       vnp_Locale: VnpLocale.VN,

@@ -220,37 +220,6 @@ if (typeof window !== "undefined") {
       event.preventDefault()
     }
   })
-
-  // Override console.error để filter axios errors
-  const originalConsoleError = console.error
-  console.error = (...args: unknown[]) => {
-    // Kiểm tra nếu là axios error đã được xử lý
-    const firstArg = args[0]
-    if (
-      firstArg &&
-      typeof firstArg === "object" &&
-      "isAxiosError" in firstArg &&
-      (firstArg as AxiosError & { _handled?: boolean })._handled
-    ) {
-      // Bỏ qua - không log
-      return
-    }
-
-    // Kiểm tra nếu message chứa "AxiosError" hoặc "Request failed" và liên quan đến API
-    const message = String(args[0] || "")
-    if (
-      (message.includes("AxiosError") ||
-        message.includes("Request failed") ||
-        message.includes("status code")) &&
-      (message.includes(API_BASE_URL) || message.includes(":8000/api") || message.includes("api.ts"))
-    ) {
-      // Bỏ qua - không log
-      return
-    }
-
-    // Log các lỗi khác bình thường
-    // originalConsoleError.apply(console, args)
-  }
 }
 
 export default api

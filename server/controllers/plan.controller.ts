@@ -133,28 +133,6 @@ export class PlanController {
     }
   );
 
-  // (ADMIN) Xóa nhiều gói dịch vụ
-  static deleteManyPlans = CatchAsyncError(
-    async (req: Request, res: Response, next: NextFunction) => {
-      const { ids } = req.body;
-      if (!Array.isArray(ids) || ids.length === 0) {
-        return next(new ErrorHandler("Danh sách ID gói trống", 400));
-      }
-      const result = await PlanService.deleteManyPlans(ids);
-      await PlanController.logAdminAction(req, {
-        action: 'bulk_delete',
-        resourceType: 'plan',
-        description: 'Xóa hàng loạt gói nâng cấp',
-        metadata: { idsCount: ids.length, deletedCount: result.deletedCount }
-      })
-      res.status(200).json({
-        success: true,
-        message: `Đã xóa ${result.deletedCount} gói dịch vụ thành công`,
-        data: result,
-      });
-    }
-  );
-
   /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
   // (USER) Lấy danh sách gói dịch vụ đang hoạt động
@@ -291,23 +269,6 @@ export class PlanController {
     res.status(200).json({
       success: true,
       message: "Cập nhật gói dịch vụ thành công",
-      data: plan,
-    });
-  });
-
-  // (ADMIN) Xóa gói dịch vụ
-  static deletePlan = CatchAsyncError(async (req: Request, res: Response, _next: NextFunction) => {
-    const { id } = req.params;
-    const plan = await PlanService.deletePlan(id);
-    await PlanController.logAdminAction(req, {
-      action: 'delete',
-      resourceType: 'plan',
-      resourceId: id,
-      description: 'Xóa gói nâng cấp'
-    })
-    res.status(200).json({
-      success: true,
-      message: "Xóa gói dịch vụ thành công",
       data: plan,
     });
   });

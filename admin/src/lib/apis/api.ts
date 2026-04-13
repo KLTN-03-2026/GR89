@@ -454,16 +454,6 @@ export async function updatePlan(id: string, data: Partial<DataPlan>): Promise<R
   return response.data as Response<Plan>
 }
 
-export async function deletePlan(id: string): Promise<Response<Plan>> {
-  const response = await AuthorizedAxios.delete(`/plan/${id}`)
-  return response.data as Response<Plan>
-}
-
-export async function deleteManyPlans(ids: string[]): Promise<Response<{ deletedCount: number; deletedPlans: Plan[] }>> {
-  const response = await AuthorizedAxios.post('/plan/delete-many', { ids })
-  return response.data as Response<{ deletedCount: number; deletedPlans: Plan[] }>
-}
-
 export async function updatePlanStatus(id: string): Promise<Response<Plan>> {
   const response = await AuthorizedAxios.put(`/plan/${id}/status`)
   return response.data as Response<Plan>
@@ -535,9 +525,11 @@ export interface PaginatedPaymentResponse {
   message: string
   data: Payment[]
   pagination: PaymentPaginationMeta
+  paidCount: number
+  totalRevenue: number
 }
 
-export async function getPaymentsPaginated(params?: PaymentQueryParams): Promise<{ success: boolean; data: Payment[]; pagination: PaymentPaginationMeta }> {
+export async function getPaymentsPaginated(params?: PaymentQueryParams): Promise<{ success: boolean; data: Payment[]; pagination: PaymentPaginationMeta; paidCount: number; totalRevenue: number }> {
   const queryParams = new URLSearchParams()
   if (params?.page != null) queryParams.append('page', String(params.page))
   if (params?.limit != null) queryParams.append('limit', String(params.limit))
@@ -559,6 +551,8 @@ export async function getPaymentsPaginated(params?: PaymentQueryParams): Promise
     success: payload.success || false,
     data: payload.data || [],
     pagination: payload.pagination,
+    paidCount: payload.paidCount,
+    totalRevenue: payload.totalRevenue,
   }
 }
 

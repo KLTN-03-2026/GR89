@@ -2,12 +2,11 @@
 import { PlanRow } from './PlansColumn'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
-import { deletePlan, updatePlanStatus } from '@/lib/apis/api'
+import { Eye, EyeOff, Loader2, MoreHorizontal, Pencil } from "lucide-react"
+import { updatePlanStatus } from '@/lib/apis/api'
 import { toast } from 'react-toastify'
 import { useState } from 'react'
 import { SheetUpdatePlan } from '@/features/billing'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface ActionCellProps {
   plan: PlanRow
@@ -17,7 +16,6 @@ interface ActionCellProps {
 export default function ActionCell({ plan, callback }: ActionCellProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isOpenUpdatePlan, setIsOpenUpdatePlan] = useState(false)
-  const [openDelete, setOpenDelete] = useState(false)
 
   const handleToggleStatus = () => {
     setIsLoading(true)
@@ -35,23 +33,6 @@ export default function ActionCell({ plan, callback }: ActionCellProps) {
       })
   }
 
-  const handleDeletePlan = () => {
-    setIsLoading(true)
-    deletePlan(plan._id)
-      .then(() => {
-        callback()
-        toast.success('Xóa gói thành công')
-        setOpenDelete(false)
-      })
-      .catch((error: unknown) => {
-        const err = error as { response?: { data?: { message?: string } } }
-        toast.error(err?.response?.data?.message || 'Không thể xóa gói')
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }
-
   return (
     <>
       <SheetUpdatePlan
@@ -60,28 +41,6 @@ export default function ActionCell({ plan, callback }: ActionCellProps) {
         open={isOpenUpdatePlan}
         setOpen={setIsOpenUpdatePlan}
       />
-
-      {/* Dialog xác nhận xóa */}
-      <Dialog open={openDelete} onOpenChange={setOpenDelete}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa gói</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa gói <strong>"{plan.name}"</strong> không?
-              Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDelete(false)} disabled={isLoading}>
-              Hủy
-            </Button>
-            <Button variant="destructive" onClick={handleDeletePlan} disabled={isLoading}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-              Xóa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -113,15 +72,6 @@ export default function ActionCell({ plan, callback }: ActionCellProps) {
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            className="text-red-600"
-            onClick={() => setOpenDelete(true)}
-            disabled={isLoading}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Xóa
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>

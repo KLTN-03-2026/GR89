@@ -29,6 +29,8 @@ export interface IPaymentPaginateResult {
   next?: number;
   prev?: number;
   pagingCounter: number;
+  paidCount: number;
+  totalRevenue: number;
 }
 
 const paymentSchema = new Schema<IPayment>(

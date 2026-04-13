@@ -197,12 +197,12 @@ export default function PaymentCallbackPage() {
           <div className="pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-500 text-center">
               Có câu hỏi? Liên hệ{' '}
-              <a href="mailto:support@englishmastery.com" className="text-blue-600 hover:underline font-medium">
+              <a href="englishmaster.duytan@gmail.com" className="text-blue-600 hover:underline font-medium">
                 hỗ trợ khách hàng
               </a>
               {' '}hoặc gọi{' '}
-              <a href="tel:1900555577" className="text-blue-600 hover:underline font-medium">
-                1900 555 577
+              <a href="tel:0393900748" className="text-blue-600 hover:underline font-medium">
+                0393 900 748
               </a>
             </p>
           </div>

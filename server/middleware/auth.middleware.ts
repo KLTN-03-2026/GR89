@@ -6,6 +6,7 @@ import { CookieUtil } from "../utils/cookie.util";
 import { JWTUtils } from "../utils/jwt.utils";
 import { StreakService } from '../services/streak.service';
 import { User } from '../models/user.model';
+import { UserService } from "../services/user.service";
 
 
 // Extend Request để có thêm thuộc tính user
@@ -69,6 +70,8 @@ export const authenticateTokenUser = CatchAsyncError(
       await StreakService.checkAndResetStreak(req.user._id)
       // Cập nhật lastActiveDate
       await updateLastActiveDateForUser(req.user._id)
+      // Kiểm tra vip
+      await UserService.checkVip(req.user._id)
     }
 
     next();
@@ -81,6 +84,7 @@ export const authenticateTokenAdmin = CatchAsyncError(
     let refreshToken = req.cookies.refresh_token_admin || req.cookies.refresh_token_content;
     let tokenRole = 'admin';
 
+    console.log(accessToken, refreshToken)
 
     // Xác định role từ token type
     if (req.cookies.access_token_content) {
