@@ -43,12 +43,17 @@ export class ListeningService {
     })
   }
 
-  private static splitSentences(text: string): string[] {
+  private static splitSubtitleLines(text: string): string[] {
     return String(text || '')
-      .trim()
-      .split(/(?<=[.!?])\s+/)
-      .map(s => s.trim())
+      .split(/\r?\n/)
+      .map((line) => line.trim())
       .filter(Boolean)
+  }
+
+  private static getSpeakerPrefix(line: string): string | null {
+    const match = String(line || '').trim().match(/^([A-Za-z][A-Za-z0-9_-]{0,20})\s*:/)
+    if (!match) return null
+    return match[1].toUpperCase()
   }
 
   /** Chuẩn hoá dữ liệu trả về client: luôn có `quiz` (mảng câu hỏi), không phụ thuộc cách lưu DB */
@@ -113,13 +118,33 @@ export class ListeningService {
   }
 
   private static validateSubtitlePair(subtitle: string, subtitleVi: string) {
-    const enSentences = this.splitSentences(subtitle)
-    const viSentences = this.splitSentences(subtitleVi)
-    if (enSentences.length !== viSentences.length) {
+    const enLines = this.splitSubtitleLines(subtitle)
+    const viLines = this.splitSubtitleLines(subtitleVi)
+    if (enLines.length !== viLines.length) {
       throw new ErrorHandler(
-        `Số lượng câu subtitle tiếng Anh (${enSentences.length}) phải bằng subtitle tiếng Việt (${viSentences.length})`,
+        `Số lượng dòng subtitle tiếng Anh (${enLines.length}) phải bằng subtitle tiếng Việt (${viLines.length})`,
         400
       )
+    }
+
+    for (let i = 0; i < enLines.length; i++) {
+      const enSpeaker = this.getSpeakerPrefix(enLines[i])
+      const viSpeaker = this.getSpeakerPrefix(viLines[i])
+
+      // Dòng hội thoại có speaker prefix (A:, B:, Teacher:...) thì EN/VI phải đồng nhất
+      if (!!enSpeaker !== !!viSpeaker) {
+        throw new ErrorHandler(
+          `Dòng ${i + 1} không đồng nhất speaker prefix giữa EN và VI`,
+          400
+        )
+      }
+
+      if (enSpeaker && viSpeaker && enSpeaker !== viSpeaker) {
+        throw new ErrorHandler(
+          `Speaker không khớp ở dòng ${i + 1}: EN là "${enSpeaker}:" nhưng VI là "${viSpeaker}:"`,
+          400
+        )
+      }
     }
   }
 

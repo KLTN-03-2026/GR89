@@ -16,7 +16,11 @@ import { Button } from '@/components/ui/button'
 import { SheetFooter } from '@/components/ui/sheet'
 
 export function DialogAddListening({ callback }: { callback: () => void }) {
-  const countSentences = (text: string) => text.trim().split(/(?<=[.!?])\s+/).filter(Boolean).length
+  const countSubtitleLines = (text: string) =>
+    String(text || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean).length
   const [open, setOpen] = useState(false)
   const [data, setData] = useState({
     title: "",
@@ -39,8 +43,8 @@ export function DialogAddListening({ callback }: { callback: () => void }) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
       return
     }
-    if (countSentences(data.subtitle) !== countSentences(data.subtitleVi)) {
-      toast.error('Số lượng câu phụ đề tiếng Anh và tiếng Việt phải bằng nhau')
+    if (countSubtitleLines(data.subtitle) !== countSubtitleLines(data.subtitleVi)) {
+      toast.error('Số lượng dòng phụ đề tiếng Anh và tiếng Việt phải bằng nhau')
       return
     }
 

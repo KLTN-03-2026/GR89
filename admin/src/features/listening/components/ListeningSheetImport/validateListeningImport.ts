@@ -22,7 +22,11 @@ export function validateListeningImportJson(input: unknown): ParseResult {
   }
 
   const errors: string[] = []
-  const countSentences = (text: string) => text.trim().split(/(?<=[.!?])\s+/).filter(Boolean).length
+  const countSubtitleLines = (text: string) =>
+    String(text || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean).length
 
   const validateQuiz = (quizValue: unknown, rowLabel: string) => {
     if (quizValue == null) return
@@ -59,8 +63,8 @@ export function validateListeningImportJson(input: unknown): ParseResult {
     if (!it.audio) errors.push(`Dòng [${i}]: thiếu "audio" (media ID)`)
     if (!it.subtitle) errors.push(`Dòng [${i}]: thiếu "subtitle"`)
     if (!it.subtitleVi) errors.push(`Dòng [${i}]: thiếu "subtitleVi"`)
-    if (it.subtitle && it.subtitleVi && countSentences(String(it.subtitle)) !== countSentences(String(it.subtitleVi))) {
-      errors.push(`Dòng [${i}]: số câu subtitle và subtitleVi phải bằng nhau`)
+    if (it.subtitle && it.subtitleVi && countSubtitleLines(String(it.subtitle)) !== countSubtitleLines(String(it.subtitleVi))) {
+      errors.push(`Dòng [${i}]: số dòng subtitle và subtitleVi phải bằng nhau`)
     }
     if (it.level && !['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(it.level)) {
       errors.push(`Dòng [${i}]: "level" phải là A1-C2`)
@@ -74,7 +78,11 @@ export function validateListeningImportJson(input: unknown): ParseResult {
 
 export function parseExcelToListeningJson(sheets: Sheet[]): ParseResult {
   const errors: string[] = []
-  const countSentences = (text: string) => text.trim().split(/(?<=[.!?])\s+/).filter(Boolean).length
+  const countSubtitleLines = (text: string) =>
+    String(text || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean).length
   const sheet = sheets.find(s => s.name === 'Listenings')
 
   if (!sheet) {
@@ -87,8 +95,8 @@ export function parseExcelToListeningJson(sheets: Sheet[]): ParseResult {
     if (!row.audioID) errors.push(`Listenings row ${i}: thiếu audioID (media ID)`)
     if (!row.subtitle) errors.push(`Listenings row ${i}: thiếu subtitle`)
     if (!row.subtitleVi) errors.push(`Listenings row ${i}: thiếu subtitleVi`)
-    if (row.subtitle && row.subtitleVi && countSentences(String(row.subtitle)) !== countSentences(String(row.subtitleVi))) {
-      errors.push(`Listenings row ${i}: số câu subtitle và subtitleVi phải bằng nhau`)
+    if (row.subtitle && row.subtitleVi && countSubtitleLines(String(row.subtitle)) !== countSubtitleLines(String(row.subtitleVi))) {
+      errors.push(`Listenings row ${i}: số dòng subtitle và subtitleVi phải bằng nhau`)
     }
 
     let parsedQuiz: QuizItem[] = []

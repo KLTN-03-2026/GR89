@@ -145,6 +145,7 @@ export class MediaController {
       {
         filePath: req.file.path,
         userId,
+        originalName: req.file.originalname,
       }
     );
     await MediaController.logAdminAction(req, {

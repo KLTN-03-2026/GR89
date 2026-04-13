@@ -5,8 +5,16 @@ import Link from 'next/link'
 import { AudioSection } from '@/components/common/medias'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import type { IListening } from '@/features/listening/types'
-import { CheckCircle2, ChevronRight, Headphones, HelpCircle, XCircle } from 'lucide-react'
+import { CheckCircle2, ChevronRight, Headphones, HelpCircle, Lightbulb, XCircle } from 'lucide-react'
 import { doListeningQuiz } from '@/features/listening/services/listeningApi'
 import { useStudySession } from '@/libs/hooks/useStudySession'
 import { toast } from 'react-toastify'
@@ -83,8 +91,8 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
 
   return (
     <div className="space-y-5">
-      <Card className="border-indigo-100/80 shadow-[0_12px_32px_rgba(99,102,241,0.10)] overflow-hidden rounded-2xl">
-        <CardHeader className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white px-6 py-5">
+      <Card className="border-indigo-100/80 pt-0 shadow-[0_12px_32px_rgba(99,102,241,0.10)] overflow-hidden rounded-2xl">
+        <CardHeader className="bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 text-white p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 text-indigo-100 text-xs font-semibold bg-white/10 px-2.5 py-1 rounded-full">
@@ -98,13 +106,35 @@ export function ListeningGistQuizPage({ listening }: { listening: IListening }) 
                 {listening.description}
               </p>
             </div>
-
-            <Link
-              href={`/skills/listening/${listening._id}`}
-              className="shrink-0 text-sm bg-white/15 hover:bg-white/25 transition px-3 py-1.5 rounded-lg font-medium"
-            >
-              Bỏ qua
-            </Link>
+          </div>
+          <div className="mt-3">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="secondary"
+                  className="bg-white/15 hover:bg-white/25 text-white border border-white/25"
+                >
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                  Gợi ý cách học
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Cách học Listening hiệu quả</DialogTitle>
+                  <DialogDescription>
+                    Làm theo 3 bước sau để nghe hiểu tốt hơn và ghi nhớ nội dung nhanh hơn.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 text-sm text-gray-700">
+                  <p><strong>Bước 1:</strong> Đọc trước câu hỏi để hiểu yêu cầu và xác định thông tin cần nghe.</p>
+                  <p><strong>Bước 2:</strong> Nghe trọn vẹn một lần để nắm ý chính, không tạm dừng và không tua lại, sau đó chọn đáp án trắc nghiệm.</p>
+                  <p><strong>Bước 3:</strong> Nộp bài, chuyển sang phần nghe chép chính tả và xem lại lý do vì sao mình chọn sai để rút kinh nghiệm.</p>
+                  <p className="text-gray-500">
+                    Mẹo: Khi phân vân, hãy ưu tiên đáp án bám sát ý chính của toàn bộ đoạn hội thoại.
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
 

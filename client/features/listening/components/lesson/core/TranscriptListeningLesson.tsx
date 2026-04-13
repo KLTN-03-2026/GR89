@@ -19,7 +19,12 @@ interface props {
 }
 
 export default function TranscriptListeningLesson({ subtitle, exitHref = "/skills/listening", _id }: props) {
-  const text = subtitle
+  const text = String(subtitle || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => Boolean(line))
+    .map((line) => line.replace(/^[AB]\s*:\s*/i, ''))
+    .join('\n')
 
   const listText = text.trim().split(" ")
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -29,7 +34,6 @@ export default function TranscriptListeningLesson({ subtitle, exitHref = "/skill
     text: string,
     isCorrect: boolean
   }[]>([])
-  const [showDetails, setShowDetails] = useState(false)
   const [showComplete, setShowComplete] = useState(false)
   const [duration, setDuration] = useState(0)
   const [isTimerActive, setIsTimerActive] = useState(false)
@@ -167,6 +171,9 @@ export default function TranscriptListeningLesson({ subtitle, exitHref = "/skill
                 className="w-full bg-white/80 backdrop-blur-sm border-gray-300 shadow-sm mt-2 focus:border-2"
                 disabled={isCompleted}
               />
+              <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                Lưu ý: Không nhập các tiêu đề như &quot;Conversation 1/2/3&quot; khi chép chính tả.
+              </p>
             </div>
           )}
 

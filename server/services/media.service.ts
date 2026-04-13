@@ -17,6 +17,7 @@ import { Entertainment } from "../models/entertainment.model";
 interface IUploadMedia {
   filePath: string;
   userId: string;
+  originalName?: string;
 }
 
 interface IUploadMedias {
@@ -104,7 +105,7 @@ export class MediaService {
   static async uploadMultipleMedia(dataUpload: IUploadMedias): Promise<IMedia[]> {
     const { files, userId } = dataUpload
     const uploadPromises = files.map((file) => {
-      return this.uploadMedia({ filePath: file.path, userId })
+      return this.uploadMedia({ filePath: file.path, userId, originalName: file.originalname })
     });
 
     const results = await Promise.all(uploadPromises);
@@ -417,7 +418,7 @@ export class MediaService {
 
   // TẢI LÊN 1 MEDIA
   static async uploadMedia(uploadData: IUploadMedia): Promise<IMedia> {
-    const { filePath, userId } = uploadData;
+    const { filePath, userId, originalName } = uploadData;
 
     // tải media lên Cloudinary
     const result = await cloudinary.uploader.upload(filePath, {
@@ -429,10 +430,13 @@ export class MediaService {
       ]
     });
 
+    const normalizedTitle = this.getTitleFromFileName(originalName);
+
     const newMedia = await Media.create({
       type: this.getMediaType(result),
       url: result.secure_url,
       publicId: result.public_id,
+      title: normalizedTitle,
       format: result.format,
       size: result.bytes,
       duration: result.duration,
@@ -445,6 +449,12 @@ export class MediaService {
     this.deleteTempFile(filePath);
 
     return newMedia
+  }
+
+  private static getTitleFromFileName(fileName?: string): string {
+    if (!fileName) return ''
+    const title = path.parse(fileName).name.trim()
+    return title
   }
 
   // TẢI LÊN VIDEO TỪ YOUTUBE

@@ -20,7 +20,7 @@ export function ListeningSheetImport({ callback }: { callback?: () => void }) {
       quickGuideTips={[
         'JSON: mảng [{ title, description, audio, subtitle, subtitleVi, quiz, isActive, isVipRequired }].',
         'quiz là mảng [{ question, options[], answer }], answer phải nằm trong options.',
-        'Số lượng câu của subtitle và subtitleVi phải bằng nhau.',
+        'Số lượng dòng của subtitle và subtitleVi phải bằng nhau.',
         'Sử dụng Media ID (ObjectID) cho trường audio.',
         'Hệ thống sẽ cập nhật nếu trùng Title, ngược lại sẽ tạo mới.'
       ]}

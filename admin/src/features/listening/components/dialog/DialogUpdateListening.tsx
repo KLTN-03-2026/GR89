@@ -24,7 +24,11 @@ interface Props {
 }
 
 export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }: Props) {
-  const countSentences = (text: string) => text.trim().split(/(?<=[.!?])\s+/).filter(Boolean).length
+  const countSubtitleLines = (text: string) =>
+    String(text || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean).length
   const [data, setData] = useState({
     title: "",
     description: "",
@@ -65,8 +69,8 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc')
       return
     }
-    if (countSentences(data.subtitle) !== countSentences(data.subtitleVi)) {
-      toast.error('Số lượng câu phụ đề tiếng Anh và tiếng Việt phải bằng nhau')
+    if (countSubtitleLines(data.subtitle) !== countSubtitleLines(data.subtitleVi)) {
+      toast.error('Số lượng dòng phụ đề tiếng Anh và tiếng Việt phải bằng nhau')
       return
     }
 

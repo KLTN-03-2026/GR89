@@ -20,6 +20,14 @@ interface DictationStepWithViProps {
   onComplete: (result: { correct: number; total: number; percentage: number }) => void
 }
 
+const sanitizeSubtitleForDictation = (text: string) =>
+  String(text || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => Boolean(line))
+    .map((line) => line.replace(/^[AB]\s*:\s*/i, ''))
+    .join('\n')
+
 const normalizeWord = (v: string) =>
   v
     .toLowerCase()
@@ -36,9 +44,11 @@ export function DictationStepWithVi({
   onComplete,
 }: DictationStepWithViProps) {
   const router = useRouter()
-  const wordsEn = subtitleEn.trim().split(/\s+/)
-  const sentencesEn = subtitleEn.split(/(?<=[.!?])\s+/).filter(Boolean)
-  const sentencesVi = subtitleVi.trim().split(/(?<=[.!?])\s+/).filter(Boolean)
+  const normalizedSubtitleEn = sanitizeSubtitleForDictation(subtitleEn)
+  const normalizedSubtitleVi = sanitizeSubtitleForDictation(subtitleVi)
+  const wordsEn = normalizedSubtitleEn.trim().split(/\s+/)
+  const sentencesEn = normalizedSubtitleEn.split(/(?<=[.!?])\s+/).filter(Boolean)
+  const sentencesVi = normalizedSubtitleVi.trim().split(/(?<=[.!?])\s+/).filter(Boolean)
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [inputText, setInputText] = useState('')
@@ -198,6 +208,9 @@ export function DictationStepWithVi({
               <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">
                 Bạn sẽ nghe audio và gõ lại từng từ. Nhấn <kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-xs">Enter</kbd> hoặc <kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-xs">Space</kbd> để xác nhận.
                 Sau mỗi câu hoàn thành, bản dịch tiếng Việt sẽ hiện ra.
+              </p>
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-md mx-auto mb-4">
+                Lưu ý: Không nhập các tiêu đề như &quot;Conversation 1/2/3&quot; khi chép chính tả.
               </p>
               <Button
                 onClick={handleStart}

@@ -92,6 +92,13 @@ export async function uploadAudioSingle(file: File): Promise<ApiResponse<Media>>
   return response.data as ApiResponse<Media>
 }
 
+export async function uploadAudioMultiple(files: File[]): Promise<ApiResponse<Media[]>> {
+  const formData = new FormData()
+  files.forEach((file) => formData.append('files', file))
+  const response = await AuthorizedAxios.post('/media/upload/multiple', formData)
+  return response.data as ApiResponse<Media[]>
+}
+
 export async function uploadVideoSingle(file: File): Promise<ApiResponse<Media>> {
   const formData = new FormData()
   formData.append('file', file)
