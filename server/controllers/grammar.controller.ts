@@ -4,7 +4,6 @@ import { GrammarService } from "../services/grammar.service";
 import ErrorHandler from "../utils/ErrorHandler";
 import { UserInfo } from "../services/auth.service";
 import { IQuizResult } from "../models/quizzResult.model";
-import { StreakService } from "../services/streak.service";
 import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
 
 export class GrammarController {
@@ -173,7 +172,6 @@ export class GrammarController {
       quizResults as IQuizResult[],
       studyTimeSeconds
     );
-    await StreakService.update(user._id);
 
     res.status(200).json({
       success: true,

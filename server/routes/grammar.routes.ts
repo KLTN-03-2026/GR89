@@ -22,14 +22,8 @@ router.delete("/bulk-delete", authenticateTokenAdmin, requireRole(["admin", "con
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
 router.get("/user", authenticateTokenUser, requireRole(["user"]), GrammarController.getAllTopicsByUser);
-router.get("/topic-user/:id/quizzes", authenticateTokenUser, requireRole(["user"]), checkVipContentUser("grammar"), GrammarController.getGrammarQuizForUser);
-router.post(
-  "/quizzes/:id/do",
-  authenticateTokenUser,
-  requireRole(["user"]),
-  checkVipContentUser("grammar"),
-  GrammarController.doGrammarQuiz
-);
+router.get("/topic-user/:id/quizzes", authenticateTokenUser, requireRole(["user"]), GrammarController.getGrammarQuizForUser);
+router.post("/quizzes/:id/do", authenticateTokenUser, requireRole(["user"]), GrammarController.doGrammarQuiz);
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 

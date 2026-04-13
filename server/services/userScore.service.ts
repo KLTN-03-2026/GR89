@@ -9,7 +9,6 @@ import { GrammarTopic } from '../models/grammarTopic.model'
 import { writingModel } from '../models/writing.model'
 import { Ipa } from '../models/ipa.model'
 import { Speaking } from '../models/speaking.model'
-import { StreakService } from './streak.service'
 import ErrorHandler from '../utils/ErrorHandler'
 
 type TotalsMap = Map<string, number>

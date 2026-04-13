@@ -5,6 +5,14 @@ import path from 'path';
 import ErrorHandler from "../utils/ErrorHandler";
 import crypto from 'crypto';
 import fetch from 'node-fetch';
+import { User } from "../models/user.model";
+import { Vocabulary } from "../models/vocabulary.model";
+import { VocabularyTopic } from "../models/vocabularyTopic.model";
+import { Reading } from "../models/reading.model";
+import { Listening } from "../models/listening.model";
+import { Speaking } from "../models/speaking.model";
+import { Ipa } from "../models/ipa.model";
+import { Entertainment } from "../models/entertainment.model";
 
 interface IUploadMedia {
   filePath: string;
@@ -103,27 +111,97 @@ export class MediaService {
     return results;
   }
 
-  // XÓA NHIỀU MEDIA (tối ưu theo lô, bao gồm Cloudinary)
+  // XÓA NHIỀU MEDIA (safe delete: chỉ xóa các media không còn tham chiếu)
   static async deleteMany(mediaIds: string[]) {
     if (!Array.isArray(mediaIds) || mediaIds.length === 0) {
-      return { deletedCount: 0 }
+      return { deletedCount: 0 };
     }
 
-    const medias = await Media.find({ _id: { $in: mediaIds } }).select('_id publicId')
+    // bỏ trùng + lọc rỗng
+    const uniqueIds = Array.from(new Set(mediaIds.filter(Boolean)));
+
+    // không cho xóa ảnh mặc định
+    const protectedIds = ['69293c75f29d5312d6568881'];
+    const candidateIds = uniqueIds.filter(id => !protectedIds.includes(id));
+
+    if (candidateIds.length === 0) {
+      return { deletedCount: 0 };
+    }
+
+    // lấy media thực sự tồn tại
+    const medias = await Media.find({ _id: { $in: candidateIds } }).select('_id publicId');
     if (medias.length === 0) {
-      return { deletedCount: 0 }
+      return { deletedCount: 0 };
     }
 
-    const publicIds = medias
+    const deletableIds: string[] = [];
+    const blockedItems: { mediaId: string; usedIn: string[] }[] = [];
+
+    // kiểm tra từng media giống deleteOne
+    for (const media of medias) {
+      const checks = [
+        { label: 'User.avatar', query: User.exists({ avatar: media._id }) },
+        { label: 'Vocabulary.image', query: Vocabulary.exists({ image: media._id }) },
+        { label: 'VocabularyTopic.image', query: VocabularyTopic.exists({ image: media._id }) },
+        { label: 'Reading.image', query: Reading.exists({ image: media._id }) },
+        { label: 'Listening.audio', query: Listening.exists({ audio: media._id }) },
+        { label: 'Speaking.audio', query: Speaking.exists({ audio: media._id }) },
+        {
+          label: 'Ipa.image/audio',
+          query: Ipa.exists({ $or: [{ image: media._id }, { audio: media._id }] })
+        },
+        {
+          label: 'Entertainment.videoUrl/thumbnailUrl',
+          query: Entertainment.exists({
+            $or: [{ videoUrl: media._id }, { thumbnailUrl: media._id }]
+          })
+        },
+        { label: 'Media.thumbnail', query: Media.exists({ thumbnail: media._id }) },
+      ];
+
+      const results = await Promise.all(checks.map(c => c.query));
+      const usedIn = checks
+        .filter((_, idx) => Boolean(results[idx]))
+        .map(c => c.label);
+
+      if (usedIn.length > 0) {
+        blockedItems.push({
+          mediaId: String(media._id),
+          usedIn
+        });
+      } else {
+        deletableIds.push(String(media._id));
+      }
+    }
+
+    // nếu không có cái nào xóa được thì báo lỗi giống deleteOne
+    if (deletableIds.length === 0) {
+      const detail = blockedItems
+        .map(item => `${item.mediaId}: ${item.usedIn.join(', ')}`)
+        .join(' | ');
+      throw new ErrorHandler(`Không thể xóa media vì đang được sử dụng ở: ${detail}`, 409);
+    }
+
+    // xóa cloudinary cho các media có thể xóa
+    const deletableMedias = medias.filter(m => deletableIds.includes(String(m._id)));
+    const publicIds = deletableMedias
       .map(m => m.publicId)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
     if (publicIds.length > 0) {
-      await cloudinary.api.delete_resources(publicIds)
+      await cloudinary.api.delete_resources(publicIds);
     }
 
-    const deleteResult = await Media.deleteMany({ _id: { $in: mediaIds } })
-    return { deletedCount: Number(deleteResult?.deletedCount || 0) }
+    // xóa db
+    const deleteResult = await Media.deleteMany({ _id: { $in: deletableIds } });
+
+    return {
+      deletedCount: Number(deleteResult?.deletedCount || 0),
+      requestedCount: uniqueIds.length,
+      blockedCount: blockedItems.length,
+      protectedCount: uniqueIds.filter(id => protectedIds.includes(id)).length,
+      blockedItems, // để FE biết cái nào đang bị dùng
+    };
   }
 
   /*============================ NGƯỜI DÙNG & CHUNG ============================*/
@@ -433,25 +511,65 @@ export class MediaService {
     return newMedia
   }
 
-  // XÓA 1 MEDIA
-  static async deleteOne(mediaId: String): Promise<IMedia | null> {
-    if (mediaId === '69293c75f29d5312d6568881') throw new ErrorHandler('Không thể xóa ảnh mặc định', 400);
-    const media = await Media.findOne({ _id: mediaId })
-    if (!media) throw new ErrorHandler('Media không tồn tại', 404)
-
-    // Xóa Cloudinary
-    if (media.publicId) {
-      await cloudinary.uploader.destroy(media.publicId)
+  // XÓA 1 MEDIA (safe delete: chỉ xóa khi không còn tham chiếu)
+  static async deleteOne(mediaId: string): Promise<IMedia | null> {
+    if (!mediaId) {
+      throw new ErrorHandler('Vui lòng cung cấp mediaId', 400);
     }
 
-    // Xóa DB
-    return await Media.findByIdAndDelete(mediaId)
+    if (mediaId === '69293c75f29d5312d6568881') {
+      throw new ErrorHandler('Không thể xóa ảnh mặc định', 400);
+    }
+
+    const media = await Media.findById(mediaId);
+    if (!media) {
+      throw new ErrorHandler('Media không tồn tại', 404);
+    }
+
+    // Danh sách nơi có thể đang tham chiếu media này
+    const checks = [
+      { label: 'User.avatar', query: User.exists({ avatar: media._id }) },
+      { label: 'Vocabulary.image', query: Vocabulary.exists({ image: media._id }) },
+      { label: 'VocabularyTopic.image', query: VocabularyTopic.exists({ image: media._id }) },
+      { label: 'Reading.image', query: Reading.exists({ image: media._id }) },
+      { label: 'Listening.audio', query: Listening.exists({ audio: media._id }) },
+      { label: 'Speaking.audio', query: Speaking.exists({ audio: media._id }) },
+      {
+        label: 'Ipa.image/audio',
+        query: Ipa.exists({ $or: [{ image: media._id }, { audio: media._id }] })
+      },
+      {
+        label: 'Entertainment.videoUrl/thumbnailUrl',
+        query: Entertainment.exists({
+          $or: [{ videoUrl: media._id }, { thumbnailUrl: media._id }]
+        })
+      },
+      { label: 'Media.thumbnail', query: Media.exists({ thumbnail: media._id }) },
+    ];
+
+    const results = await Promise.all(checks.map((c) => c.query));
+    const usedIn = checks
+      .filter((_, idx) => Boolean(results[idx]))
+      .map((c) => c.label);
+
+    if (usedIn.length > 0) {
+      throw new ErrorHandler(
+        `Không thể xóa media vì đang được sử dụng ở: ${usedIn.join(', ')}`,
+        409
+      );
+    }
+
+    // Không còn tham chiếu -> xóa cloud + db
+    if (media.publicId) {
+      // Nếu cần xử lý riêng raw/video có thể thêm options resource_type tương ứng
+      await cloudinary.uploader.destroy(media.publicId);
+    }
+
+    return await Media.findByIdAndDelete(media._id);
   }
 
   // TẢI LÊN FILE SUBTITLE (.SRT)
   static async uploadSubtitleFile(filePath: string, userId: string): Promise<{ fileUrl: string; format: string; originalName: string }> {
-    // Read file content to parse
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
     const originalName = filePath.split(/[/\\]/).pop() || 'subtitle.srt';
 
     // Upload to Cloudinary as raw file
@@ -654,11 +772,5 @@ export class MediaService {
     }
 
     return entries;
-  }
-
-  private static generatePublicId(imageUrl: string, imageId: number): string {
-    // Tạo hash từ URL để có publicId unique
-    const hash = crypto.createHash('md5').update(imageUrl).digest('hex').substring(0, 12)
-    return `pixabay_${imageId}_${hash}`
   }
 }

@@ -165,7 +165,7 @@ export class VocabularyController {
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession);
 
     const vocabularyProgress = await VocabularyService.doQuizVocabulary(id, user._id, quizResults, studyTimeSeconds);
-    await StreakService.update(user._id)
+    await StreakService.updateStreak(user._id)
 
     res.status(200).json({
       success: true,
@@ -304,12 +304,12 @@ export class VocabularyController {
   // (ADMIN) Cập nhật từ vựng
   static updateVocabulary = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const { word, transcription, partOfSpeech, definition, vietnameseMeaning, example, image, vocabularyTopicId } = req.body;
-    if (!id || !word || !transcription || !partOfSpeech || !definition || !vietnameseMeaning || !example || !image || !vocabularyTopicId) {
+    const { word, transcription, partOfSpeech, definition, vietnameseMeaning, example, image } = req.body;
+    if (!id || !word || !transcription || !partOfSpeech || !definition || !vietnameseMeaning || !example || !image) {
       return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400));
     }
     const user = req.user as UserInfo;
-    const vocabulary = await VocabularyService.updateVocabulary(id, { word, transcription, partOfSpeech, definition, vietnameseMeaning, example, image, vocabularyTopicId, updatedBy: user._id as string } as any);
+    const vocabulary = await VocabularyService.updateVocabulary(id, { word, transcription, partOfSpeech, definition, vietnameseMeaning, example, image, updatedBy: user._id as string } as any);
     res.status(200).json({
       success: true,
       message: 'Cập nhật từ vựng thành công',

@@ -5,6 +5,7 @@ import { WritingService } from "../services/writing.service";
 import { IWriting } from "../models/writing.model";
 import { UserInfo } from "../services/auth.service";
 import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
+import { StreakService } from "../services/streak.service";
 
 export class WritingController {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -183,8 +184,7 @@ export class WritingController {
 
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession)
     const result = await WritingService.evaluateWriting(id, content, user._id, studyTimeSeconds)
-    const { StreakService } = await import('../services/streak.service')
-    await StreakService.update(user._id)
+    await StreakService.updateStreak(user._id)
     res.status(200).json({
       success: true,
       message: 'AI đánh giá bài viết thành công',

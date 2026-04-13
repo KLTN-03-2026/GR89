@@ -4,7 +4,7 @@ import { User } from "@/types";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import { login, loginGoogle, logout, register } from '@/features/auth/services/authApi'
-import { getMyProfile } from '@/features/account/services/accountApi'
+import { getMyProfile, updateMyProfile } from '@/features/account/services/accountApi'
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 
@@ -27,6 +27,7 @@ interface AuthContextType {
   logout: () => void
   register: (credentials: RegisterRequest) => Promise<void>
   refreshProfile: () => Promise<void>
+  updateUser: (userData: User) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -36,19 +37,27 @@ export const AuthContext = createContext<AuthContextType>({
   loginGoogle: () => { },
   logout: () => { },
   register: async () => { },
-  refreshProfile: async () => { }
+  refreshProfile: async () => { },
+  updateUser: async () => { }
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const currentPath = usePathname()
-  const isCurrentPathAuth = currentPath === '/login' || currentPath === '/register'
-  const [user, setUser] = useState<User | null>(null)
+  const isCurrentPathAuth = currentPath === '/login' || currentPath === '/register' || currentPath === '/'
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const raw = localStorage.getItem('user')
+      return raw ? (JSON.parse(raw) as User) : null
+    } catch {
+      return null
+    }
+  })
   const [isLoading, setIsLoading] = useState(isCurrentPathAuth ? false : true)
   const router = useRouter();
 
   useEffect(() => {
-    const onAuthPage = currentPath === '/login' || currentPath === '/register'
-    if (onAuthPage) {
+    if (isCurrentPathAuth || !!user) {
       setIsLoading(false)
       return
     }
@@ -58,6 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getMyProfile()
       .then((res) => {
         if (!cancelled) setUser(res.data as User)
+        localStorage.setItem('user', JSON.stringify(res.data))
       })
       .catch(() => {
         if (!cancelled) setUser(null)
@@ -69,13 +79,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       cancelled = true
     }
-  }, [currentPath])
+  }, [currentPath, user])
 
   const loginUser = async (credentials: LoginRequest) => {
     setIsLoading(true)
     await login(credentials)
       .then((res) => {
         setUser(res.data)
+        localStorage.setItem('user', JSON.stringify(res.data))
         toast.success('Đăng nhập thành công')
         router.push('/dashboard')
       })
@@ -89,6 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await loginGoogle(tokenResponse.access_token)
         .then(res => {
           setUser(res.data)
+          localStorage.setItem('user', JSON.stringify(res.data))
           router.push('/dashboard')
           toast.success(res.message)
         })
@@ -101,6 +113,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .then(() => {
         setUser(null)
         toast.success('Đăng xuất thành công')
+        localStorage.removeItem('user')
         router.push('/')
       })
       .finally(() => {
@@ -113,6 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await register(credentials)
       .then((res) => {
         toast.success(res.message)
+        localStorage.setItem('user', JSON.stringify(res.data))
         router.push('/dashboard')
       })
       .catch((error) => {
@@ -128,6 +142,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await getMyProfile()
       .then((res) => {
         setUser(res.data as User)
+        localStorage.setItem('user', JSON.stringify(res.data))
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }
+
+  const updateUser = async (userData: User) => {
+    setIsLoading(true)
+    await updateMyProfile(userData)
+      .then((res) => {
+        setUser(res.data as User)
+        localStorage.setItem('user', JSON.stringify(res.data))
       })
       .finally(() => {
         setIsLoading(false)
@@ -135,7 +162,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login: loginUser, loginGoogle: handleLoginGoogle, logout: logoutUser, register: registerUser, refreshProfile }}>
+    <AuthContext.Provider value={{ user, isLoading, login: loginUser, loginGoogle: handleLoginGoogle, logout: logoutUser, register: registerUser, refreshProfile, updateUser }}>
       {children}
     </AuthContext.Provider>
   )
@@ -143,4 +170,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export function useAuth() {
   return useContext(AuthContext);
-}
+} 

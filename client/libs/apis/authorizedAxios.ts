@@ -249,7 +249,7 @@ if (typeof window !== "undefined") {
     }
 
     // Log các lỗi khác bình thường
-    originalConsoleError.apply(console, args)
+    // originalConsoleError.apply(console, args)
   }
 }
 

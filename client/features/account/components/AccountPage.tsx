@@ -22,7 +22,6 @@ export function AccountPage() {
     { id: 'orders', label: 'Lịch sử đơn hàng', icon: ClipboardList, description: 'Giao dịch đã mua' }
   ]
 
-  const handleSave = () => { setIsEditing(false) }
   const handleCancel = () => { setIsEditing(false) }
 
   const renderProfileTab = () => (
@@ -30,7 +29,6 @@ export function AccountPage() {
       isEditing={isEditing}
       onEdit={() => setIsEditing(true)}
       onCancel={handleCancel}
-      onSave={handleSave}
       user={user ? { fullName: user.fullName, email: user.email, isVip: user.isVip } : null}
     />
   )

@@ -36,11 +36,6 @@ interface IVocabularyData {
   createdBy: string;
 }
 
-interface IVocabularyResult {
-  vocabulary: IVocabulary[];
-  vocabularyTopic: IVocabularyTopic
-}
-
 export class VocabularyService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
@@ -601,7 +596,7 @@ export class VocabularyService {
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
-    await StreakService.update(userId)
+    await StreakService.updateStreak(userId)
 
     return history
   }

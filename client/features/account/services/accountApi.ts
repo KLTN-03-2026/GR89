@@ -1,7 +1,8 @@
 'use client'
 
 import authorizedAxios from '@/libs/apis/authorizedAxios'
-import { StreakStatus, UserProfile } from '../types'
+import { StreakStatus } from '../types'
+import { User } from '@/types'
 
 interface ApiResponse<T = unknown> {
   success: boolean
@@ -14,18 +15,18 @@ export async function getStreakStatus(): Promise<ApiResponse<StreakStatus>> {
   return response.data
 }
 
-export async function getMyProfile(): Promise<ApiResponse<UserProfile>> {
-  const response = await authorizedAxios.get<ApiResponse<UserProfile>>('/user/me/user')
+export async function getMyProfile(): Promise<ApiResponse<User>> {
+  const response = await authorizedAxios.get<ApiResponse<User>>('/user/me/user')
   return response.data
 }
 
-export async function updateMyProfile(data: { fullName?: string }): Promise<ApiResponse<UserProfile>> {
-  const response = await authorizedAxios.put<ApiResponse<UserProfile>>('/user/me', data)
+export async function updateMyProfile(data: { fullName?: string }): Promise<ApiResponse<User>> {
+  const response = await authorizedAxios.put<ApiResponse<User>>('/user/me', data)
   return response.data
 }
 
-export async function updateMyAvatar(avatarMediaId: string): Promise<ApiResponse<UserProfile>> {
-  const response = await authorizedAxios.put<ApiResponse<UserProfile>>('/user/me/avatar', { avatar: avatarMediaId })
+export async function updateMyAvatar(avatarMediaId: string): Promise<ApiResponse<User>> {
+  const response = await authorizedAxios.put<ApiResponse<User>>('/user/me/avatar', { avatar: avatarMediaId })
   return response.data
 }
 

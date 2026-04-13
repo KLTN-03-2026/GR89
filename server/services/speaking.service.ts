@@ -568,9 +568,9 @@ export class SpeakingService {
     const fromHistory = bestHistory ? Math.round((Number(bestHistory.progress) || 0) * 100) / 100 : 0;
     const sentenceAvg = sentenceStats.length
       ? Math.round(
-          sentenceStats.reduce((s: number, r: { bestScore: number }) => s + r.bestScore, 0) /
-            sentenceStats.length
-        )
+        sentenceStats.reduce((s: number, r: { bestScore: number }) => s + r.bestScore, 0) /
+        sentenceStats.length
+      )
       : 0;
     const displayProgress = Math.round(Math.max(fromHistory, sentenceAvg) * 100) / 100;
 
@@ -585,10 +585,10 @@ export class SpeakingService {
 
     const lastSentenceAt = sentences.length
       ? sentences.reduce(
-          (latest: Date | undefined, x) =>
-            !latest || new Date(x.lastAt) > new Date(latest) ? x.lastAt : latest,
-          undefined as Date | undefined
-        )
+        (latest: Date | undefined, x) =>
+          !latest || new Date(x.lastAt) > new Date(latest) ? x.lastAt : latest,
+        undefined as Date | undefined
+      )
       : undefined;
 
     return {
@@ -824,7 +824,7 @@ export class SpeakingService {
         })
 
         if (isCompleted) {
-          await StreakService.update(userId)
+          await StreakService.updateStreak(userId)
         }
       }
     }

@@ -547,7 +547,7 @@ export class GrammarService {
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
-    await StreakService.update(userId)
+    await StreakService.updateStreak(userId)
 
     return history
   }

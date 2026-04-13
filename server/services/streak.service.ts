@@ -27,7 +27,7 @@ function isYesterday(last?: Date | null, now?: Date | null): boolean {
 export class StreakService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
-  static async getStatus(userId: string, at: Date = new Date()) {
+  static async getStreakStatus(userId: string, at: Date = new Date()) {
     const user = await User.findById(userId)
     if (!user) return null
     const todayDone = isSameDay(user.lastActiveDate ?? null, at)
@@ -89,12 +89,14 @@ export class StreakService {
    * Tính theo ngày thực tế (calendar day), không phải 24 giờ
    * Ví dụ: 23h59 ngày 1 → 00h01 ngày 3 = 2 ngày (bỏ qua ngày 2)
    */
-  static async update(userId: string) {
+  static async updateStreak(userId: string) {
     const user = await User.findById(userId)
     if (!user) return
-
-    const last = user.lastLearnDate ?? null
     const now = new Date()
+    const last = user.lastLearnDate ?? null
+
+    user.lastLearnDate = now
+    await user.save()
 
     // Nếu đã học hôm nay - không cần cập nhật streak
     if (isSameDay(last, now)) {
@@ -108,9 +110,6 @@ export class StreakService {
       const nowLocal = toLocalDate(now)
       diffDays = Math.round((nowLocal.getTime() - lastLocal.getTime()) / (24 * 60 * 60 * 1000))
     }
-
-    // Cập nhật lastLearnDate
-    user.lastLearnDate = now
 
     if (diffDays === 1) {
       // Học liên tục (ngày liền trước) → Tăng streak

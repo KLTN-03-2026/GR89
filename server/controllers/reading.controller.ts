@@ -6,6 +6,7 @@ import { IReading, IVocabularyReading } from "../models/reading.model";
 import { IQuiz } from "../models/quiz.model";
 import { IQuizResult } from "../models/quizzResult.model";
 import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
+import { StreakService } from "../services/streak.service";
 
 export class ReadingController {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -139,8 +140,7 @@ export class ReadingController {
     const { quizResults, studySession } = req.body
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession)
     const reading = await ReadingService.doReadingQuiz(id, req.user?._id as string, quizResults as IQuizResult[], studyTimeSeconds)
-    const { StreakService } = await import('../services/streak.service')
-    await StreakService.update(req.user?._id as string)
+    await StreakService.updateStreak(req.user?._id as string)
 
     if (!reading) return next(new ErrorHandler('Làm bài đọc thất bại', 400))
     res.status(200).json({

@@ -7,27 +7,45 @@ import { Media } from '@/features/Media/types';
 import { Check, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { MediaImageSkeletonGrid } from './MediaImageSkeleton';
 
+const parsePositiveInt = (value: string | null, fallback: number) => {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback
+  return Math.floor(parsed)
+}
+
 export function ListMediaImage() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const queryPage = parsePositiveInt(searchParams.get('page'), 1)
+  const queryLimit = parsePositiveInt(searchParams.get('limit'), 12)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [preview, setPreview] = useState<Media | null>(null)
   const [images, setImages] = useState<Media[]>([])
   const [refresh, setRefresh] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(12)
+  const [page, setPage] = useState(queryPage)
+  const [limit, setLimit] = useState(queryLimit)
   const [pages, setPages] = useState(0)
   const [total, setTotal] = useState(0)
 
-  const fetchMedia = useCallback(async (nextPage = page, nextLimit = limit) => {
+  const updateQuery = useCallback((nextPage: number, nextLimit: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('page', String(nextPage))
+    params.set('limit', String(nextLimit))
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [pathname, router, searchParams])
+
+  const fetchMedia = useCallback(async (nextPage: number, nextLimit: number) => {
     setIsLoading(true)
     try {
       const res = await getMediaList({ page: nextPage, limit: nextLimit, type: 'image', sortBy: 'createdAt', sortOrder: 'desc' })
       setImages(res.data?.filter(item => item.type === 'image') as Media[])
-      setPage(res.pagination.page || nextPage)
       setPages(res.pagination.pages || 0)
       setTotal(res.pagination.total || 0)
     } catch {
@@ -35,11 +53,16 @@ export function ListMediaImage() {
     } finally {
       setIsLoading(false)
     }
-  }, [page, limit])
+  }, [])
 
   useEffect(() => {
-    fetchMedia()
-  }, [fetchMedia, refresh])
+    if (queryPage !== page) setPage(queryPage)
+    if (queryLimit !== limit) setLimit(queryLimit)
+  }, [queryPage, queryLimit, page, limit])
+
+  useEffect(() => {
+    fetchMedia(page, limit)
+  }, [fetchMedia, page, limit, refresh])
 
   const toggleSelect = (image: Media) => {
     setSelectedIds(prev => {
@@ -104,7 +127,9 @@ export function ListMediaImage() {
 
       // Nếu trang hiện tại trống sau khi xóa, lùi về trang trước; nếu không thì reload trang hiện tại
       if (nextImages.length === 0 && page > 1) {
-        fetchMedia(page - 1, limit)
+        const prevPage = page - 1
+        setPage(prevPage)
+        updateQuery(prevPage, limit)
       } else {
         fetchMedia(page, limit)
       }
@@ -117,26 +142,18 @@ export function ListMediaImage() {
   }
 
   const handlePageChange = async (nextPage: number) => {
+    if (isLoading) return
     if (nextPage < 1) return
-    if (pages && nextPage > pages) return
+    const maxPage = pages > 0 ? pages : Math.max(1, Math.ceil(total / limit))
+    if (nextPage > maxPage) return
     setPage(nextPage)
-    setIsLoading(true)
-    try {
-      const res = await getMediaList({ page: nextPage, limit, type: 'image', sortBy: 'createdAt', sortOrder: 'desc' })
-      setImages(res.data?.filter(item => item.type === 'image') as Media[])
-      setPage(res.pagination.page || nextPage)
-      setPages(res.pagination.pages || pages)
-      setTotal(res.pagination.total || total)
-    } catch {
-      toast.error('Không thể tải danh sách ảnh')
-    } finally {
-      setIsLoading(false)
-    }
+    updateQuery(nextPage, limit)
   }
 
   const handleLimitChange = (nextLimit: number) => {
     setLimit(nextLimit)
-    handlePageChange(1)
+    setPage(1)
+    updateQuery(1, nextLimit)
   }
 
   return (
@@ -183,11 +200,15 @@ export function ListMediaImage() {
               ))}
             </select>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page <= 1}>
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page <= 1 || isLoading}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <span className="text-sm">Trang {page} / {pages || 1}</span>
-              <Button variant="outline" size="sm" onClick={() => handlePageChange(page + 1)} disabled={pages ? page >= pages : images.length < limit}>
+              <Button
+                variant="outline" size="sm"
+                onClick={() => !isLoading && handlePageChange(page + 1)}
+                disabled={page >= (pages > 0 ? pages : Math.max(1, Math.ceil(total / limit))) || isLoading}
+              >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>

@@ -12,7 +12,7 @@ router.get("/export", authenticateTokenAdmin, requireRole(["admin", "content"]),
 router.get("/lesson-stats", authenticateTokenUser, requireRole(["user"]), LessonStatsController.getUserLessonStats);
 router.get("/streak/status", authenticateTokenUser, CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
   const { StreakService } = await import("../services/streak.service");
-  const status = await StreakService.getStatus(req.user?._id || "");
+  const status = await StreakService.getStreakStatus(req.user?._id || "");
   res.status(200).json({ success: true, data: status });
 }));
 

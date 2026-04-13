@@ -5,6 +5,7 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { IListening } from "../models/listening.model";
 import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
 import { AdminActivityService } from "../services/adminActivity.service";
+import { StreakService } from "../services/streak.service";
 
 export class ListeningController {
   private static async logAdminAction(req: Request, payload: {
@@ -195,8 +196,7 @@ export class ListeningController {
     const { time, result, studySession, mode } = req.body
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession)
     const listening = await ListeningService.doListeningQuiz(userId, id, time, result, studyTimeSeconds, mode)
-    const { StreakService } = await import('../services/streak.service')
-    await StreakService.update(userId)
+    await StreakService.updateStreak(userId)
     res.status(200).json({
       success: true,
       message: 'Làm bài nghe thành công',

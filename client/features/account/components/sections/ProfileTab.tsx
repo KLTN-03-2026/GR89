@@ -6,26 +6,28 @@ import { Label } from '@/components/ui/label'
 import { Camera, Mail, User as UserIcon, Flag, Phone, CalendarDays, Loader2, Crown } from 'lucide-react'
 import { useRef, useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { getMyProfile, updateMyProfile, updateMyAvatar, uploadImage, UserProfile } from '@/features/account/services/accountApi'
+import { getMyProfile, updateMyAvatar, uploadImage } from '@/features/account/services/accountApi'
 import { toast } from 'react-toastify'
+import { User } from '@/types'
+import { useAuth } from '@/libs/contexts/AuthContext'
+import Image from 'next/image'
 
 interface ProfileTabProps {
   isEditing: boolean
   onEdit: () => void
   onCancel: () => void
-  onSave: () => void
   user: { fullName: string; email: string; isVip?: boolean } | null
 }
 
-export default function ProfileTab({ isEditing, onEdit, onCancel, onSave, user }: ProfileTabProps) {
+export default function ProfileTab({ isEditing, onEdit, onCancel, user }: ProfileTabProps) {
   const fileRef = useRef<HTMLInputElement>(null)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [profile, setProfile] = useState<User | null>(null)
   const [fullName, setFullName] = useState(user?.fullName || '')
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [tempPreview, setTempPreview] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const { isLoading, updateUser } = useAuth()
 
   useEffect(() => {
     fetchProfile()
@@ -47,17 +49,15 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, onSave, user }
   }
 
   const fetchProfile = async () => {
-    try {
-      const res = await getMyProfile()
-      if (res.success && res.data) {
-        setProfile(res.data)
-        setFullName(res.data.fullName)
-        const avatarUrl = typeof res.data.avatar === 'string' ? res.data.avatar : res.data.avatar?.url
-        if (avatarUrl) setAvatarPreview(avatarUrl)
-      }
-    } catch (err) {
-      console.error('Failed to fetch profile:', err)
-    }
+    await getMyProfile()
+      .then(res => {
+        if (res.success && res.data) {
+          setProfile(res.data)
+          setFullName(res.data.fullName)
+          const avatarUrl = typeof res.data.avatar === 'string' ? res.data.avatar : res.data.avatar?.url
+          if (avatarUrl) setAvatarPreview(avatarUrl)
+        }
+      })
   }
 
   const onPickAvatar = () => fileRef.current?.click()
@@ -98,20 +98,8 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, onSave, user }
       toast.error('Tên phải có ít nhất 3 ký tự')
       return
     }
-    setLoading(true)
-    try {
-      const res = await updateMyProfile({ fullName: fullName.trim() })
-      if (res.success) {
-        setProfile(res.data)
-        toast.success('Cập nhật thông tin thành công')
-        onSave()
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      toast.error(error?.response?.data?.message || 'Cập nhật thông tin thất bại')
-    } finally {
-      setLoading(false)
-    }
+
+    await updateUser(profile as User)
   }
   return (
     <div className="space-y-8 w-full">
@@ -122,8 +110,7 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, onSave, user }
             <div className="relative">
               <div className="w-16 h-16 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-xl font-semibold overflow-hidden">
                 {avatarPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+                  <Image src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
                 ) : (
                   <span>{user?.fullName.charAt(0)}</span>
                 )}
@@ -149,9 +136,9 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, onSave, user }
               <Button variant="outline" onClick={onEdit} className="h-8 px-3">Chỉnh sửa</Button>
             ) : (
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleCancel} disabled={loading}>Hủy</Button>
-                <Button size="sm" onClick={handleSave} disabled={loading} className="bg-gray-900 hover:bg-black text-white">
-                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                <Button variant="outline" size="sm" onClick={handleCancel} disabled={isLoading}>Hủy</Button>
+                <Button size="sm" onClick={handleSave} disabled={isLoading} className="bg-gray-900 hover:bg-black text-white">
+                  {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   Lưu
                 </Button>
               </div>
@@ -170,8 +157,7 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, onSave, user }
             <div className="flex items-center justify-center">
               <div className="w-32 h-32 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
                 {tempPreview || avatarPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={(tempPreview || avatarPreview) as string} alt="preview" className="w-full h-full object-cover" />
+                  <Image src={(tempPreview || avatarPreview) as string} alt="preview" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-gray-400">No image</span>
                 )}
@@ -251,16 +237,6 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, onSave, user }
               <Input id="city" placeholder="" disabled={!isEditing} className={`${!isEditing ? 'bg-gray-50' : 'bg-white'} border-gray-200`} />
             </div>
           </div>
-
-          {isEditing && (
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={handleCancel} disabled={loading}>Hủy</Button>
-              <Button onClick={handleSave} disabled={loading} className="bg-gray-900 hover:bg-black text-white">
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Lưu
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
