@@ -18,9 +18,9 @@ export type LessonSection = {
 }
 
 export type PracticeQuestion =
-  | { id: string; type: 'fill_blank'; question: string; answer: string; hint?: string }
-  | { id: string; type: 'multiple_choice'; question: string; options: string[]; answer: string; hint?: string }
-  | { id: string; type: 'correct_sentence'; question: string; wrongSentence: string; answer: string; hint?: string }
+  | { id: string; type: 'Fill in the blank'; question: string; answer: string; hint?: string }
+  | { id: string; type: 'Multiple Choice'; question: string; options: string[]; answer: string; hint?: string }
+  | { id: string; type: 'Correct Sentence'; question: string; answer: string; hint?: string }
 
 export type QuizQuestion = {
   _id: string
@@ -91,10 +91,9 @@ export type GrammarSection = {
 
 export type GrammarPractice = {
   id?: string
-  type: 'fill_blank' | 'multiple_choice' | 'correct_sentence'
+  type: 'Fill in the blank' | 'Multiple Choice' | 'Correct Sentence'
   question: string
   options?: string[]
-  wrongSentence?: string
   answer: string
   hint: string
 }

@@ -22,14 +22,13 @@ export interface IGrammarSection {
   table?: IGrammarTable;
 }
 
-export type GrammarPracticeType = "fill_blank" | "multiple_choice" | "correct_sentence";
+export type GrammarPracticeType = "Multiple Choice" | "Fill in the blank" | "Correct Sentence";
 
 export interface IGrammarPracticeQuestion {
   id: string;
   type: GrammarPracticeType;
   question: string;
   options?: string[];
-  wrongSentence?: string;
   answer: string;
   hint: string;
 }
@@ -152,7 +151,7 @@ const grammarPracticeQuestionSchema = new Schema<IGrammarPracticeQuestion>(
     },
     type: {
       type: String,
-      enum: ["fill_blank", "multiple_choice", "correct_sentence"],
+      enum: ["Fill in the blank", "Multiple Choice", "Correct Sentence"],
       required: [true, "Loại bài luyện tập là bắt buộc"],
     },
     question: {
@@ -163,10 +162,6 @@ const grammarPracticeQuestionSchema = new Schema<IGrammarPracticeQuestion>(
     options: {
       type: [String],
       default: [],
-    },
-    wrongSentence: {
-      type: String,
-      trim: true,
     },
     answer: {
       type: String,

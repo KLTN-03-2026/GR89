@@ -22,13 +22,14 @@ router.delete("/bulk-delete", authenticateTokenAdmin, requireRole(["admin", "con
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
 router.get("/user", authenticateTokenUser, requireRole(["user"]), GrammarController.getAllTopicsByUser);
-router.get("/topic-user/:id/quizzes", authenticateTokenUser, requireRole(["user"]), GrammarController.getGrammarQuizForUser);
-router.post("/quizzes/:id/do", authenticateTokenUser, requireRole(["user"]), GrammarController.doGrammarQuiz);
+router.get("/topic-user/:id/quizzes", authenticateTokenUser, requireRole(["user"]), checkVipContentUser('grammar'), GrammarController.getGrammarQuizForUser);
+router.post("/quizzes/:id/do", authenticateTokenUser, requireRole(["user"]),checkVipContentUser('grammar'), GrammarController.doGrammarQuiz);
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
 router.post("/", authenticateTokenAdmin, requireRole(["admin", "content"]), GrammarController.createGrammarTopic);
-router.get("/:id", GrammarController.getGrammarTopicById);
+router.get("/:id/admin", authenticateTokenAdmin, requireRole(["admin", "content"]), GrammarController.getGrammarTopicById);
+router.get("/:id/user", authenticateTokenUser, requireRole(["user"]), checkVipContentUser('grammar'), GrammarController.getGrammarTopicById);
 router.get("/:id/stats", authenticateTokenAdmin, requireRole(["admin", "content"]), GrammarController.getGrammarTopicStats);
 router.put("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), GrammarController.updateGrammarTopic);
 router.delete("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), GrammarController.deleteGrammarTopic);

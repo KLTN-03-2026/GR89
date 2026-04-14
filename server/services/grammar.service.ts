@@ -245,7 +245,7 @@ export class GrammarService {
 
         const normalizedPractice: IGrammarPracticeQuestion[] = practiceInput.map((p: any, j: number) => {
           const type = p?.type as IGrammarPracticeQuestion['type']
-          if (!type || !['fill_blank', 'multiple_choice', 'correct_sentence'].includes(type)) {
+          if (!type || !['Fill in the blank', 'Multiple Choice', 'Correct Sentence'].includes(type)) {
             throw new Error(`Practice [${j}] type không hợp lệ`)
           }
 
@@ -254,21 +254,15 @@ export class GrammarService {
           if (!question) throw new Error(`Practice [${j}] thiếu "question"`)
           if (!answer) throw new Error(`Practice [${j}] thiếu "answer"`)
 
-          const options = type === 'multiple_choice'
+          const options = type === 'Multiple Choice'
             ? (Array.isArray(p?.options) ? p.options.map((x: any) => normalizeString(x)).filter(Boolean) : [])
             : []
-
-          const wrongSentence = type === 'correct_sentence' ? normalizeString(p?.wrongSentence) : ''
-          if (type === 'correct_sentence' && !wrongSentence) {
-            throw new Error(`Practice [${j}] thiếu "wrongSentence" cho correct_sentence`)
-          }
 
           return {
             id: normalizePracticeId(i, j, p?.id),
             type,
             question,
             options,
-            wrongSentence: type === 'correct_sentence' ? wrongSentence : undefined,
             answer,
             hint: normalizeHint(p?.hint)
           }
@@ -695,8 +689,7 @@ export class GrammarService {
       id: String(question.id).trim(),
       type: question.type,
       question: String(question.question).trim(),
-      options: question.type === "multiple_choice" ? (question.options || []).map((option) => option.trim()).filter(Boolean) : [],
-      wrongSentence: question.type === "correct_sentence" ? question.wrongSentence?.trim() || "" : undefined,
+      options: question.type === "Multiple Choice" ? (question.options || []).map((option) => option.trim()).filter(Boolean) : [],
       answer: String(question.answer).trim(),
       hint: question.hint?.trim() || "",
     })) as any;
@@ -888,7 +881,7 @@ export class GrammarService {
 
     const topicsRows: any[][] = [['ID', 'title', 'description', 'level', 'isActive', 'isVipRequired', 'orderIndex']]
     const sectionsRows: any[][] = [['TopicID', 'SectionID', 'title', 'description', 'note', 'formula', 'list (separated by ;)', 'examples (en|vi; en|vi)']]
-    const practiceRows: any[][] = [['TopicID', 'PracticeID', 'type', 'question', 'options (separated by ;)', 'wrongSentence', 'answer', 'hint']]
+    const practiceRows: any[][] = [['TopicID', 'PracticeID', 'type', 'question', 'options (separated by ;)', 'answer', 'hint']]
     const quizzesRows: any[][] = [['TopicID', 'question', 'type', 'options (separated by ;)', 'answer', 'explanation']]
 
     for (const t of (topics as any[])) {
@@ -916,7 +909,7 @@ export class GrammarService {
         t.practice.forEach((p: any) => {
           const optionsStr = Array.isArray(p.options) ? p.options.join(';') : ''
           practiceRows.push([
-            String(t._id || ''), p.id || '', p.type || '', p.question || '', optionsStr, p.wrongSentence || '', p.answer || '', p.hint || ''
+            String(t._id || ''), p.id || '', p.type || '', p.question || '', optionsStr, p.answer || '', p.hint || ''
           ])
         })
       }

@@ -18,8 +18,8 @@ export function createId(prefix: string) {
 }
 
 export function getPracticeTypeLabel(type: PracticeQuestion['type']) {
-  if (type === 'fill_blank') return 'Điền vào chỗ trống'
-  if (type === 'multiple_choice') return 'Trắc nghiệm'
+  if (type === 'Fill in the blank') return 'Điền vào chỗ trống'
+  if (type === 'Multiple Choice') return 'Trắc nghiệm'
   return 'Sửa câu'
 }
 

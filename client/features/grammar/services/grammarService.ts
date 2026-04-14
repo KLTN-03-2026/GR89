@@ -34,5 +34,5 @@ export async function getGrammarData() {
 }
 
 export async function getGrammarLesson(id: string) {
-  return fetchServer<GrammarLessonFlowData>(`/grammar/${id}`)
+  return fetchServer<GrammarLessonFlowData>(`/grammar/${id}/user`)
 }

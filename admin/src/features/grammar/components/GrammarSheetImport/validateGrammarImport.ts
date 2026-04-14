@@ -1,4 +1,14 @@
 import type { ParseResult, Sheet } from '@/components/common/sheetImport/types'
+import { GrammarSection, GrammarTopic, PracticeQuestion } from '../../types'
+import { Quiz } from '@/types'
+
+type GrammarImportQuiz = {
+  question: string
+  type: string
+  options: string[]
+  answer: string
+  explanation: string
+}
 
 export function validateGrammarImportJson(input: unknown): ParseResult {
   if (!Array.isArray(input)) {
@@ -13,9 +23,9 @@ export function validateGrammarImportJson(input: unknown): ParseResult {
       return
     }
 
-    const it = item as any
+    const it = item as Record<string, unknown>
     if (!it.title) errors.push(`Dòng [${i}]: thiếu "title"`)
-    if (it.level && !['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(it.level)) {
+    if (typeof it.level === 'string' && !['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(it.level)) {
       errors.push(`Dòng [${i}]: "level" phải là A1-C2`)
     }
 
@@ -33,7 +43,7 @@ export function validateGrammarImportJson(input: unknown): ParseResult {
   })
 
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, data: input as any[] }
+  return { ok: true, data: input as GrammarTopic[] }
 }
 
 export function parseExcelToGrammarJson(sheets: Sheet[]): ParseResult {
@@ -47,9 +57,9 @@ export function parseExcelToGrammarJson(sheets: Sheet[]): ParseResult {
     return { ok: false, errors: ['Thiếu sheet Topics'] }
   }
 
-  const sectionsByTopic: Record<string, any[]> = {}
+  const sectionsByTopic: Record<string, GrammarSection[]> = {}
   if (sectionSheet) {
-    sectionSheet.rows.forEach((row, i) => {
+    sectionSheet.rows.forEach((row) => {
       const tid = row.TopicID
       if (!tid || tid === '' || typeof tid !== 'string') return
       if (!sectionsByTopic[tid]) sectionsByTopic[tid] = []
@@ -72,9 +82,9 @@ export function parseExcelToGrammarJson(sheets: Sheet[]): ParseResult {
     })
   }
 
-  const practiceByTopic: Record<string, any[]> = {}
+  const practiceByTopic: Record<string, PracticeQuestion[]> = {}
   if (practiceSheet) {
-    practiceSheet.rows.forEach((row, i) => {
+    practiceSheet.rows.forEach((row) => {
       const tid = row.TopicID
       if (!tid) return
       if (!tid || tid === '' || typeof tid !== 'string') return
@@ -82,26 +92,26 @@ export function parseExcelToGrammarJson(sheets: Sheet[]): ParseResult {
 
       practiceByTopic[tid].push({
         id: String(row.PracticeID || '').trim(),
-        type: String(row.type || '').trim(),
+        type: String(row.type || '').trim() as PracticeQuestion['type'],
         question: String(row.question || '').trim(),
         options: String(row['options (separated by ;)'] || '').split(';').map(s => s.trim()).filter(Boolean),
-        wrongSentence: String(row.wrongSentence || '').trim(),
         answer: String(row.answer || '').trim(),
         hint: String(row.hint || '').trim(),
       })
     })
   }
 
-  const quizzesByTopic: Record<string, any[]> = {}
+  const quizzesByTopic: Record<string, Quiz[]> = {}
   if (quizSheet) {
-    quizSheet.rows.forEach((row, i) => {
+    quizSheet.rows.forEach((row) => {
       const tid = row.TopicID
       if (!tid || tid === '' || typeof tid !== 'string') return
       if (!quizzesByTopic[tid]) quizzesByTopic[tid] = []
 
       quizzesByTopic[tid].push({
+        _id: '',
         question: String(row.question || '').trim(),
-        type: String(row.type || 'Multiple Choice').trim(),
+        type: String(row.type || 'Multiple Choice').trim() as Quiz['type'],
         options: String(row['options (separated by ;)'] || '').split(';').map(s => s.trim()).filter(Boolean),
         answer: String(row.answer || '').trim(),
         explanation: String(row.explanation || '').trim(),

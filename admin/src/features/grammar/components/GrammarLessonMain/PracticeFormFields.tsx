@@ -1,9 +1,9 @@
 'use client'
 
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 
 import type { PracticeErrorState, PracticeQuestion } from '../../types'
 import { getPracticeTypeLabel } from './utils'
@@ -59,14 +59,14 @@ export function PracticeFormFields({
             <SelectValue placeholder="Chọn loại bài" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="fill_blank">Điền vào chỗ trống</SelectItem>
-            <SelectItem value="multiple_choice">Trắc nghiệm</SelectItem>
-            <SelectItem value="correct_sentence">Sửa câu</SelectItem>
+            <SelectItem value="Fill in the blank">Điền vào chỗ trống</SelectItem>
+            <SelectItem value="Multiple Choice">Trắc nghiệm</SelectItem>
+            <SelectItem value="Correct Sentence">Sửa câu</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {activePractice.type === 'multiple_choice' && (
+      {activePractice.type === 'Multiple Choice' && (
         <div className="space-y-2 rounded-xl border p-4">
           <Label>Lựa chọn (mỗi dòng 1 option)</Label>
           <Textarea
@@ -79,14 +79,9 @@ export function PracticeFormFields({
         </div>
       )}
 
-      {activePractice.type === 'correct_sentence' && (
-        <div className="space-y-2 rounded-xl border p-4">
-          <Label>Câu sai</Label>
-          <Input
-            value={activePractice.wrongSentence}
-            onChange={(e) => onUpdatePractice({ wrongSentence: e.target.value })}
-            placeholder="Nhập câu sai cần sửa"
-          />
+      {activePractice.type === 'Correct Sentence' && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Câu hỏi sẽ được dùng làm câu sai gốc. Giao diện người học sẽ tự hiển thị: `&quot;`Hãy sửa câu sau:`&quot;`.
         </div>
       )}
 

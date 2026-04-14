@@ -39,8 +39,8 @@ export function PracticeStage({
 
   // 🔹 label
   const getTypeLabel = () => {
-    if (question.type === 'fill_blank') return 'Điền vào chỗ trống'
-    if (question.type === 'multiple_choice') return 'Trắc nghiệm'
+    if (question.type === 'Fill in the blank') return 'Điền vào chỗ trống'
+    if (question.type === 'Multiple Choice') return 'Trắc nghiệm'
     return 'Sửa lỗi câu'
   }
 
@@ -49,7 +49,7 @@ export function PracticeStage({
     const userAnswer = answer.trim().toLowerCase()
     let isCorrect = false
 
-    if (question.type === 'fill_blank' || question.type === 'correct_sentence') {
+    if (question.type === 'Fill in the blank' || question.type === 'Correct Sentence') {
       isCorrect = userAnswer === question.answer.trim().toLowerCase()
     } else {
       isCorrect = answer === question.answer
@@ -126,11 +126,11 @@ export function PracticeStage({
               {question.question}
             </p>
 
-            {question.type === 'correct_sentence' && (
+            {question.type === 'Correct Sentence' && (
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-rose-500/10 border border-rose-200 dark:border-rose-900/30">
                 <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                 <p className="text-sm font-bold text-rose-700 dark:text-rose-400 italic">
-                  Câu sai: <span className="underline decoration-rose-300 decoration-2 underline-offset-4">{question.wrongSentence}</span>
+                  Hãy sửa câu sau: <span className="underline decoration-rose-300 decoration-2 underline-offset-4">{question.question}</span>
                 </p>
               </div>
             )}
@@ -139,7 +139,7 @@ export function PracticeStage({
 
         <div className="space-y-4">
           <AnimatePresence mode="wait">
-            {question.type === 'multiple_choice' ? (
+            {question.type === 'Multiple Choice' ? (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

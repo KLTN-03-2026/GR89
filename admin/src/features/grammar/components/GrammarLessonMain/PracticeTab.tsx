@@ -36,7 +36,7 @@ export function PracticeTab({
       return
     }
 
-    setPracticeOptionsInput(activePractice.type === 'multiple_choice' ? activePractice.options.join('\n') : '')
+    setPracticeOptionsInput(activePractice.type === 'Multiple Choice' ? activePractice.options.join('\n') : '')
   }, [activePractice, setPracticeOptionsInput])
 
   const activePracticeErrors = useMemo(() => {
@@ -49,7 +49,7 @@ export function PracticeTab({
 
     return {
       question: getSingleTextareaError(activePractice.question, 'Câu hỏi'),
-      options: activePractice.type === 'multiple_choice' ? getOptionsTextareaError(activePractice.options, 'Lựa chọn') : ''
+      options: activePractice.type === 'Multiple Choice' ? getOptionsTextareaError(activePractice.options, 'Lựa chọn') : ''
     }
   }, [activePractice])
 
@@ -68,7 +68,7 @@ export function PracticeTab({
     const id = createId('practice')
     const next: PracticeQuestion = {
       id,
-      type: 'fill_blank',
+      type: 'Fill in the blank',
       question: 'Câu hỏi mới',
       answer: '',
       hint: ''
@@ -89,7 +89,7 @@ export function PracticeTab({
 
     let normalizedPractice = activePractice
 
-    if (activePractice.type === 'multiple_choice') {
+    if (activePractice.type === 'Multiple Choice') {
       const options = practiceOptionsInput
         .split('\n')
         .map((line) => line.trim())
@@ -114,23 +114,20 @@ export function PracticeTab({
   const handleChangePracticeType = (nextType: PracticeQuestion['type']) => {
     if (!activePractice) return
 
-    if (nextType === 'multiple_choice') {
-      setPracticeOptionsInput(activePractice.type === 'multiple_choice' ? activePractice.options.join('\n') : '')
-      updatePractice({ type: nextType, options: activePractice.type === 'multiple_choice' ? activePractice.options : [] })
+    if (nextType === 'Multiple Choice') {
+      setPracticeOptionsInput(activePractice.type === 'Multiple Choice' ? activePractice.options.join('\n') : '')
+      updatePractice({ type: nextType, options: activePractice.type === 'Multiple Choice' ? activePractice.options : [] })
       return
     }
 
-    if (nextType === 'correct_sentence') {
+    if (nextType === 'Correct Sentence') {
       setPracticeOptionsInput('')
-      updatePractice({
-        type: nextType,
-        wrongSentence: activePractice.type === 'correct_sentence' ? activePractice.wrongSentence : ''
-      })
+      updatePractice({ type: nextType })
       return
     }
 
     setPracticeOptionsInput('')
-    updatePractice({ type: 'fill_blank' })
+    updatePractice({ type: 'Fill in the blank' })
   }
 
   const handleChangePracticeOptionsInput = (value: string) => {

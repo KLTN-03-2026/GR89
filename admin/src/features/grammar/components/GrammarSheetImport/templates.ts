@@ -1,6 +1,11 @@
 import * as XLSX from 'xlsx'
 import type { GrammarTopic } from '@/features/grammar/types'
 
+type GrammarImportTemplateTopic = Omit<GrammarTopic, '_id' | 'orderIndex'> & {
+  ID: string
+  orderIndex?: number
+}
+
 /**
  * Tạo Workbook mẫu cho Excel Import Ngữ pháp
  * Cấu trúc gồm 4 sheet: Topics, Sections, Practice, Quizzes
@@ -35,20 +40,18 @@ export function buildExcelTemplateWorkbook() {
     {
       TopicID: 'grammar-1',
       PracticeID: 'prac-1',
-      type: 'fill_blank',
+      type: 'Fill in the blank',
       question: 'She ___ (play) tennis every Sunday.',
       'options (separated by ;)': '',
-      wrongSentence: '',
       answer: 'plays',
       hint: 'Ngôi thứ 3 số ít thêm -s/-es'
     },
     {
       TopicID: 'grammar-1',
       PracticeID: 'prac-2',
-      type: 'multiple_choice',
+      type: 'Multiple Choice',
       question: 'Which sentence is correct?',
       'options (separated by ;)': 'She play tennis.;She plays tennis.;She playing tennis.',
-      wrongSentence: '',
       answer: 'She plays tennis.',
       hint: 'Động từ chia theo chủ ngữ'
     }
@@ -77,7 +80,7 @@ export function buildExcelTemplateWorkbook() {
 /**
  * Tạo dữ liệu mẫu JSON cho Import Ngữ pháp
  */
-export function buildJsonTemplateData(): GrammarTopic[] {
+export function buildJsonTemplateData(): GrammarImportTemplateTopic[] {
   return [
     {
       ID: 'grammar-1',
@@ -101,7 +104,7 @@ export function buildJsonTemplateData(): GrammarTopic[] {
       ],
       practice: [
         {
-          type: 'fill_blank',
+          type: 'Fill in the blank',
           question: 'She ___ (play) tennis every Sunday.',
           answer: 'plays',
           hint: 'Ngôi thứ 3 số ít thêm -s/-es'
@@ -116,6 +119,6 @@ export function buildJsonTemplateData(): GrammarTopic[] {
           explanation: 'She is third person singular, so we use "goes".'
         }
       ]
-    } as any // Use any because GrammarTopic might have mandatory fields like _id that aren't needed for template
+    }
   ]
 }

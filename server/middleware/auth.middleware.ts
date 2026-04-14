@@ -84,8 +84,6 @@ export const authenticateTokenAdmin = CatchAsyncError(
     let refreshToken = req.cookies.refresh_token_admin || req.cookies.refresh_token_content;
     let tokenRole = 'admin';
 
-    console.log(accessToken, refreshToken)
-
     // Xác định role từ token type
     if (req.cookies.access_token_content) {
       tokenRole = 'content';

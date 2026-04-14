@@ -33,7 +33,7 @@ export async function getGrammarTopics(): Promise<Response<GrammarTopic[]>> {
 }
 
 export async function getGrammarTopicById(id: string): Promise<Response<GrammarTopic>> {
-  const response = await AuthorizedAxios.get(`/grammar/${id}`)
+  const response = await AuthorizedAxios.get(`/grammar/${id}/admin`)
   return response.data as Response<GrammarTopic>
 }
 
@@ -105,14 +105,14 @@ export async function getGrammarTopicsPaginated(
 
 /** Import dữ liệu từ JSON */
 export async function importGrammarJson(
-  topics: any[],
+  topics: GrammarTopic[],
   skipErrors: boolean = false
-): Promise<Response<any>> {
+): Promise<Response<GrammarTopic[]>> {
   const response = await AuthorizedAxios.post('/grammar/import-json', {
     topics,
     skipErrors,
   })
-  return response.data as Response<any>
+  return response.data as Response<GrammarTopic>
 }
 
 export async function exportGrammarExcel(): Promise<Blob> {

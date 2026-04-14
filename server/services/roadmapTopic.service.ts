@@ -383,9 +383,8 @@ export class RoadmapTopicService {
       let isActive = true;
 
       if (type === "ipa") {
-
         const item = await Ipa.findById(lesson.lessonId).select("sound soundType isActive").lean();
-        console.log(item)
+
         if (item) {
           title = item.sound || title;
           description = item.soundType || "";
