@@ -27,6 +27,10 @@ export interface UserInfo {
   fullName: string;
   email: string;
   avatar: string;
+  dateOfBirth?: Date | null;
+  phone?: string;
+  country?: string;
+  city?: string;
   role: string;
   currentLevel: string;
   currentStreak: number;
@@ -66,6 +70,10 @@ export class AuthService {
         fullName: user.fullName,
         email: user.email,
         avatar: avatar?.url || '',
+        dateOfBirth: user.dateOfBirth || null,
+        phone: user.phone || '',
+        country: user.country || '',
+        city: user.city || '',
         role: user.role,
         isActive: user.isActive,
         isVip: user.isVip || false,
@@ -230,6 +238,10 @@ export class AuthService {
         fullName: user.fullName,
         email: user.email,
         avatar: avatar?.url || '/images/avatar-default.jpg',
+        dateOfBirth: user.dateOfBirth || null,
+        phone: user.phone || '',
+        country: user.country || '',
+        city: user.city || '',
         role: user.role,
         isActive: user.isActive,
         isVip: user.isVip || false,
@@ -288,6 +300,10 @@ export class AuthService {
         fullName: existingUser.fullName,
         email: existingUser.email,
         avatar: existingUser.avatar || '/images/avatar-default.jpg',
+        dateOfBirth: existingUser.dateOfBirth || null,
+        phone: existingUser.phone || '',
+        country: existingUser.country || '',
+        city: existingUser.city || '',
         role: existingUser.role,
         isActive: existingUser.isActive,
         isVip: existingUser.isVip || false,
@@ -341,6 +357,10 @@ export class AuthService {
       fullName: newUser.fullName,
       email: newUser.email,
       avatar: '',
+      dateOfBirth: newUser.dateOfBirth || null,
+      phone: newUser.phone || '',
+      country: newUser.country || '',
+      city: newUser.city || '',
       role: newUser.role,
       isActive: newUser.isActive,
       isVip: newUser.isVip || false,

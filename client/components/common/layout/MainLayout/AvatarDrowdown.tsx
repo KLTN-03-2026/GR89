@@ -7,18 +7,18 @@ import { useEffect, useState } from 'react'
 
 export default function AvatarDrowdown() {
   const { user, logout } = useAuth()
-  const defaultAvatar = user?.avatar?.url || "/images/avatar-default.jpg"
+  const defaultAvatar = user?.avatar || "/images/avatar-default.jpg"
   const [avatarError, setAvatarError] = useState(false)
 
   useEffect(() => {
     setAvatarError(false)
-  }, [user?.avatar?.url])
+  }, [user?.avatar])
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="w-10 h-10 cursor-pointer bg-gray-400">
-          <AvatarImage src={avatarError ? defaultAvatar : (user?.avatar?.url || defaultAvatar)} alt="avatar" width={40} height={40} onError={() => setAvatarError(true)} />
+          <AvatarImage src={avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)} alt="avatar" width={40} height={40} onError={() => setAvatarError(true)} />
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -27,7 +27,7 @@ export default function AvatarDrowdown() {
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-lg bg-gray-400">
               <AvatarImage
-                src={avatarError ? defaultAvatar : (user?.avatar?.url || defaultAvatar)}
+                src={avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)}
                 alt={user?.fullName}
                 onError={() => setAvatarError(true)}
               />

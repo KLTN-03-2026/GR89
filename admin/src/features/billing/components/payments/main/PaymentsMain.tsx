@@ -3,14 +3,13 @@ import { useEffect, useState, useCallback, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable } from "@/components/common"
 import { columnsPayments, PaymentRow } from "../table/PaymentsColumn"
-import { Download, CheckCircle2, Search, Filter, CreditCard, Banknote, Wallet } from "lucide-react"
+import { CheckCircle2, Search, Filter, CreditCard, Banknote, Wallet } from "lucide-react"
 import {
   getPaymentsPaginated,
   PaymentQueryParams
 } from "@/lib/apis/api"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
 
 function useDebounce<T>(value: T, delay: number): T {

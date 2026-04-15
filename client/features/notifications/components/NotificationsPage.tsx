@@ -3,15 +3,31 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Bell, Check, CheckCheck, Clock, Star, Trophy, BookOpen, MessageCircle, ArrowLeft, Settings, Search, MoreVertical, Trash2 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export function NotificationsPage() {
+  type NotificationType = 'achievement' | 'lesson' | 'reminder' | 'message' | 'system'
+  type NotificationPriority = 'high' | 'medium' | 'low'
+  interface NotificationItem {
+    id: number
+    type: NotificationType
+    title: string
+    description: string
+    time: string
+    isRead: boolean
+    icon: LucideIcon
+    color: string
+    bgColor: string
+    priority: NotificationPriority
+  }
+
   const router = useRouter()
   const [filter, setFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const notifications = [
+  const notifications: NotificationItem[] = [
     { id: 1, type: 'achievement', title: 'Chúc mừng! Bạn đã hoàn thành bài học Grammar cơ bản', description: 'Bạn đã hoàn thành 10/10 bài học trong chủ đề "Present Simple". Hãy tiếp tục với chủ đề tiếp theo!', time: '2 phút trước', isRead: false, icon: Trophy, color: 'text-yellow-600', bgColor: 'bg-yellow-100', priority: 'high' },
     { id: 2, type: 'lesson', title: 'Bài học mới: Advanced Vocabulary', description: 'Chủ đề "Business English" đã được thêm vào lộ trình học của bạn. Hãy khám phá ngay!', time: '1 giờ trước', isRead: false, icon: BookOpen, color: 'text-blue-600', bgColor: 'bg-blue-100', priority: 'medium' },
     { id: 3, type: 'reminder', title: 'Nhắc nhở học tập hàng ngày', description: 'Đã đến lúc học bài! Hãy tiếp tục hành trình học tiếng Anh của bạn để duy trì streak.', time: '3 giờ trước', isRead: true, icon: Clock, color: 'text-orange-600', bgColor: 'bg-orange-100', priority: 'low' },
@@ -31,8 +47,20 @@ export function NotificationsPage() {
   const markAllAsRead = () => { console.log('Mark all as read') }
   const deleteNotification = (id: number) => { console.log('Delete notification:', id) }
 
-  const getTypeLabel = (type: string) => ({ achievement: 'Thành tích', lesson: 'Bài học', reminder: 'Nhắc nhở', message: 'Tin nhắn', system: 'Hệ thống' }[type as any] || 'Khác')
-  const getPriorityColor = (priority: string) => ({ high: 'bg-red-100 text-red-800', medium: 'bg-yellow-100 text-yellow-800', low: 'bg-gray-100 text-gray-800' }[priority as any] || 'bg-gray-100 text-gray-800')
+  const typeLabels: Record<NotificationType, string> = {
+    achievement: 'Thành tích',
+    lesson: 'Bài học',
+    reminder: 'Nhắc nhở',
+    message: 'Tin nhắn',
+    system: 'Hệ thống'
+  }
+  const priorityColors: Record<NotificationPriority, string> = {
+    high: 'bg-red-100 text-red-800',
+    medium: 'bg-yellow-100 text-yellow-800',
+    low: 'bg-gray-100 text-gray-800'
+  }
+  const getTypeLabel = (type: NotificationType) => typeLabels[type]
+  const getPriorityColor = (priority: NotificationPriority) => priorityColors[priority]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">

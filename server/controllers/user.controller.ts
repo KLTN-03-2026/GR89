@@ -125,11 +125,19 @@ export class UserController {
 
   // (USER) Cập nhật thông tin cá nhân
   static updateMe = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { fullName } = req.body;
+    const { fullName, dateOfBirth, phone, country, city } = req.body;
     if (fullName && String(fullName).trim().length < 3)
       return next(new ErrorHandler("Tên phải có ít nhất 3 ký tự", 400));
+    if (phone && String(phone).trim().length > 20)
+      return next(new ErrorHandler("Số điện thoại không hợp lệ", 400));
 
-    const me = await UserService.updateMe(req.user?._id as string, { fullName });
+    const me = await UserService.updateMe(req.user?._id as string, {
+      fullName: fullName?.trim(),
+      dateOfBirth: dateOfBirth || null,
+      phone: phone?.trim(),
+      country: country?.trim(),
+      city: city?.trim(),
+    });
     res.status(200).json({
       success: true,
       message: "Cập nhật thông tin thành công",

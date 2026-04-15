@@ -3,6 +3,8 @@ import ErrorHandler from "../utils/ErrorHandler";
 import XLSX from 'xlsx'
 import mongoose from "mongoose";
 import { Plan } from "../models/plan.model";
+import { UserInfo } from "./auth.service";
+import { MediaService } from "./media.service";
 
 export class UserService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -157,6 +159,10 @@ export class UserService {
       fullName: user.fullName,
       email: user.email,
       avatar: user?.avatar as any,
+      dateOfBirth: user.dateOfBirth || null,
+      phone: user.phone || "",
+      country: user.country || "",
+      city: user.city || "",
       role: user.role,
       currentLevel: user.currentLevel,
       currentStreak: user.currentStreak,
@@ -171,11 +177,18 @@ export class UserService {
   }
 
   // (USER) Cập nhật thông tin cá nhân
-  static async updateMe(userId: string, data: { fullName?: string }): Promise<IUser> {
+  static async updateMe(
+    userId: string,
+    data: { fullName?: string; dateOfBirth?: Date | null; phone?: string; country?: string; city?: string }
+  ): Promise<UserInfo> {
     const updated = await User.findByIdAndUpdate(
       userId,
       {
         ...(data.fullName ? { fullName: data.fullName } : {}),
+        ...(data.dateOfBirth !== undefined ? { dateOfBirth: data.dateOfBirth } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.country !== undefined ? { country: data.country } : {}),
+        ...(data.city !== undefined ? { city: data.city } : {}),
       },
       { new: true }
     )
@@ -183,13 +196,20 @@ export class UserService {
       .populate("avatar", "url");
 
     if (!updated) throw new ErrorHandler("Không tìm thấy người dùng", 404);
-    return updated;
+    return {
+      ...updated.toObject(),
+      avatar: (updated?.avatar as any)?.url || '',
+    } as unknown as UserInfo;
   }
 
   // (USER) Cập nhật ảnh đại diện
-  static async updateAvatar(userId: string, avatarMediaId: string): Promise<IUser> {
+  static async updateAvatar(userId: string, avatarMediaId: string): Promise<UserInfo> {
     if (!mongoose.isValidObjectId(avatarMediaId))
       throw new ErrorHandler("Media avatar không hợp lệ", 400);
+
+    const DEFAULT_AVATAR_ID = '69293c75f29d5312d6568881'
+    const currentUser = await User.findById(userId).select("avatar")
+    const previousAvatarId = currentUser?.avatar ? String(currentUser.avatar) : null
 
     const updated = await User.findByIdAndUpdate(
       userId,
@@ -200,7 +220,19 @@ export class UserService {
       .populate("avatar", "url");
 
     if (!updated) throw new ErrorHandler("Không tìm thấy người dùng", 404);
-    return updated;
+
+    if (
+      previousAvatarId &&
+      previousAvatarId !== DEFAULT_AVATAR_ID &&
+      previousAvatarId !== avatarMediaId
+    ) {
+      await MediaService.deleteOne(previousAvatarId)
+    }
+
+    return {
+      ...updated.toObject(),
+      avatar: (updated?.avatar as any)?.url || '',
+    } as unknown as UserInfo;
   }
 
   // (USER) Đổi mật khẩu

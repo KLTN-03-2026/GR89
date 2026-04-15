@@ -4,7 +4,7 @@ import { User } from "@/types";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import { login, loginGoogle, logout, register } from '@/features/auth/services/authApi'
-import { getMyProfile, updateMyProfile } from '@/features/account/services/accountApi'
+import { getMyProfile, updateMyAvatar, updateMyProfile } from '@/features/account/services/accountApi'
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
 
@@ -28,6 +28,7 @@ interface AuthContextType {
   register: (credentials: RegisterRequest) => Promise<void>
   refreshProfile: () => Promise<void>
   updateUser: (userData: User) => Promise<void>
+  updateAvatar: (file: File) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -38,25 +39,27 @@ export const AuthContext = createContext<AuthContextType>({
   logout: () => { },
   register: async () => { },
   refreshProfile: async () => { },
-  updateUser: async () => { }
+  updateUser: async () => { },
+  updateAvatar: async () => { }
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const currentPath = usePathname()
   const isCurrentPathAuth = currentPath === '/login' || currentPath === '/register' || currentPath === '/'
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window === 'undefined') return null
-    try {
-      const raw = localStorage.getItem('user')
-      return raw ? (JSON.parse(raw) as User) : null
-    } catch {
-      return null
-    }
-  })
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(isCurrentPathAuth ? false : true)
   const router = useRouter();
 
   useEffect(() => {
+    if (!user) {
+      const raw = localStorage.getItem('user')
+      if (raw) {
+        setUser(JSON.parse(raw) as User)
+        setIsLoading(false)
+        return
+      }
+    }
+
     if (isCurrentPathAuth || !!user) {
       setIsLoading(false)
       return
@@ -79,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       cancelled = true
     }
-  }, [currentPath, user])
+  }, [currentPath, isCurrentPathAuth, user])
 
   const loginUser = async (credentials: LoginRequest) => {
     setIsLoading(true)
@@ -151,7 +154,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateUser = async (userData: User) => {
     setIsLoading(true)
-    await updateMyProfile(userData)
+    await updateMyProfile(userData as User)
       .then((res) => {
         setUser(res.data as User)
         localStorage.setItem('user', JSON.stringify(res.data))
@@ -161,8 +164,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       })
   }
 
+  const updateAvatar = async (file: File) => {
+    setIsLoading(true)
+    await updateMyAvatar(file)
+      .then(res => {
+        if (res.success && res.data) {
+          setUser(res.data as User)
+          localStorage.setItem('user', JSON.stringify(res.data))
+        }
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login: loginUser, loginGoogle: handleLoginGoogle, logout: logoutUser, register: registerUser, refreshProfile, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoading, login: loginUser, loginGoogle: handleLoginGoogle, logout: logoutUser, register: registerUser, refreshProfile, updateUser, updateAvatar }}>
       {children}
     </AuthContext.Provider>
   )

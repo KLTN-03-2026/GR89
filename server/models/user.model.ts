@@ -7,6 +7,10 @@ export interface IUser extends Document {
   password?: string;
   fullName: string;
   avatar: Schema.Types.ObjectId | null | string;
+  dateOfBirth?: Date | null;
+  phone?: string;
+  country?: string;
+  city?: string;
   provider: 'email' | 'google' | 'facebook'
   role: 'user' | 'admin' | 'content';
   currentLevel: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
@@ -79,6 +83,25 @@ const userSchema = new Schema<IUser>({
     type: Schema.Types.ObjectId,
     ref: 'Media',
     default: new mongoose.Types.ObjectId('69293c75f29d5312d6568881'),
+  },
+  dateOfBirth: {
+    type: Date,
+    default: null,
+  },
+  phone: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  country: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  city: {
+    type: String,
+    default: '',
+    trim: true,
   },
   role: {
     type: String,

@@ -35,13 +35,13 @@ export function NavUser() {
 
   useEffect(() => {
     setAvatarError(false)
-  }, [user?.avatar?.url])
+  }, [user?.avatar])
 
   const handleLogout = async () => {
     await logout()
   }
 
-  const defaultAvatar = user?.avatar?.url || "/images/avatar-default.jpg"
+  const defaultAvatar = user?.avatar || "/images/avatar-default.jpg"
 
   if (isLoading || !user) {
     return (
@@ -70,8 +70,8 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale bg-gray-400">
-                <AvatarImage src={
-                  avatarError ? defaultAvatar : (user?.avatar?.url || defaultAvatar)}
+                <AvatarImage
+                  src={avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)}
                   alt={user.fullName}
                   onError={() => setAvatarError(true)}
                 />
@@ -106,7 +106,7 @@ export function NavUser() {
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg bg-gray-400">
                   <AvatarImage src={
-                    avatarError ? defaultAvatar : (user?.avatar?.url || defaultAvatar)}
+                    avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)}
                     alt={user.fullName}
                     onError={() => setAvatarError(true)}
                   />
