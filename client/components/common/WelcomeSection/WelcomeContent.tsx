@@ -1,9 +1,8 @@
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import { IWelcomeContentProps } from '@/types'
 
-export default function WelcomeContent({ hightlightColor, Icon, title, titleHighlight, badge, badge2, descriptions, buttons, background }: IWelcomeContentProps) {
+export default function WelcomeContent({ hightlightColor, Icon, title, titleHighlight, badge, badge2, descriptions, background }: IWelcomeContentProps) {
   return (
     <div className=" space-y-8">
       <div className="flex items-center gap-4 ">
@@ -45,35 +44,6 @@ export default function WelcomeContent({ hightlightColor, Icon, title, titleHigh
             </span>
           ))}
         </p>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-        {buttons.map(button => {
-          const commonClasses = 'w-full sm:w-auto flex items-center gap-3 rounded-2xl px-6 py-4 text-base md:text-lg font-semibold transition-all duration-300 shadow-[0_18px_35px_rgba(15,23,42,0.25)]'
-
-          if (button.type === 'default') {
-            return (
-              <Button
-                key={button.text}
-                className={`${commonClasses} bg-white text-slate-900 border border-white/80 hover:bg-white/90 hover:scale-[1.02]`}
-              >
-                <button.icon className="w-5 h-5 text-slate-600" />
-                <span className="truncate">{button.text}</span>
-              </Button>
-            )
-          }
-
-          return (
-            <Button
-              key={button.text}
-              variant="outline"
-              className={`${commonClasses} bg-transparent text-white border border-white/30 hover:bg-white/10 hover:border-white/50 hover:scale-[1.02]`}
-            >
-              <button.icon className="w-5 h-5 text-white/80" />
-              <span className="truncate">{button.text}</span>
-            </Button>
-          )
-        })}
       </div>
     </div>
   )

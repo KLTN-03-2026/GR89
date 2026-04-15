@@ -1,6 +1,6 @@
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { BookOpen, Play, Brain, Target, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { BookOpen, Brain, Target, Clock } from 'lucide-react'
 import { GrammarOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -9,11 +9,6 @@ interface Props {
 }
 
 export function GrammarHeader({ overview }: Props) {
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Bắt đầu học', icon: Play },
-    { type: 'outline', text: 'Xem lộ trình', icon: BookOpen }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Chinh phục hệ thống ngữ pháp tiếng Anh từ A-Z với lộ trình bài bản, ví dụ trực quan và bài tập thực hành chuyên sâu.' }
   ]
@@ -40,7 +35,6 @@ export function GrammarHeader({ overview }: Props) {
     badge: ' Bài bản',
     badge2: `📚 Hoàn thành ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-purple-500 via-indigo-500 to-blue-200'
   }
 

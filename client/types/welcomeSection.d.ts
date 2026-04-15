@@ -15,12 +15,6 @@ export interface IDescription {
   textHighlight?: string | ''
 }
 
-export interface IButton {
-  type: 'outline' | 'default'
-  text: string
-  icon: LucideIcon
-}
-
 export interface IWelcomeContentProps {
   hightlightColor: string
   Icon: LucideIcon | string
@@ -29,7 +23,6 @@ export interface IWelcomeContentProps {
   badge: string
   badge2: string
   descriptions: IDescription[]
-  buttons: IButton[]
   background: string
 }
 

@@ -1,8 +1,8 @@
 'use client'
 
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { Volume2, Mic, Target, Play, BookOpen, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { Volume2, Target, BookOpen, Clock } from 'lucide-react'
 import { IpaOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -11,12 +11,6 @@ interface IPAHeaderProps {
 }
 
 export function IPAHeader({ overview }: IPAHeaderProps) {
-
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Tiếp tục học IPA', icon: Play },
-    { type: 'outline', text: 'Luyện phát âm', icon: Mic }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Học phiên âm quốc tế IPA một cách có hệ thống. Nắm vững cách phát âm chuẩn và cải thiện kỹ năng speaking.' }
   ]
@@ -43,7 +37,6 @@ export function IPAHeader({ overview }: IPAHeaderProps) {
     badge: ' Hệ thống',
     badge2: `🎤 Hoàn thành ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-purple-400 via-violet-400 to-indigo-200'
   }
 

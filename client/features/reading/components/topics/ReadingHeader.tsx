@@ -1,8 +1,8 @@
 'use client'
 
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { BookOpen, Play, Brain, Target, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { BookOpen, Brain, Target, Clock } from 'lucide-react'
 import { ReadingOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -11,11 +11,6 @@ interface ReadingHeaderProps {
 }
 
 export function ReadingHeader({ overview }: ReadingHeaderProps) {
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Bắt đầu đọc', icon: Play },
-    { type: 'outline', text: 'Xem bài đọc', icon: BookOpen }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Luyện kỹ năng đọc hiểu tiếng Anh với các bài đọc đa dạng. Từ tin tức đến văn học, nâng cao khả năng đọc hiểu.' }
   ]
@@ -42,7 +37,6 @@ export function ReadingHeader({ overview }: ReadingHeaderProps) {
     badge: ' Đa dạng',
     badge2: `📖 Hoàn thành ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-indigo-500 via-blue-500 to-cyan-200'
   }
 

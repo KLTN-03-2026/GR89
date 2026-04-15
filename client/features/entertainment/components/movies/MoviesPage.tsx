@@ -2,8 +2,8 @@
 import { useMemo } from "react"
 import { WelcomeSection } from "@/components/common/WelcomeSection"
 import { Movies } from "./Movies"
-import { IStreakCardProps, IWelcomeContentProps, IButton, IDescription, IStatsOverview } from "@/types"
-import { Clock, Play, Film, Target } from "lucide-react"
+import { IStreakCardProps, IWelcomeContentProps, IDescription, IStatsOverview } from "@/types"
+import { Clock, Film, Target } from "lucide-react"
 import type { EntertainmentStatsEntry, EntertainmentItem } from '@/features/entertainment'
 import { formatStudyTime } from "@/libs/utils/formatStudyTime"
 
@@ -17,11 +17,6 @@ export function MoviesPage({ movieStats, items }: MoviesPageProps) {
   const watchedMovies = movieStats?.viewedCount ?? 0
   const completion = totalMovies > 0 ? Math.round((watchedMovies / totalMovies) * 100) : 0
   const watchTime = formatStudyTime(movieStats?.totalWatchTime)
-
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Xem phim mới', icon: Play },
-    { type: 'outline', text: 'Xem lại phim yêu thích', icon: Film }
-  ]
 
   const descriptions: IDescription[] = [
     {
@@ -47,7 +42,6 @@ export function MoviesPage({ movieStats, items }: MoviesPageProps) {
     badge: " Giải trí",
     badge2: totalMovies > 0 ? `🎬 ${watchedMovies}/${totalMovies} phim` : "Chưa có dữ liệu",
     descriptions,
-    buttons,
     background: "from-red-500 via-rose-500 to-pink-200"
   }
 

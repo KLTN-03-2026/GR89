@@ -1,8 +1,8 @@
 'use client'
 
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { BookOpen, Brain, Play, Target, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { BookOpen, Brain, Target, Clock } from 'lucide-react'
 import { VocabularyOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -11,11 +11,6 @@ interface VocabularyHeaderProps {
 }
 
 export function VocabularyHeader({ overview }: VocabularyHeaderProps) {
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Tiếp tục học từ vựng', icon: Play },
-    { type: 'outline', text: 'Ôn tập từ vựng', icon: BookOpen }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Mở rộng vốn từ vựng tiếng Anh một cách có hệ thống. Học từ vựng theo chủ đề, ngữ cảnh và áp dụng vào thực tế.' }
   ]
@@ -42,7 +37,6 @@ export function VocabularyHeader({ overview }: VocabularyHeaderProps) {
     badge: ' Hệ thống',
     badge2: `📚 Hoàn thành ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-emerald-500 via-green-400 to-teal-200'
   }
 

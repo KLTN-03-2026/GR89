@@ -1,8 +1,8 @@
 'use client'
 
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { Mic, Play, MessageCircle, Brain, Target, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { Mic, MessageCircle, Brain, Target, Clock } from 'lucide-react'
 import { SpeakingOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -11,11 +11,6 @@ interface SpeakingHeaderProps {
 }
 
 export function SpeakingHeader({ overview }: SpeakingHeaderProps) {
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Bắt đầu nói', icon: Play },
-    { type: 'outline', text: 'Luyện phát âm', icon: Mic }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Luyện kỹ năng nói tiếng Anh với các chủ đề đa dạng. Từ hội thoại đến thuyết trình, nâng cao khả năng giao tiếp.' }
   ]
@@ -42,7 +37,6 @@ export function SpeakingHeader({ overview }: SpeakingHeaderProps) {
     badge: ' Thực hành',
     badge2: `🎤 Hoàn thành ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-orange-500 via-amber-500 to-yellow-200'
   }
 

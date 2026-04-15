@@ -1,8 +1,8 @@
 'use client'
 
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { Headphones, Play, BookOpen, Brain, Target, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { Headphones, BookOpen, Brain, Target, Clock } from 'lucide-react'
 import { ListeningOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -11,11 +11,6 @@ interface ListeningHeaderProps {
 }
 
 export function ListeningHeader({ overview }: ListeningHeaderProps) {
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Bắt đầu nghe', icon: Play },
-    { type: 'outline', text: 'Xem bài nghe', icon: BookOpen }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Luyện kỹ năng nghe hiểu tiếng Anh với các bài nghe đa dạng. Từ hội thoại đến bài giảng.' }
   ]
@@ -42,7 +37,6 @@ export function ListeningHeader({ overview }: ListeningHeaderProps) {
     badge: ' Đa dạng',
     badge2: `🎧 Hoàn thành ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-pink-500 via-rose-500 to-red-200'
   }
 

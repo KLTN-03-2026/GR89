@@ -1,8 +1,8 @@
 'use client'
 
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { PenTool, Play, FileText, Brain, Target, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { PenTool, FileText, Brain, Target, Clock } from 'lucide-react'
 import { WritingOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -11,11 +11,6 @@ interface WritingHeaderProps {
 }
 
 export function WritingHeader({ overview }: WritingHeaderProps) {
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Bắt đầu viết', icon: Play },
-    { type: 'outline', text: 'Xem bài viết', icon: PenTool }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Luyện kỹ năng viết tiếng Anh với các chủ đề đa dạng. Từ đoạn văn đến bài luận, nâng cao khả năng diễn đạt.' }
   ]
@@ -47,7 +42,6 @@ export function WritingHeader({ overview }: WritingHeaderProps) {
     badge: ' Sáng tạo',
     badge2: `✍️ Hoàn thành ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-teal-500 via-cyan-500 to-blue-200'
   }
 

@@ -1,7 +1,7 @@
 'use client'
 import { WelcomeSection } from "@/components/common/WelcomeSection"
 import { IStatsOverview, IWelcomeContentProps, IStreakCardProps } from "@/types"
-import { Clock, Flame, Star, PlayCircle, ChartColumn, LucideIcon } from "lucide-react"
+import { Clock, Flame, Star } from "lucide-react"
 import { LessonStatsResponse } from "@/libs/apis/api"
 import SkillsProgress from "./SkillsProgress"
 import StudyTimeStats from "./StudyTimeStats"
@@ -21,11 +21,6 @@ interface DashboardContentProps {
 export function DashboardContent({ user, lessonStats, entertainmentStats }: DashboardContentProps) {
   const streak = user?.currentStreak || 0
   const longestStreak = user?.longestStreak || 0
-
-  const buttons: { type: 'outline' | 'default'; text: string; icon: LucideIcon }[] = [
-    { type: 'outline', text: 'Xem tiến độ', icon: ChartColumn },
-    { type: 'default', text: 'Tiếp tục học', icon: PlayCircle }
-  ]
 
   const descriptions: { text: string, textHighlight?: string | '' }[] = [
     {
@@ -76,7 +71,6 @@ export function DashboardContent({ user, lessonStats, entertainmentStats }: Dash
         ? `🔥 Chuỗi ${streak} ngày | 🏆 Kỷ lục ${longestStreak ?? 0} ngày`
         : `🔥 Chuỗi ${streak ?? 0} ngày`),
     descriptions: descriptions,
-    buttons: buttons,
     background: "from-blue-800 to-blue-500"
   }
 
