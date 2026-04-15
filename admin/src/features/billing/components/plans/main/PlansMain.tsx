@@ -4,12 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/common"
 import { columnsPlans, PlanRow } from "../table/PlansColumn"
-import { Download, Upload, Eye, EyeOff, LayoutGrid, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
+import { Eye, EyeOff, LayoutGrid, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
 import {
   getPlansPaginated,
   updateManyPlansStatus,
-  exportPlanExcel,
-  importPlanExcel,
   PlanQueryParams
 } from "@/lib/apis/api"
 import { toast } from "react-toastify"
@@ -121,33 +119,6 @@ export function PlansMain() {
     }
   }
 
-  const handleExport = async () => {
-    try {
-      const blob = await exportPlanExcel()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `plans_${new Date().toISOString().split('T')[0]}.xlsx`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Xuất Excel thành công')
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Không thể xuất Excel')
-    }
-  }
-
-  const handleImport = async (file: File) => {
-    try {
-      const result = await importPlanExcel(file, false)
-      toast.success(`Import thành công: ${result.data?.created} tạo mới, ${result.data?.updated} cập nhật`)
-      setRefreshKey(prev => prev + 1)
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Không thể import Excel')
-    }
-  }
-
   const cols = useMemo(() => columnsPlans(handleRefresh), [handleRefresh])
 
   const kpiStats = useMemo(() => {
@@ -192,24 +163,6 @@ export function PlansMain() {
           <p className="text-gray-500 font-medium">Quản lý các gói dịch vụ và quyền lợi người dùng.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExport} className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-            <Download className="w-4 h-4 mr-2 text-gray-400" />
-            Xuất Excel
-          </Button>
-          <label className="cursor-pointer">
-            <Button variant="outline" asChild className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-              <span><Upload className="w-4 h-4 mr-2 text-gray-400" /> Nhập Excel</span>
-            </Button>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleImport(file)
-              }}
-            />
-          </label>
           <SheetAddPlan callback={handleRefresh} />
         </div>
       </div>

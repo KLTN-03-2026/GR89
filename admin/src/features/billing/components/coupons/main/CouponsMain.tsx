@@ -4,14 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/common"
 import { columnsCoupons } from "../table/CouponsColumn"
-import { Plus, Download, Upload, Trash2, Eye, EyeOff, Ticket, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
+import { Trash2, Eye, EyeOff, Ticket, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
 import {
   getCouponsPaginated,
   deleteCoupon,
   deleteManyCoupons,
   updateManyCouponsStatus,
-  exportCouponExcel,
-  importCouponExcel,
   Coupon,
   CouponQueryParams,
   getPlansPaginated,
@@ -87,34 +85,16 @@ export function CouponsMain() {
     fetchCoupons(params)
   }, [page, limit, debouncedSearch, sortBy, sortOrder, isActive, fetchCoupons])
 
-  // Fetch plans when dialog opens
+  // Fetch plans once so both Add and Edit sheets can use them.
   useEffect(() => {
-    if (open) {
-      getPlansPaginated({ limit: 100 })
-        .then(res => {
-          setPlans(res.data || [])
-        })
-        .catch(() => {
-          toast.error('Không thể tải danh sách gói')
-        })
-    }
-  }, [open])
-
-  const handleEdit = (row: Coupon) => {
-    setEditing(row)
-    setOpen(true)
-  }
-
-  const handleDelete = async (row: Coupon) => {
-    if (!confirm(`Bạn có chắc muốn xóa mã giảm giá "${row.code}"?`)) return
-    try {
-      await deleteCoupon(row._id)
-      toast.success('Xóa mã giảm giá thành công')
-      fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể xóa mã giảm giá')
-    }
-  }
+    getPlansPaginated({ limit: 100 })
+      .then(res => {
+        setPlans(res.data || [])
+      })
+      .catch(() => {
+        toast.error('Không thể tải danh sách gói')
+      })
+  }, [])
 
   const handleBulkDelete = async () => {
     if (selectedRows.length === 0) {
@@ -128,8 +108,9 @@ export function CouponsMain() {
       setSelectedRows([])
       setOpenDeleteDialog(false)
       fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể xóa mã giảm giá')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể xóa mã giảm giá'
+      toast.error(message)
     } finally {
       setLoadingAction(false)
     }
@@ -147,35 +128,11 @@ export function CouponsMain() {
       setSelectedRows([])
       setOpenPublishDialog(false)
       fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể cập nhật trạng thái')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể cập nhật trạng thái'
+      toast.error(message)
     } finally {
       setLoadingAction(false)
-    }
-  }
-
-  const handleExport = async () => {
-    try {
-      const blob = await exportCouponExcel()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `coupons_${new Date().toISOString().split('T')[0]}.xlsx`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Xuất Excel thành công')
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể xuất Excel')
-    }
-  }
-
-  const handleImport = async (file: File) => {
-    try {
-      const result = await importCouponExcel(file, false)
-      toast.success(`Import thành công: ${result.data?.created} tạo mới, ${result.data?.updated} cập nhật`)
-      fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể import Excel')
     }
   }
 
@@ -187,6 +144,23 @@ export function CouponsMain() {
     sortOrder,
     isActive
   }), [page, limit, debouncedSearch, sortBy, sortOrder, isActive])
+
+  const handleEdit = useCallback((row: Coupon) => {
+    setEditing(row)
+    setOpen(true)
+  }, [])
+
+  const handleDelete = useCallback(async (row: Coupon) => {
+    if (!confirm(`Bạn có chắc muốn xóa mã giảm giá "${row.code}"?`)) return
+    try {
+      await deleteCoupon(row._id)
+      toast.success('Xóa mã giảm giá thành công')
+      fetchCoupons(refreshParams())
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể xóa mã giảm giá'
+      toast.error(message)
+    }
+  }, [fetchCoupons, refreshParams])
 
   const cols = useMemo(
     () => columnsCoupons(handleEdit, handleDelete, () => fetchCoupons(refreshParams())),
@@ -235,24 +209,6 @@ export function CouponsMain() {
           <p className="text-gray-500 font-medium">Quản lý các chương trình khuyến mãi và mã giảm giá.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExport} className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-            <Download className="w-4 h-4 mr-2 text-gray-400" />
-            Xuất Excel
-          </Button>
-          <label className="cursor-pointer">
-            <Button variant="outline" asChild className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-              <span><Upload className="w-4 h-4 mr-2 text-gray-400" /> Nhập Excel</span>
-            </Button>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleImport(file)
-              }}
-            />
-          </label>
           <SheetAddCoupon
             plans={plans}
             callback={() => fetchCoupons(refreshParams())}
@@ -324,6 +280,41 @@ export function CouponsMain() {
                 <SelectItem value="all">Tất cả trạng thái</SelectItem>
                 <SelectItem value="active">Đang hiệu lực</SelectItem>
                 <SelectItem value="inactive">Tạm tắt</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={sortBy}
+              onValueChange={(v) => {
+                setSortBy(v)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="h-11 w-[180px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+                <SelectValue placeholder="Sắp xếp theo" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                <SelectItem value="createdAt">Ngày tạo</SelectItem>
+                <SelectItem value="updatedAt">Ngày cập nhật</SelectItem>
+                <SelectItem value="code">Mã giảm giá</SelectItem>
+                <SelectItem value="name">Tên chiến dịch</SelectItem>
+                <SelectItem value="discountValue">Giá trị giảm</SelectItem>
+                <SelectItem value="validFrom">Ngày bắt đầu</SelectItem>
+                <SelectItem value="validTo">Ngày kết thúc</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={sortOrder}
+              onValueChange={(v: 'asc' | 'desc') => {
+                setSortOrder(v)
+                setPage(1)
+              }}
+            >
+              <SelectTrigger className="h-11 w-[150px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+                <SelectValue placeholder="Thứ tự" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                <SelectItem value="desc">Mới nhất</SelectItem>
+                <SelectItem value="asc">Cũ nhất</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -120,12 +120,6 @@ export function PaymentsMain() {
           </div>
           <p className="text-gray-500 font-medium">Theo dõi lịch sử thanh toán và doanh thu hệ thống.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-            <Download className="w-4 h-4 mr-2 text-gray-400" />
-            Báo cáo tài chính
-          </Button>
-        </div>
       </div>
 
       <StatsGrid stats={kpiStats} columns={3} />
