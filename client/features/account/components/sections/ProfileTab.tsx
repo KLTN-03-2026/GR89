@@ -225,7 +225,7 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, user }: Profil
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="country" className="text-sm font-semibold text-gray-700">Quốc gia*</Label>
+              <Label htmlFor="country" className="text-sm font-semibold text-gray-700">Quốc gia</Label>
               <div className="relative">
                 <Flag className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <Input id="country" placeholder="Việt Nam" disabled={!isEditing} className={`pl-9 ${!isEditing ? 'bg-gray-50' : 'bg-white'} border-gray-200`} />
