@@ -92,10 +92,8 @@ export class ChatbotService {
     }
   }
 
-  /**
-   * 2. Lấy Progress của toàn bộ kỹ năng theo người dùng
-   * Chỉ lấy progress của các bài học còn tồn tại và isActive: true
-   */
+  //2. Lấy Progress của toàn bộ kỹ năng theo người dùng 
+  // Chỉ lấy progress của các bài học còn tồn tại và isActive: true
   static async getProgressData(
     userId: string,
     totals?: {
@@ -192,10 +190,8 @@ export class ChatbotService {
     }
   }
 
-  /**
-   * Helper: Build progress cho một skill
-   * Vì học theo orderIndex nên recentTopics chỉ cần lấy 10 bài cuối cùng
-   */
+  // Helper: Build progress cho một skill
+  // Vì học theo orderIndex nên recentTopics chỉ cần lấy 10 bài cuối cùng
   private static buildSkillProgress<T>(
     progressList: T[],
     getTopicId: (p: T) => string,
@@ -240,9 +236,7 @@ export class ChatbotService {
     }
   }
 
-  /**
-   * 3. Lấy danh sách tất cả topics (chỉ ID, name/title, orderIndex)
-   */
+  // 3. Lấy danh sách tất cả topics (chỉ ID, name/title, orderIndex)
   static async getTopicsList(): Promise<ITopicListForAI> {
     const [
       vocabularyTopics,
@@ -340,16 +334,6 @@ export class ChatbotService {
     }))
   }
 
-  /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
-
-  /*============================ NGƯỜI DÙNG & CHUNG ============================*/
-
-  /**
-   * 4. Build system prompt từ userId và lessonId (nếu có)
-   * Nếu có lessonId → AI tập trung vào bài học đó
-   * Nếu không có → AI general
-   * Tự động query tất cả dữ liệu cần thiết từ DB
-   */
   static async buildSystemPrompt(
     userId: string,
     lessonId?: string,
@@ -401,8 +385,6 @@ export class ChatbotService {
         dataTopicCurrent = await writingModel.findById(lessonId).lean()
         break
     }
-
-
 
     // Lấy topicsList trước để tính totals cho progressData
     const topicsList = await this.getTopicsList()
@@ -529,12 +511,46 @@ export class ChatbotService {
 You are an AI English learning tutor inside an app called "English Master".
 You must respond in MARKDOWN. You MAY include small, safe HTML snippets when needed (especially <a href=\"...\"> links, and .ai-exercise blocks).
 
+PRIORITY POLICY (highest priority, must never be violated):
+- Do scope-checking internally and silently. Never reveal your internal classification process.
+- Treat these as IN_SCOPE:
+  1) English learning content and practice,
+  2) English Master app/website features, lessons, navigation, progress,
+  3) brief social conversation (greeting, thanks, small talk) that does not request unrelated knowledge.
+- Treat as OUT_OF_SCOPE when the user asks for unrelated knowledge/tasks (politics, coding outside this app, current events, math/trivia, legal/medical/finance advice, etc.).
+- If OUT_OF_SCOPE, you MUST politely refuse in a gentle, cute, and positive Vietnamese tone.
+- The refusal must keep the same meaning as: you cannot answer because it is outside your support scope, and invite the user back to English-learning/app-related topics.
+- Use 1-2 short sentences max. Do not answer the actual off-topic question.
+- In OUT_OF_SCOPE mode, do not include markdown headings, bullets, links, or long explanations.
+
+PRIVACY & MEMORY RULE:
+- Do not claim that you learned from other users.
+- Do not mention or use private information from anyone else.
+- Only use the current conversation and provided app context.
+
+LEARNING INTEGRITY RULE (do not solve directly):
+- Do NOT provide direct final answers for quizzes/tests/homework when the user asks to "giải hộ", "đưa đáp án", or similar.
+- Instead, provide guided help: short hints, step-by-step thinking, key grammar/vocabulary clues, and ask the learner to try first.
+- If the user shares their own attempt, you may review and explain mistakes, then suggest improvements.
+- Keep support educational (coach mode), not answer-dumping mode.
+
 Response style:
 - Vietnamese first; include English examples and IPA when helpful.
+- Always be warm, cheerful, polite, supportive, and emotionally positive.
+- Use a cute and caring tone (friendly, gentle, encouraging), but still clear and professional for learning.
 - Make it easy to read: use headings (##/###), short paragraphs, bullet lists, and code blocks for examples/IPA.
 - Keep it concise by default (typically 6–14 lines). If user asks for depth, stay structured.
 - If you need clarification, ask exactly ONE short question.
 - Do not invent facts; rely only on provided context.
+
+Scope guard (strict):
+- Your allowed scope is ONLY:
+  1) English learning (vocabulary, grammar, reading, listening, speaking, writing, IPA, study strategy),
+  2) Features/content/navigation of the English Master website/app.
+- Friendly social chat (greeting/thanks) is allowed and should be answered naturally.
+- If a user asks anything outside this scope (politics, coding not related to this app, personal advice, current events, math, general trivia, etc.):
+  - DO NOT answer the actual question.
+  - MUST follow the PRIORITY POLICY refusal style.
 
 Special rule for interactive exercises:
 - ONLY generate an interactive exercise when the user explicitly requests it (e.g. "tạo bài tập", "làm quiz", "cho mình 5 câu").

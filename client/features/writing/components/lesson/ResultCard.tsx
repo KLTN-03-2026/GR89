@@ -3,16 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { resultWriting } from '@/types'
 import { Award, BookOpen, Sparkles, Star, Target, Trophy, Home, RotateCcw, ArrowLeft, FileText, Eye, EyeOff } from 'lucide-react'
 import { useParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { resultWriting } from '../../types'
 
 interface props {
   result: resultWriting
+  onRetry?: () => void
 }
 
-export default function ResultCard({ result }: props) {
+export default function ResultCard({ result, onRetry }: props) {
   const { _id } = useParams()
   const router = useRouter()
   const [showRevised, setShowRevised] = useState(false)
@@ -22,15 +23,20 @@ export default function ResultCard({ result }: props) {
   const gradeIcon = total >= 85 ? '🏆' : total >= 70 ? '🥈' : total >= 55 ? '🥉' : '📝'
 
   const handleGoHome = () => {
-    router.push('/dashboard')
+    router.replace('/dashboard')
   }
 
   const handleRetry = () => {
-    router.push(`/skills/writing/lesson/${_id}`)
+    if (!onRetry) {
+      router.replace(`/skills/writing/lesson/${_id}`)
+    }
+    else {
+      onRetry()
+    }
   }
 
   const handleBackToWriting = () => {
-    router.push('/skills/writing')
+    router.replace('/skills/writing')
   }
 
   return (
@@ -151,7 +157,7 @@ export default function ResultCard({ result }: props) {
             <p className="text-sm text-gray-600 mb-4 font-medium">Hiệu quả đạt {Math.round((result?.rubricContent?.point || 0) / 25 * 100)}%</p>
 
             <div className="space-y-3 h-48 overflow-y-auto">
-              {result?.rubricContent?.feedback?.map((feedback, index) => (
+              {result?.rubricContent?.feedback?.map((feedback: string, index: number) => (
                 <div key={index} className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
                   <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-700 text-sm leading-relaxed">{feedback}</span>
@@ -180,7 +186,7 @@ export default function ResultCard({ result }: props) {
             <p className="text-sm text-gray-600 mb-4 font-medium">Hiệu quả đạt {Math.round((result?.rubricGrammar?.point || 0) / 25 * 100)}%</p>
 
             <div className="space-y-3 h-48 overflow-y-auto">
-              {result?.rubricGrammar?.feedback?.map((feedback, index) => (
+              {result?.rubricGrammar?.feedback?.map((feedback: string, index: number) => (
                 <div key={index} className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
                   <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-700 text-sm leading-relaxed">{feedback}</span>
@@ -209,7 +215,7 @@ export default function ResultCard({ result }: props) {
             <p className="text-sm text-gray-600 mb-4 font-medium">Hiệu quả đạt {Math.round((result?.rubricStructure?.point || 0) / 25 * 100)}%</p>
 
             <div className="space-y-3 h-48 overflow-y-auto">
-              {result?.rubricStructure?.feedback?.map((feedback, index) => (
+              {result?.rubricStructure?.feedback?.map((feedback: string, index: number) => (
                 <div key={index} className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
                   <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-700 text-sm leading-relaxed">{feedback}</span>
@@ -238,7 +244,7 @@ export default function ResultCard({ result }: props) {
             <p className="text-sm text-gray-600 mb-4 font-medium">Hiệu quả đạt {Math.round((result?.rubricVocabulary?.point || 0) / 25 * 100)}%</p>
 
             <div className="space-y-3 h-48 overflow-y-auto">
-              {result?.rubricVocabulary?.feedback?.map((feedback, index) => (
+              {result?.rubricVocabulary?.feedback?.map((feedback: string, index: number) => (
                 <div key={index} className="flex items-start gap-3 p-3 bg-white/60 rounded-xl">
                   <Star className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-700 text-sm leading-relaxed">{feedback}</span>
@@ -270,7 +276,7 @@ export default function ResultCard({ result }: props) {
             <h4 className="font-bold text-orange-800 text-lg">Gợi ý cải thiện</h4>
           </div>
           <div className="space-y-3">
-            {result.suggested.map((suggested, index) => (
+            {result.suggested.map((suggested: string, index: number) => (
               <div key={index} className="flex items-start gap-3 p-3 bg-white/60 rounded-xl hover:bg-white/80 transition-colors duration-200">
                 <div className="w-2 h-2 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full mt-2 flex-shrink-0"></div>
                 <span className="text-orange-700 leading-relaxed">{suggested}</span>

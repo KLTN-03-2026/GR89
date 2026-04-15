@@ -5,7 +5,7 @@ import ResultCard from "./ResultCard"
 import VocabularyTipsCard from "./VocabularyTipsCard"
 import WritingEditorCard from "./WritingEditorCard"
 import WritingTipsCard from "./WritingTipsCard"
-import { resultWriting, writing } from "@/types"
+import { resultWriting, writing } from "@/features/writing/types"
 
 interface WritingLessonMainProps {
   writingData: writing
@@ -46,7 +46,7 @@ export function WritingLessonMain({ writingData }: WritingLessonMainProps) {
         </div>
       </div>)
       :
-      <ResultCard result={result} />
+      <ResultCard result={result} onRetry={() => setResult(null)} />
   )
 }
 
