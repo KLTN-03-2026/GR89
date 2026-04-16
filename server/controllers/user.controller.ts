@@ -123,6 +123,18 @@ export class UserController {
     });
   });
 
+  // (USER) Lấy hoạt động học gần đây
+  static getRecentActivities = CatchAsyncError(async (req: Request, res: Response) => {
+    const userId = req.user?._id as string
+    const limit = req.query.limit ? Number(req.query.limit) : 5
+    const activities = await UserService.getRecentActivities(userId, limit)
+    res.status(200).json({
+      success: true,
+      message: "Lấy hoạt động gần đây thành công",
+      data: activities,
+    })
+  })
+
   // (USER) Cập nhật thông tin cá nhân
   static updateMe = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { fullName, dateOfBirth, phone, country, city } = req.body;

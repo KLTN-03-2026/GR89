@@ -11,14 +11,16 @@ import type { EntertainmentStatsEntry } from '@/features/entertainment'
 import { User } from "@/types/user"
 import { QuickActions } from "./QuickActions"
 import { RecentActivities } from "./RecentActivities"
+import type { RecentActivity } from "../types"
 
 interface DashboardContentProps {
   user: User
   lessonStats: LessonStatsResponse | null
   entertainmentStats: EntertainmentStatsEntry[]
+  recentActivities: RecentActivity[]
 }
 
-export function DashboardContent({ user, lessonStats, entertainmentStats }: DashboardContentProps) {
+export function DashboardContent({ user, lessonStats, entertainmentStats, recentActivities }: DashboardContentProps) {
   const streak = user?.currentStreak || 0
   const longestStreak = user?.longestStreak || 0
 
@@ -142,7 +144,7 @@ export function DashboardContent({ user, lessonStats, entertainmentStats }: Dash
       {/* Hành động nhanh & Hoạt động gần đây */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 w-full mt-4">
         <QuickActions />
-        <RecentActivities />
+        <RecentActivities activities={recentActivities} />
       </div>
     </>
   )

@@ -24,6 +24,7 @@ router.put("/bulk/status", authenticateTokenAdmin, requireRole(["admin", "conten
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
 router.get("/me/user", authenticateTokenUser, requireRole(["user"]), UserController.getMe);
+router.get("/me/recent-activities", authenticateTokenUser, requireRole(["user"]), UserController.getRecentActivities);
 router.get("/me/admin", authenticateTokenAdmin, requireRole(["admin", "content"]), UserController.getMe);
 router.put("/me", authenticateTokenUser, requireRole(["user"]), UserController.updateMe);
 router.put("/me/avatar", authenticateTokenUser, requireRole(["user"]), upload.single("file"), UserController.updateAvatar);

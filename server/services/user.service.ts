@@ -5,6 +5,16 @@ import mongoose from "mongoose";
 import { Plan } from "../models/plan.model";
 import { UserInfo } from "./auth.service";
 import { MediaService } from "./media.service";
+import { StudyHistory } from "../models/studyHistory.model";
+import { VocabularyTopic } from "../models/vocabularyTopic.model";
+import { GrammarTopic } from "../models/grammarTopic.model";
+import { Reading } from "../models/reading.model";
+import { Listening } from "../models/listening.model";
+import { Speaking } from "../models/speaking.model";
+import { writingModel } from "../models/writing.model";
+import { Ipa } from "../models/ipa.model";
+
+type ActivityCategory = 'grammar' | 'vocabulary' | 'reading' | 'listening' | 'speaking' | 'ipa' | 'writing'
 
 export class UserService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -174,6 +184,71 @@ export class UserService {
       vipPlanId: user.vipPlanId?.toString() || "",
       vipStartDate: user.vipStartDate,
     } as unknown as IUser;
+  }
+
+  // (USER) Lấy hoạt động học gần đây
+  static async getRecentActivities(userId: string, limit: number = 5): Promise<Array<{
+    lessonId: string
+    category: ActivityCategory
+    lessonTitle: string
+    createdAt: Date
+    status: 'passed' | 'failed' | 'in_progress'
+  }>> {
+    const histories = await StudyHistory.find({ userId: new mongoose.Types.ObjectId(userId) })
+      .select('lessonId category createdAt status')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean()
+
+    if (!histories.length) return []
+
+    const groupedIds: Record<ActivityCategory, string[]> = {
+      vocabulary: [],
+      grammar: [],
+      reading: [],
+      listening: [],
+      speaking: [],
+      writing: [],
+      ipa: [],
+    }
+
+    for (const item of histories) {
+      const category = item.category as ActivityCategory
+      groupedIds[category].push(String(item.lessonId))
+    }
+
+    const [vocabulary, grammar, reading, listening, speaking, writing, ipa] = await Promise.all([
+      VocabularyTopic.find({ _id: { $in: groupedIds.vocabulary } }).select('_id name').lean(),
+      GrammarTopic.find({ _id: { $in: groupedIds.grammar } }).select('_id title').lean(),
+      Reading.find({ _id: { $in: groupedIds.reading } }).select('_id title').lean(),
+      Listening.find({ _id: { $in: groupedIds.listening } }).select('_id title').lean(),
+      Speaking.find({ _id: { $in: groupedIds.speaking } }).select('_id title').lean(),
+      writingModel.find({ _id: { $in: groupedIds.writing } }).select('_id title').lean(),
+      Ipa.find({ _id: { $in: groupedIds.ipa } }).select('_id sound').lean(),
+    ])
+
+    const titleMaps = {
+      vocabulary: new Map(vocabulary.map(v => [String(v._id), v.name])),
+      grammar: new Map(grammar.map(g => [String(g._id), g.title])),
+      reading: new Map(reading.map(r => [String(r._id), r.title])),
+      listening: new Map(listening.map(l => [String(l._id), l.title])),
+      speaking: new Map(speaking.map(s => [String(s._id), s.title])),
+      writing: new Map(writing.map(w => [String(w._id), w.title])),
+      ipa: new Map(ipa.map(i => [String(i._id), i.sound])),
+    } as const
+
+    return histories.map(item => {
+      const category = item.category as ActivityCategory
+      const lessonId = String(item.lessonId)
+      const lessonTitle = titleMaps[category].get(lessonId) || 'Bài học'
+      return {
+        lessonId,
+        category,
+        lessonTitle,
+        createdAt: item.createdAt as Date,
+        status: item.status as 'passed' | 'failed' | 'in_progress'
+      }
+    })
   }
 
   // (USER) Cập nhật thông tin cá nhân
