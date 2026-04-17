@@ -21,14 +21,14 @@ import { DialogImageToMedia, DialogVideoToMedia } from '@/components/common'
 import { Media } from "@/features/Media/types";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Clapperboard, 
-  Plus, 
-  Info, 
-  Video, 
-  Image as ImageIcon, 
-  User, 
-  Type, 
+import {
+  Clapperboard,
+  Plus,
+  Info,
+  Video,
+  Image as ImageIcon,
+  User,
+  Type,
   FileText,
   Music,
   Mic,
@@ -95,16 +95,15 @@ export function SheetAddEntertainment({
       return
     }
     setLoading(true)
-    try {
-      await createEntertainment(data)
-      toast.success('Tạo nội dung giải trí thành công')
-      callback?.()
-      setOpen(false)
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
-    } finally {
-      setLoading(false)
-    }
+    await createEntertainment(data)
+      .then(() => {
+        toast.success('Tạo nội dung giải trí thành công')
+        callback?.()
+        setOpen(false)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   const getIcon = () => {
@@ -158,29 +157,29 @@ export function SheetAddEntertainment({
                 <Info className="w-4 h-4" />
                 Thông Tin Tác Phẩm
               </div>
-              
+
               <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
                 <div className="space-y-2.5 col-span-2">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     <Type className="w-3.5 h-3.5" /> Tiêu Đề <span className="text-rose-500">*</span>
                   </Label>
-                  <Input 
+                  <Input
                     placeholder="Nhập tên phim, bài hát, podcast..."
                     className={`h-12 bg-white border-gray-200 rounded-2xl focus:ring-${theme}-500 font-bold px-4 shadow-sm`}
-                    value={data.title} 
-                    onChange={(e) => setData({ ...data, title: e.target.value })} 
+                    value={data.title}
+                    onChange={(e) => setData({ ...data, title: e.target.value })}
                   />
                 </div>
-                
+
                 <div className="space-y-2.5 col-span-2">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5" /> Mô Tả Tóm Tắt
                   </Label>
-                  <Input 
+                  <Input
                     placeholder="Tóm tắt nội dung hấp dẫn..."
                     className={`h-12 bg-white border-gray-200 rounded-2xl focus:ring-${theme}-500 font-bold px-4 shadow-sm`}
-                    value={data.description} 
-                    onChange={(e) => setData({ ...data, description: e.target.value })} 
+                    value={data.description}
+                    onChange={(e) => setData({ ...data, description: e.target.value })}
                   />
                 </div>
 
@@ -188,9 +187,9 @@ export function SheetAddEntertainment({
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     <LayoutList className="w-3.5 h-3.5" /> Phân Loại
                   </Label>
-                  <Select 
+                  <Select
                     disabled={lockType}
-                    value={data.type} 
+                    value={data.type}
                     onValueChange={(v) => setData({ ...data, type: v as any })}
                   >
                     <SelectTrigger className={`h-12 bg-white border-gray-200 rounded-2xl focus:ring-${theme}-500 font-bold px-4 shadow-sm`}>
@@ -216,16 +215,16 @@ export function SheetAddEntertainment({
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5" /> Tác Giả / Đạo Diễn
                   </Label>
-                  <Input 
+                  <Input
                     placeholder="Tên nghệ sĩ, đạo diễn..."
                     className={`h-12 bg-white border-gray-200 rounded-2xl focus:ring-${theme}-500 font-bold px-4 shadow-sm`}
-                    value={data.author} 
-                    onChange={(e) => setData({ ...data, author: e.target.value })} 
+                    value={data.author}
+                    onChange={(e) => setData({ ...data, author: e.target.value })}
                   />
                 </div>
 
@@ -234,11 +233,11 @@ export function SheetAddEntertainment({
                     <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5" /> Thứ Tự Tập
                     </Label>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       className={`h-12 bg-white border-gray-200 rounded-2xl focus:ring-${theme}-500 font-bold px-4 shadow-sm`}
-                      value={data.orderIndex} 
-                      onChange={(e) => setData({ ...data, orderIndex: Number(e.target.value) })} 
+                      value={data.orderIndex}
+                      onChange={(e) => setData({ ...data, orderIndex: Number(e.target.value) })}
                     />
                   </div>
                 )}
@@ -321,16 +320,16 @@ export function SheetAddEntertainment({
         <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
           <div className="flex items-center justify-end gap-4 w-full">
             <SheetClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-12 px-8 rounded-2xl border-gray-200 font-bold text-gray-600 hover:bg-white transition-all active:scale-95"
                 disabled={loading}
               >
                 Hủy Bỏ
               </Button>
             </SheetClose>
-            <Button 
-              onClick={handleCreate} 
+            <Button
+              onClick={handleCreate}
               disabled={loading}
               className={`h-12 px-10 rounded-2xl bg-${theme}-600 hover:bg-${theme}-700 shadow-xl shadow-${theme}-200 font-black transition-all active:scale-95`}
             >
@@ -346,19 +345,19 @@ export function SheetAddEntertainment({
 
 function CheckCircle2({ className }: { className?: string }) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/>
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" /><path d="m9 12 2 2 4-4" />
     </svg>
   )
 }

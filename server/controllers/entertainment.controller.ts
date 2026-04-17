@@ -236,6 +236,7 @@ export class EntertainmentController {
   static update = CatchAsyncError(async (req: Request, res: Response) => {
     const { id } = req.params
     const data = await EntertainmentService.update(id, req.body)
+
     await EntertainmentController.logAdminAction(req, {
       action: 'update',
       resourceType: 'entertainment',

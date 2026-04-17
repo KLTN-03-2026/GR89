@@ -9,12 +9,14 @@ import { Media } from "@/features/Media/types";
 import { DialogAddImageCard } from "../../../features/Media/components/dialog/MediaImage/DialogAddImageCard";
 import useMedia from "@/hooks/useMedia";
 import { useEffect, useState } from "react";
+import type { ReactNode } from 'react'
 
 interface DialogImageToMediaProps {
   onSelect: (image: Media) => void
+  children?: ReactNode
 }
 
-export function DialogImageToMedia({ onSelect }: DialogImageToMediaProps) {
+export function DialogImageToMedia({ onSelect, children }: DialogImageToMediaProps) {
   const [selectedImage, setSelectedImage] = useState<Media | null>(null)
   const { images, getMedias, loadMoreMedias, loading, pagination } = useMedia()
 
@@ -36,10 +38,12 @@ export function DialogImageToMedia({ onSelect }: DialogImageToMediaProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full" variant="outline">
-          <ImageIcon className="w-4 h-4" />
-          Chọn ảnh từ thư viện
-        </Button>
+        {children || (
+          <Button className="w-full" variant="outline">
+            <ImageIcon className="w-4 h-4" />
+            Chọn ảnh từ thư viện
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="w-[800px] !max-w-[95vw] !max-h-[80%] flex flex-col">

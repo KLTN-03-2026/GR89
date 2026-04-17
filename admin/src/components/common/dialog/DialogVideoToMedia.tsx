@@ -9,12 +9,14 @@ import { DialogAddVideo } from '../../../features/Media/components/dialog/MediaV
 import { useEffect, useState } from 'react'
 import { Media } from "@/features/Media/types";
 import Image from 'next/image'
+import type { ReactNode } from 'react'
 
 interface DialogVideoToMediaProps {
   onSelect: (video: Media) => void
+  children?: ReactNode
 }
 
-export function DialogVideoToMedia({ onSelect }: DialogVideoToMediaProps) {
+export function DialogVideoToMedia({ onSelect, children }: DialogVideoToMediaProps) {
   const [selectedVideo, setSelectedVideo] = useState<Media | null>(null)
   const { images, getMedias, loadMoreMedias, loading, pagination } = useMedia()
 
@@ -61,10 +63,12 @@ export function DialogVideoToMedia({ onSelect }: DialogVideoToMediaProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="w-full" variant="outline">
-          <VideoIcon className="w-4 h-4" />
-          Chọn video từ thư viện
-        </Button>
+        {children || (
+          <Button className="w-full" variant="outline">
+            <VideoIcon className="w-4 h-4" />
+            Chọn video từ thư viện
+          </Button>
+        )}
       </DialogTrigger>
 
       <DialogContent className="w-[1000px] !max-w-[95vw] flex flex-col max-h-[80vh] ">

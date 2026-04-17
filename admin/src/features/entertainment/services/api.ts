@@ -93,12 +93,22 @@ export async function getEntertainmentById(id: string): Promise<Response<Enterta
 }
 
 export async function createEntertainment(data: Partial<Entertainment>): Promise<Response<Entertainment>> {
-  const res = await AuthorizedAxios.post('/entertainment/', data)
+  const payload: Partial<Entertainment> = { ...data }
+  if (!payload.parentId || !String(payload.parentId).trim()) {
+    delete payload.parentId
+  }
+
+  const res = await AuthorizedAxios.post('/entertainment/', payload)
   return res.data as Response<Entertainment>
 }
 
 export async function updateEntertainment(id: string, data: Partial<Entertainment>): Promise<Response<Entertainment>> {
-  const res = await AuthorizedAxios.put(`/entertainment/${id}`, data)
+  const payload: Partial<Entertainment> = { ...data }
+  if (!payload.parentId || !String(payload.parentId).trim()) {
+    delete payload.parentId
+  }
+
+  const res = await AuthorizedAxios.put(`/entertainment/${id}`, payload)
   return res.data as Response<Entertainment>
 }
 
@@ -107,7 +117,7 @@ export async function deleteEntertainment(id: string): Promise<Response<Entertai
   return res.data as Response<Entertainment>
 }
 
-export async function deleteManyEntertainment(ids: string[]): Promise<Response<Entertainment[]>> {
+export async function deleteMEntertainmentEntertainment(ids: string[]): Promise<Response<Entertainment[]>> {
   const res = await AuthorizedAxios.delete(`/entertainment/`, { data: { ids } })
   return res.data as Response<Entertainment[]>
 }
@@ -133,9 +143,9 @@ export async function updateMultipleEntertainmentStatus(
   return res.data as Response<{ updatedCount: number; updatedEntertainments: Entertainment[] }>
 }
 
-export async function deleteMultipleEntertainment(ids: string[]): Promise<Response<any>> {
+export async function deleteMultipleEntertainment(ids: string[]): Promise<Response<Entertainment>> {
   const res = await AuthorizedAxios.delete('/entertainment/bulk/delete', { data: { ids } })
-  return res.data as Response<any>
+  return res.data as Response<Entertainment>
 }
 
 /*=============== ENTERTAINMENT export/import ==============*/
@@ -146,13 +156,13 @@ export async function exportEntertainmentExcel(type?: string): Promise<Blob> {
   return new Blob([res?.data as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 }
 
-export async function importEntertainmentJson(items: any[], skipErrors: boolean = false, type?: string): Promise<Response<any>> {
+export async function importEntertainmentJson(items: Entertainment[], skipErrors: boolean = false, type?: string): Promise<Response<Entertainment>> {
   const response = await AuthorizedAxios.post('/entertainment/import-json', {
     items,
     skipErrors,
     type
   })
-  return response.data as Response<any>
+  return response.data as Response<Entertainment>
 }
 
 /*=============== ENTERTAINMENT STATISTICS ==============*/

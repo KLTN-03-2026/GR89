@@ -47,16 +47,23 @@ export const checkUnlockContentUser = (contentType: 'vocabulary' | 'grammar' | '
   })
 }
 
-export const checkVipContentUser = (contentType: 'vocabulary' | 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'entertainment' | 'ipa', paramName: string = 'id') => {
+export const checkVipContentUser = (contentType: 'vocabulary' | 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'entertainment' | 'ipa' | 'chatbotAI', paramName: string = 'id') => {
   return CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const contentId = req.params[paramName]
+    let contentId: string | undefined
     const user = req.user as UserInfo
     if (!user) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
 
     //Kiếm tra role
     if (user.role !== 'user') return next(new ErrorHandler('Bạn không có quyền truy cập', 403))
+    if (!contentType) return next(new ErrorHandler('Nội dung không tồn tại', 400))
 
-    if (!contentType || !contentId) return next(new ErrorHandler('Nội dung không tồn tại', 400))
+    if (contentType !== 'chatbotAI') {
+      contentId = String(req.params[paramName])
+      if (!contentId) return next(new ErrorHandler('Nội dung không tồn tại', 400))
+    }
+    else {
+      if (!user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+    }
 
     //Kiểm tra vip
     switch (contentType) {

@@ -21,15 +21,12 @@ import { Media } from "@/features/Media/types";
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import {
-  Clapperboard,
   Info,
   Video,
   Image as ImageIcon,
   User,
   Type,
   FileText,
-  Music,
-  Mic,
   LayoutList,
   Edit3,
   Save,
@@ -102,24 +99,15 @@ export function SheetUpdateEntertainment({
       return
     }
     setLoading(true)
-    try {
-      await updateEntertainment(entertainment._id, data)
-      toast.success('Cập nhật nội dung giải trí thành công')
-      callback?.()
-      setOpen(false)
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getIcon = () => {
-    switch (data.type) {
-      case 'music': return <Music className="w-6 h-6" />
-      case 'podcast': return <Mic className="w-6 h-6" />
-      default: return <Clapperboard className="w-6 h-6" />
-    }
+    await updateEntertainment(entertainment._id, data)
+      .then(() => {
+        toast.success('Cập nhật nội dung giải trí thành công')
+        callback?.()
+        setOpen(false)
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   const getThemeColor = () => {
