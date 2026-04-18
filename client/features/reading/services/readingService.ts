@@ -1,7 +1,7 @@
 import 'server-only'
 import { fetchServer } from '@/libs/apis/fetch-server'
 import type { LessonStatsResponse, ReadingOverview } from '@/libs/apis/api'
-import type { IReading } from '../types'
+import type { IReading, IReadingResult } from '../types'
 
 export async function getReadingData() {
   const [statsOverview, readings] = await Promise.all([
@@ -39,6 +39,6 @@ export async function getReadingLesson(_id: string) {
 }
 
 export async function getReadingResult(_id: string) {
-  const result = await fetchServer<any>(`/reading/${_id}/result`)
+  const result = await fetchServer<IReadingResult>(`/reading/${_id}/result`)
   return result
 }

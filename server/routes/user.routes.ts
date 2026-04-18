@@ -19,6 +19,12 @@ router.get("/streak/status", authenticateTokenUser, CatchAsyncError(async (req: 
 /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
 
 router.get("/", authenticateTokenAdmin, requireRole(["admin", "content"]), UserController.getAllUsers);
+router.get(
+  "/:id/study-history",
+  authenticateTokenAdmin,
+  requireRole(["admin", "content"]),
+  UserController.getAdminUserStudyHistory
+);
 router.put("/bulk/status", authenticateTokenAdmin, requireRole(["admin", "content"]), UserController.updateManyUsersStatus);
 
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/

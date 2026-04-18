@@ -1,5 +1,3 @@
-// Lightweight translation utilities for single-word lookups
-
 export interface DictionaryDetails {
   word: string
   phonetic?: string
@@ -12,69 +10,81 @@ export interface DictionaryDetails {
   }>
 }
 
+const MY_MEMORY_URL = 'https://api.mymemory.translated.net/get'
+const LIBRE_TRANSLATE_URL = 'https://libretranslate.de/translate'
+const DICTIONARY_API_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en'
+
+// Dịch từ tiếng Anh sang tiếng Việt, ưu tiên MyMemory và fallback sang LibreTranslate.
 export async function translateWordToVi(word: string): Promise<string> {
-  const q = word.trim();
-  if (!q) return '';
+  const query = word.trim()
+  if (!query) return ''
 
-  // Strategy:
-  // 1) Try MyMemory (EN->VI)
-  // 2) Fallback to LibreTranslate public instance (EN->VI)
-
+  // Nguồn dịch chính: MyMemory.
   try {
-    const mm = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(q)}&langpair=en|vi`
-    );
-    if (mm.ok) {
-      const data = await mm.json();
-      const vi = data?.responseData?.translatedText as string | undefined;
-      if (vi && vi.toLowerCase() !== q.toLowerCase()) {
-        return vi;
+    const response = await fetch(
+      `${MY_MEMORY_URL}?q=${encodeURIComponent(query)}&langpair=en|vi`
+    )
+
+    if (response.ok) {
+      const data = await response.json()
+      const translated = data?.responseData?.translatedText as string | undefined
+      if (translated && translated.toLowerCase() !== query.toLowerCase()) {
+        return translated
       }
     }
   } catch {
-    // ignore
+    // Bỏ qua lỗi để thử nguồn dự phòng.
   }
 
-  // LibreTranslate fallback
+  // Nguồn dịch dự phòng: LibreTranslate.
   try {
-    const lt = await fetch('https://libretranslate.de/translate', {
+    const response = await fetch(LIBRE_TRANSLATE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q, source: 'en', target: 'vi', format: 'text' })
-    });
-    if (lt.ok) {
-      const data = await lt.json();
-      const vi = (data?.translatedText as string | undefined) || '';
-      if (vi) return vi;
+      body: JSON.stringify({ q: query, source: 'en', target: 'vi', format: 'text' }),
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      const translated = (data?.translatedText as string | undefined) || ''
+      if (translated) return translated
     }
   } catch {
-    // ignore
+    // Bỏ qua lỗi để trả chuỗi rỗng khi tất cả nguồn đều thất bại.
   }
 
-  return '';
+  return ''
 }
 
+// Lấy thông tin từ vựng gồm nghĩa Việt, phiên âm, định nghĩa và ví dụ tiếng Anh.
 export async function fetchWordDetails(word: string): Promise<DictionaryDetails | null> {
-  const q = word.trim();
-  if (!q) return null;
+  const query = word.trim()
+  if (!query) return null
 
-  const details: DictionaryDetails = { word: q };
+  const details: DictionaryDetails = { word: query }
 
-  // Vietnamese translation (reuse translateWordToVi)
+  // Lấy nghĩa tiếng Việt (tái sử dụng hàm dịch ở trên).
   try {
-    const vi = await translateWordToVi(q);
-    if (vi) details.translationVi = vi;
-  } catch { }
+    const translated = await translateWordToVi(query)
+    if (translated) details.translationVi = translated
+  } catch {
+    // Không chặn luồng nếu API dịch lỗi.
+  }
 
-  // English dictionary details
+  // Lấy chi tiết từ điển tiếng Anh từ dictionaryapi.dev.
   try {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(q)}`);
-    if (res.ok) {
-      const json = await res.json();
-      const entry = json?.[0];
-      details.phonetic = entry?.phonetic;
-      details.phonetics = entry?.phonetics;
-      type RawMeaning = { partOfSpeech?: string; definitions?: Array<{ definition?: string; example?: string }> }
+    const response = await fetch(`${DICTIONARY_API_URL}/${encodeURIComponent(query)}`)
+    if (response.ok) {
+      const data = await response.json()
+      const entry = data?.[0]
+      details.phonetic = entry?.phonetic
+      details.phonetics = entry?.phonetics
+
+      type RawMeaning = {
+        partOfSpeech?: string
+        definitions?: Array<{ definition?: string; example?: string }>
+      }
+
       const meanings: RawMeaning[] = Array.isArray(entry?.meanings) ? entry.meanings : []
       details.meanings = meanings
         .map((m) => ({
@@ -86,13 +96,15 @@ export async function fetchWordDetails(word: string): Promise<DictionaryDetails 
           examples: (m?.definitions || [])
             .map((d) => d?.example || '')
             .filter((e): e is string => typeof e === 'string' && e.length > 0)
-            .slice(0, 3)
+            .slice(0, 3),
         }))
         .filter((m) => m.definitions && m.definitions.length > 0)
     }
-  } catch { }
+  } catch {
+    // Không chặn luồng nếu API từ điển lỗi.
+  }
 
-  return details;
+  return details
 }
 
 

@@ -1,22 +1,67 @@
 'use client'
-import { IIpa } from "@/types";
-import CardIpa from "./CardIpa";
+import { IIpa } from "@/features/ipa/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Waves } from "lucide-react";
 import { useMemo } from "react";
+import CardIpa from "./CardIpa";
 
 interface ListCardIpaProps {
   ipaList: IIpa[]
 }
 
+const MONOPHTHONG_ROWS = [
+  ['i:', 'ɪ', 'ʊ', 'u:'],
+  ['e', 'ə', 'ɜ:', 'ɔ:'],
+  ['æ', 'ʌ', 'ɑ:', 'ɒ'],
+];
+
+const DIPHTHONG_ROWS = [
+  ['ɪə', 'eɪ'],
+  ['ʊə', 'ɔɪ', 'əʊ'],
+  ['eə', 'aɪ', 'aʊ'],
+];
+
+const CONSONANT_ROWS = [
+  ['p', 'b', 't', 'd', 'tʃ', 'dʒ', 'k', 'g'],
+  ['f', 'v', 'θ', 'ð', 's', 'z', 'ʃ', 'ʒ'],
+  ['m', 'n', 'ŋ', 'h', 'l', 'r', 'w', 'j'],
+];
+
+function normalizeIpaSymbol(value: string) {
+  return value
+    .toLowerCase()
+    .replaceAll('/', '')
+    .replaceAll('ː', ':')
+    .replace(/\s+/g, '');
+}
+
 export function ListCardIpa({ ipaList }: ListCardIpaProps) {
-  const { ipaVowel, ipaDiphthong, ipaConsonant } = useMemo(() => {
+  const { ipaByKey, ipaVowel, ipaDiphthong, ipaConsonant } = useMemo(() => {
+    const validIpaList = ipaList.filter(ipa => ipa.examples?.length > 0);
+    const map = new Map<string, IIpa>();
+
+    validIpaList.forEach((ipa) => {
+      map.set(normalizeIpaSymbol(ipa.sound), ipa);
+    });
+
     return {
-      ipaVowel: ipaList.filter(ipa => ipa.soundType === 'vowel'),
-      ipaDiphthong: ipaList.filter(ipa => ipa.soundType === 'diphthong'),
-      ipaConsonant: ipaList.filter(ipa => ipa.soundType === 'consonant')
-    }
+      ipaByKey: map,
+      ipaVowel: validIpaList.filter(ipa => ipa.soundType === 'vowel'),
+      ipaDiphthong: validIpaList.filter(ipa => ipa.soundType === 'diphthong'),
+      ipaConsonant: validIpaList.filter(ipa => ipa.soundType === 'consonant'),
+    };
   }, [ipaList])
+
+  const getIpaBySymbol = (symbol: string) => ipaByKey.get(normalizeIpaSymbol(symbol));
+  const renderIpaCell = (symbol: string) => {
+    const ipa = getIpaBySymbol(symbol);
+
+    if (!ipa) {
+      return;
+    }
+
+    return (<CardIpa _id={ipa._id} sound={ipa.sound} soundType={ipa.soundType} examples={ipa.examples} progress={ipa.progress} />);
+  };
 
   if (ipaConsonant.length === 0 && ipaVowel.length === 0 && ipaDiphthong.length === 0) {
     return (
@@ -38,76 +83,64 @@ export function ListCardIpa({ ipaList }: ListCardIpaProps) {
   }
 
   return (
-    <>
-      <div>
-        <h2 className="my-4 text-xl font-bold">Phụ âm</h2>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-5">
-          {ipaConsonant && ipaConsonant.length > 0 ? (
-            ipaConsonant.map(ipa => (
-              ipa.examples && ipa.examples.length > 0 && (
-                <CardIpa
-                  key={ipa._id}
-                  _id={ipa._id}
-                  sound={ipa.sound}
-                  soundType="consonant"
-                  examples={ipa.examples}
-                  progress={ipa.progress}
-                  isVipRequired={ipa.isVipRequired}
-                />
-              )
-            ))
-          ) : (
-            <div className="col-span-full text-sm text-gray-500 italic">Không có phụ âm nào khả dụng</div>
-          )}
-        </div>
-      </div>
+    <div className="overflow-x-auto rounded-xl bg-white">
+      <table className="min-w-[980px] w-full border-collapse text-center">
+        <thead>
+          <tr className="bg-gray-100 text-sm font-semibold text-gray-800">
+            <th className="w-14" />
+            <th colSpan={4} className="py-1 text-xl">Nguyên âm đơn</th>
+            <th colSpan={3} className="py-1 text-xl">Nguyên âm đôi</th>
+          </tr>
+        </thead>
 
-      <div>
-        <h2 className="my-4 text-xl font-bold">Nguyên âm</h2>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-5">
-          {ipaVowel && ipaVowel.length > 0 ? (
-            ipaVowel.map(ipa => (
-              ipa.examples && ipa.examples.length > 0 && (
-                <CardIpa
-                  key={ipa._id}
-                  _id={ipa._id}
-                  sound={ipa.sound}
-                  soundType="vowel"
-                  examples={ipa.examples}
-                  progress={ipa.progress}
-                  isVipRequired={ipa.isVipRequired}
-                />
-              )
-            ))
-          ) : (
-            <div className="col-span-full text-sm text-gray-500 italic">Không có nguyên âm nào khả dụng</div>
-          )}
-        </div>
-      </div>
+        <tbody>
+          {MONOPHTHONG_ROWS.map((monoRow, rowIndex) => (
+            <tr key={`vowels-${rowIndex}`}>
+              {rowIndex === 0 && (
+                <td
+                  rowSpan={3}
+                  className="bg-[#ececec] align-middle"
+                >
+                  <span className="[writing-mode:vertical-rl] rotate-180 text-xl font-semibold tracking-wide">
+                    NGUYÊN ÂM
+                  </span>
+                </td>
+              )}
+              {monoRow.map(symbol => (
+                <td key={`mono-${rowIndex}-${symbol}`} className="p-1">
+                  {renderIpaCell(symbol)}
+                </td>
+              ))}
+              {DIPHTHONG_ROWS[rowIndex].map(symbol => (
+                <td key={`diph-${rowIndex}-${symbol}`} className="p-1">
+                  {renderIpaCell(symbol)}
+                </td>
+              ))}
+            </tr>
+          ))}
 
-      <div>
-        <h2 className="my-4 text-xl font-bold">Nguyên âm đôi</h2>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(100px,1fr))] lg:grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-5">
-          {ipaDiphthong && ipaDiphthong.length > 0 ? (
-            ipaDiphthong.map(ipa => (
-              ipa.examples && ipa.examples.length > 0 && (
-                <CardIpa
-                  key={ipa._id}
-                  _id={ipa._id}
-                  sound={ipa.sound}
-                  soundType="diphthong"
-                  examples={ipa.examples}
-                  progress={ipa.progress}
-                  isVipRequired={ipa.isVipRequired}
-                />
-              )
-            ))
-          ) : (
-            <div className="col-span-full text-sm text-gray-500 italic">Không có nguyên âm đôi nào khả dụng</div>
-          )}
-        </div>
-      </div>
-    </>
+          {CONSONANT_ROWS.map((row, rowIndex) => (
+            <tr key={`consonants-${rowIndex}`} >
+              {rowIndex === 0 && (
+                <td
+                  rowSpan={3}
+                  className="bg-[#f5f5aa] align-middle"
+                >
+                  <span className="[writing-mode:vertical-rl] rotate-180 text-xl font-semibold tracking-wide">
+                    PHỤ ÂM
+                  </span>
+                </td>
+              )}
+              {row.map(symbol => (
+                <td key={`cons-${rowIndex}-${symbol}`} className="p-1">
+                  {renderIpaCell(symbol)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

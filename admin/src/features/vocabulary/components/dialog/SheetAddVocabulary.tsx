@@ -25,10 +25,8 @@ import {
   Image as ImageIcon,
   Trash2,
   Save,
-  X,
   Loader2,
   Sparkles,
-  Info
 } from "lucide-react"
 import { createVocabulary } from "../../services/api"
 import { toast } from "react-toastify"
@@ -74,18 +72,16 @@ export function SheetAddVocabulary({ topicId, callback }: { topicId: string, cal
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
-    try {
-      await createVocabulary(data as any)
-      toast.success('Đã thêm từ vựng: ' + data.word)
-      setOpen(false)
-      form.reset()
-      setImageUrl("")
-      callback()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể thêm từ vựng')
-    } finally {
-      setLoading(false)
-    }
+    await createVocabulary(data)
+      .then(() => {
+        toast.success('Đã thêm từ vựng: ' + data.word)
+        setOpen(false)
+        form.reset()
+        setImageUrl("")
+        callback()
+      }).finally(() => {
+        setLoading(false)
+      })
   }
 
   const partOfSpeechs = [

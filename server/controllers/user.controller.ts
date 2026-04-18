@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import mongoose from "mongoose";
 import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { UserService } from "../services/user.service";
 import ErrorHandler from "../utils/ErrorHandler";
@@ -132,6 +133,29 @@ export class UserController {
       success: true,
       message: "Lấy hoạt động gần đây thành công",
       data: activities,
+    })
+  })
+
+  // (ADMIN) Lịch sử học tập của một người dùng (StudyHistory)
+  static getAdminUserStudyHistory = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return next(new ErrorHandler("Mã người dùng không hợp lệ", 400))
+    }
+    const rawLimit = req.query.limit != null ? Number(req.query.limit) : 80
+    const limit = Number.isFinite(rawLimit) ? rawLimit : 80
+    const data = await UserService.getAdminStudyHistory(id, limit)
+    await UserController.logAdminAction(req, {
+      action: "view_user_study_history",
+      resourceType: "user",
+      resourceId: id,
+      description: "Xem lịch sử học tập người dùng",
+      metadata: { returnedCount: data.length, limit },
+    })
+    res.status(200).json({
+      success: true,
+      message: "Lấy lịch sử học tập thành công",
+      data,
     })
   })
 

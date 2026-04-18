@@ -58,3 +58,22 @@ export interface SkillAnalysis {
   name: string;
   avg: number;
 }
+
+/** Một dòng lịch sử học (StudyHistory) — API admin GET /user/:id/study-history */
+export interface UserStudyHistoryEntry {
+  lessonId: string;
+  category:
+    | 'grammar'
+    | 'vocabulary'
+    | 'reading'
+    | 'listening'
+    | 'speaking'
+    | 'ipa'
+    | 'writing';
+  lessonTitle: string;
+  status: 'passed' | 'failed' | 'in_progress';
+  progress: number;
+  duration: number;
+  level: string;
+  createdAt: string;
+}

@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+// Gộp className và tự xử lý class Tailwind bị trùng/xung đột.
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -15,6 +16,7 @@ type PlayAudioOptions = {
   randomVoice?: boolean
 }
 
+// Chuẩn hóa văn bản trước khi đọc để giọng máy tự nhiên và rõ nghĩa hơn.
 const normalizeTextForSpeech = (input: string, lang: string) => {
   let text = String(input ?? "").trim()
   text = text.replace(/\s+/g, " ").replace(/[\r\n]+/g, ", ")
@@ -36,6 +38,7 @@ const normalizeTextForSpeech = (input: string, lang: string) => {
   return text
 }
 
+// Chọn giọng đọc phù hợp theo ngôn ngữ, có thể ưu tiên giọng chất lượng cao.
 const pickVoice = (lang: string, options: { voiceName?: string; random?: boolean } = {}) => {
   const synth = window.speechSynthesis
   const voices = synth.getVoices()
@@ -51,7 +54,6 @@ const pickVoice = (lang: string, options: { voiceName?: string; random?: boolean
   if (candidates.length === 0) return voices[0]
 
   if (options.random) {
-    // Ưu tiên các giọng "ngon" như Google/Microsoft/Neural nếu có nhiều candidates
     const highQuality = candidates.filter(v => {
       const name = (v.name || "").toLowerCase()
       return name.includes("google") || name.includes("natural") || name.includes("neural") || name.includes("microsoft")
@@ -78,6 +80,7 @@ const pickVoice = (lang: string, options: { voiceName?: string; random?: boolean
   return sorted[0]
 }
 
+// Tìm URL audio phát âm của từ tiếng Anh từ Dictionary API.
 const fetchDictionaryAudio = async (word: string): Promise<string | null> => {
   try {
     const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase().trim()}`);
@@ -96,11 +99,12 @@ const fetchDictionaryAudio = async (word: string): Promise<string | null> => {
       }
     }
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
 
+// Đọc văn bản bằng Web Speech API với các tùy chọn tốc độ, cao độ và âm lượng.
 const speakWithTTS = (text: string, options: PlayAudioOptions = {}) => {
   if (typeof window === "undefined") return
   if (!("speechSynthesis" in window)) return
@@ -122,18 +126,19 @@ const speakWithTTS = (text: string, options: PlayAudioOptions = {}) => {
   synth.speak(utterance)
 }
 
+// Dừng ngay mọi âm thanh TTS đang phát trên trình duyệt.
 export const stopAudio = () => {
   if (typeof window === "undefined") return
   if (!("speechSynthesis" in window)) return
   window.speechSynthesis.cancel()
 }
 
+// Phát âm văn bản: ưu tiên audio từ điển, nếu không có thì fallback sang TTS.
 export const playAudio = async (text: string, options: PlayAudioOptions = {}) => {
   if (typeof window === "undefined") return
 
   const lang = options.lang || "en-US"
 
-  // Thử dùng Dictionary API trước nếu là tiếng Anh và không yêu cầu random giọng (vì API thường chỉ có 1-2 giọng cố định)
   if (lang.toLowerCase().startsWith("en") && !options.randomVoice) {
     const audioUrl = await fetchDictionaryAudio(text);
     if (audioUrl) {
@@ -142,7 +147,7 @@ export const playAudio = async (text: string, options: PlayAudioOptions = {}) =>
         audio.volume = options.volume ?? 1;
         await audio.play();
         return;
-      } catch (error) {
+      } catch {
         speakWithTTS(text, options);
         return;
       }
@@ -152,6 +157,7 @@ export const playAudio = async (text: string, options: PlayAudioOptions = {}) =>
   speakWithTTS(text, options);
 }
 
+// Chuyển số giây sang định dạng thời gian mm:ss hoặc hh:mm:ss.
 export const getTime = (time: number) => {
   const hours = Math.floor(time / 3600)
   const minutes = Math.floor((time % 3600) / 60)
@@ -160,13 +166,12 @@ export const getTime = (time: number) => {
   return `${hours < 10 ? '0' + hours : hours}:${minutes < 10 ? '0' + minutes : minutes}:${seconds < 10 ? '0' + seconds : seconds}`
 }
 
-// Format đẹp hơn với emoji và styling
+// Định dạng ngày theo kiểu tương đối dễ đọc như "2 giờ trước", "Hôm qua".
 export const formatDate = (date: Date | string | null | undefined) => {
   if (!date) return 'Chưa có dữ liệu'
 
   const dateObj = date instanceof Date ? date : new Date(date)
 
-  // Kiểm tra nếu date không hợp lệ
   if (isNaN(dateObj.getTime())) return 'Ngày không hợp lệ'
 
   const now = new Date()
@@ -189,7 +194,7 @@ export const formatDate = (date: Date | string | null | undefined) => {
   })
 }
 
-// Format với thông tin chi tiết
+// Định dạng ngày giờ đầy đủ tiếng Việt gồm thứ, ngày tháng năm và thời gian.
 export const formatDateDetailed = (date: Date | string | null | undefined) => {
   if (!date) return 'Chưa có dữ liệu'
 

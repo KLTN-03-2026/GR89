@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { addExampleIpa } from '@/features/IPA/services/api'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 
 interface DialogAddIpaExampleProps {
   ipaId: string
@@ -29,17 +30,17 @@ export function DialogAddIpaExample({ ipaId, callback }: DialogAddIpaExampleProp
     }
 
     setIsLoading(true)
-    try {
-      await addExampleIpa(ipaId, data)
-      toast.success('Thêm ví dụ thành công')
-      callback()
-      setIsOpen(false)
-      setData({ word: "", phonetic: "", vietnamese: "" })
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
-    } finally {
-      setIsLoading(false)
-    }
+    await addExampleIpa(ipaId, data)
+      .then(() => {
+        toast.success('Thêm ví dụ thành công')
+        callback()
+        setIsOpen(false)
+        setData({ word: "", phonetic: "", vietnamese: "" })
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+
   }
 
   return (

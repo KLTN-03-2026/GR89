@@ -1,4 +1,4 @@
-import { UserScore, UserScoreStats, TopUser, SkillAnalysis, User } from '@/features/user/types'
+import { UserScore, UserScoreStats, TopUser, SkillAnalysis, User, UserStudyHistoryEntry } from '@/features/user/types'
 import AuthorizedAxios from '@/lib/apis/authorizrAxios'
 
 /** Shape response API (khớp lib/apis/api) */
@@ -96,6 +96,16 @@ export async function getAllUserScoresPaginated(
 export async function getUserScoreById(userId: string): Promise<ApiResponse<UserScore>> {
   const response = await AuthorizedAxios.get(`/user-scores/${userId}`)
   return response.data as ApiResponse<UserScore>
+}
+
+export async function getUserStudyHistory(
+  userId: string,
+  limit: number = 80
+): Promise<ApiResponse<UserStudyHistoryEntry[]>> {
+  const response = await AuthorizedAxios.get(`/user/${userId}/study-history`, {
+    params: { limit },
+  })
+  return response.data as ApiResponse<UserStudyHistoryEntry[]>
 }
 
 export async function getUserScoresStats(): Promise<ApiResponse<UserScoreStats>> {

@@ -251,6 +251,82 @@ export class UserService {
     })
   }
 
+  /** (ADMIN) Lịch sử học tập chi tiết từ StudyHistory — dùng trang quản trị điểm người dùng */
+  static async getAdminStudyHistory(
+    userId: string,
+    limit: number = 50
+  ): Promise<
+    Array<{
+      lessonId: string
+      category: ActivityCategory
+      lessonTitle: string
+      status: 'passed' | 'failed' | 'in_progress'
+      progress: number
+      duration: number
+      level: string
+      createdAt: Date
+    }>
+  > {
+    const histories = await StudyHistory.find({ userId: new mongoose.Types.ObjectId(userId) })
+      .select('lessonId category createdAt status progress duration level')
+      .sort({ createdAt: -1 })
+      .limit(Math.min(Math.max(limit, 1), 200))
+      .lean()
+
+    if (!histories.length) return []
+
+    const groupedIds: Record<ActivityCategory, string[]> = {
+      vocabulary: [],
+      grammar: [],
+      reading: [],
+      listening: [],
+      speaking: [],
+      writing: [],
+      ipa: [],
+    }
+
+    for (const item of histories) {
+      const category = item.category as ActivityCategory
+      groupedIds[category].push(String(item.lessonId))
+    }
+
+    const [vocabulary, grammar, reading, listening, speaking, writing, ipa] = await Promise.all([
+      VocabularyTopic.find({ _id: { $in: groupedIds.vocabulary } }).select('_id name').lean(),
+      GrammarTopic.find({ _id: { $in: groupedIds.grammar } }).select('_id title').lean(),
+      Reading.find({ _id: { $in: groupedIds.reading } }).select('_id title').lean(),
+      Listening.find({ _id: { $in: groupedIds.listening } }).select('_id title').lean(),
+      Speaking.find({ _id: { $in: groupedIds.speaking } }).select('_id title').lean(),
+      writingModel.find({ _id: { $in: groupedIds.writing } }).select('_id title').lean(),
+      Ipa.find({ _id: { $in: groupedIds.ipa } }).select('_id sound').lean(),
+    ])
+
+    const titleMaps = {
+      vocabulary: new Map(vocabulary.map(v => [String(v._id), v.name])),
+      grammar: new Map(grammar.map(g => [String(g._id), g.title])),
+      reading: new Map(reading.map(r => [String(r._id), r.title])),
+      listening: new Map(listening.map(l => [String(l._id), l.title])),
+      speaking: new Map(speaking.map(s => [String(s._id), s.title])),
+      writing: new Map(writing.map(w => [String(w._id), w.title])),
+      ipa: new Map(ipa.map(i => [String(i._id), i.sound])),
+    } as const
+
+    return histories.map(item => {
+      const category = item.category as ActivityCategory
+      const lessonId = String(item.lessonId)
+      const lessonTitle = titleMaps[category].get(lessonId) || 'Bài học'
+      return {
+        lessonId,
+        category,
+        lessonTitle,
+        status: item.status as 'passed' | 'failed' | 'in_progress',
+        progress: typeof item.progress === 'number' ? item.progress : 0,
+        duration: typeof item.duration === 'number' ? item.duration : 0,
+        level: (item.level as string) || 'A1',
+        createdAt: item.createdAt as Date,
+      }
+    })
+  }
+
   // (USER) Cập nhật thông tin cá nhân
   static async updateMe(
     userId: string,

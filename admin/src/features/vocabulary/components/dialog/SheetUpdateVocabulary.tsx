@@ -11,24 +11,20 @@ import {
   SheetClose
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Type, 
-  Languages, 
-  FileText, 
-  Quote, 
-  Image as ImageIcon, 
-  Trash2, 
-  Save, 
-  X,
+import {
+  Type,
+  Languages,
+  FileText,
+  Quote,
+  Image as ImageIcon,
+  Trash2,
+  Save,
   Loader2,
   Sparkles,
-  History,
-  User as UserIcon
 } from "lucide-react"
 import { updateVocabulary } from "../../services/api"
 import { toast } from "react-toastify"
@@ -40,8 +36,6 @@ import { z } from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Vocabulary } from "../../types"
 import { useParams } from 'next/navigation'
-import { format } from "date-fns"
-import { vi } from "date-fns/locale"
 
 const schema = z.object({
   word: z.string().min(1, "Từ vựng không được để trống"),
@@ -65,7 +59,7 @@ interface SheetUpdateVocabularyProps {
 
 export function SheetUpdateVocabulary({ isOpen, setIsOpen, vocabulary, onSuccess }: SheetUpdateVocabularyProps) {
   const [loading, setLoading] = useState(false)
-  const [imageUrl, setImageUrl] = useState((vocabulary.image as any)?.url || "")
+  const [imageUrl, setImageUrl] = useState(vocabulary.image?.url || "")
   const { id: topicId } = useParams()
 
   const form = useForm<FormData>({
@@ -77,7 +71,7 @@ export function SheetUpdateVocabulary({ isOpen, setIsOpen, vocabulary, onSuccess
       definition: vocabulary.definition,
       vietnameseMeaning: vocabulary.vietnameseMeaning,
       example: vocabulary.example,
-      image: (vocabulary.image as any)?._id || "",
+      image: vocabulary.image?._id || "",
     }
   })
 
@@ -90,24 +84,23 @@ export function SheetUpdateVocabulary({ isOpen, setIsOpen, vocabulary, onSuccess
         definition: vocabulary.definition,
         vietnameseMeaning: vocabulary.vietnameseMeaning,
         example: vocabulary.example,
-        image: (vocabulary.image as any)?._id || "",
+        image: vocabulary.image?._id || "",
       })
-      setImageUrl((vocabulary.image as any)?.url || "")
+      setImageUrl(vocabulary.image?.url || "")
     }
   }, [isOpen, vocabulary, form])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
-    try {
-      await updateVocabulary(vocabulary._id, { ...data, vocabularyTopicId: topicId as string })
-      toast.success('Đã cập nhật từ vựng: ' + data.word)
-      setIsOpen(false)
-      onSuccess()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể cập nhật từ vựng')
-    } finally {
-      setLoading(false)
-    }
+    await updateVocabulary(vocabulary._id, { ...data, vocabularyTopicId: topicId as string })
+      .then(() => {
+        toast.success('Đã cập nhật từ vựng: ' + data.word)
+        setIsOpen(false)
+        onSuccess()
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   const partOfSpeechs = [
@@ -148,7 +141,7 @@ export function SheetUpdateVocabulary({ isOpen, setIsOpen, vocabulary, onSuccess
                   <Sparkles className="w-4 h-4" />
                   Định Danh & Phát Âm
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4 bg-zinc-50 p-6 rounded-lg border border-zinc-200">
                   <FormField
                     control={form.control}
@@ -371,18 +364,18 @@ export function SheetUpdateVocabulary({ isOpen, setIsOpen, vocabulary, onSuccess
         <SheetFooter className="p-6 bg-white border-t">
           <div className="flex items-center justify-end gap-3 w-full">
             <SheetClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-11 px-6 rounded-lg font-bold text-zinc-600"
                 disabled={loading}
               >
                 Hủy Bỏ
               </Button>
             </SheetClose>
-            <Button 
+            <Button
               type="submit"
               form="form-update-vocabulary"
-              disabled={loading} 
+              disabled={loading}
               className="h-11 px-8 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white font-bold"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
