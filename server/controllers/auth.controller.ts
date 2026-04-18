@@ -169,7 +169,18 @@ export class AuthController {
 
   // REFESH TOKEN
   static refeshToken = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { role } = req.body
+    const requestedRole = req.body?.role as 'admin' | 'user' | 'content' | undefined
+    let role: 'admin' | 'user' | 'content' | undefined = requestedRole
+
+    // Tự động suy luận role nếu body không gửi hoặc gửi sai role
+    if (!role || !req.cookies[`refresh_token_${role}`]) {
+      if (req.cookies.refresh_token_admin) role = 'admin'
+      else if (req.cookies.refresh_token_content) role = 'content'
+      else if (req.cookies.refresh_token_user) role = 'user'
+    }
+
+    if (!role) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
+
     const refreshToken = req.cookies[`refresh_token_${role}`]
     if (!refreshToken) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
 

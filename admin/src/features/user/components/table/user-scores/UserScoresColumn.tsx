@@ -6,6 +6,7 @@ import ActionsCell from "./ActionsCell"
 import { TrendingUp, Clock } from "lucide-react"
 import { formatScore } from "@/lib/scoreUtils"
 import { UserScore } from "@/features/user/types"
+import { formatStudyTime } from "@/lib/utils"
 
 function getInitials(fullName: string) {
   return fullName
@@ -17,7 +18,6 @@ function getInitials(fullName: string) {
 }
 
 export const columnsUserScores = (): ColumnDef<UserScore>[] => [
-  // Hidden column for search functionality
   {
     id: "searchable",
     accessorFn: (row) => `${row.fullName} ${row.email}`,
@@ -44,8 +44,8 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
               {getInitials(user.fullName)}
             </AvatarFallback>
           </Avatar>
-          <div className="space-y-1">
-            <div className="font-medium">{user.fullName}</div>
+          <div className="space-y-1 line-clamp-2">
+            <div className="font-medium ">{user.fullName}</div>
             <div className="text-sm text-muted-foreground">{user.email}</div>
           </div>
         </div>
@@ -60,7 +60,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const points = row.original.totalPoints
       return (
-        <div className="text-center">
+        <div className="text-center line-clamp-2">
           <div className="font-bold text-lg">{formatScore(points)}</div>
           <div className="text-sm text-muted-foreground">điểm</div>
         </div>
@@ -74,20 +74,23 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const user = row.original
       const skills = [
-        { name: 'TV', points: user.vocabularyPoints },
-        { name: 'NG', points: user.grammarPoints },
-        { name: 'ĐH', points: user.readingPoints },
-        { name: 'NH', points: user.listeningPoints },
-        { name: 'N', points: user.speakingPoints },
-        { name: 'V', points: user.writingPoints }
+        { name: 'IPA', points: user.ipaPoints },
+        { name: 'Vocab', points: user.vocabularyPoints },
+        { name: 'Gram', points: user.grammarPoints },
+        { name: 'Read', points: user.readingPoints },
+        { name: 'Listen', points: user.listeningPoints },
+        { name: 'Speak', points: user.speakingPoints },
+        { name: 'Write', points: user.writingPoints }
       ]
 
       return (
-        <div className="flex flex-wrap gap-1 justify-center">
+        <div className="grid grid-cols-4 gap-2 text-center">
           {skills.map((skill, index) => (
-            <div key={index} className="flex flex-col items-center">
+            <div key={index}>
               <div className="text-xs font-medium">{skill.name}</div>
-              <div className="text-xs text-muted-foreground">{formatScore(skill.points)}</div>
+              <div className="text-xs text-muted-foreground">
+                {formatScore(skill.points)}
+              </div>
             </div>
           ))}
         </div>
@@ -121,8 +124,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
         <div className="flex items-center justify-center gap-2">
           <Clock className="w-4 h-4 text-muted-foreground" />
           <div className="text-center">
-            <div className="font-medium">{time}</div>
-            <div className="text-xs text-muted-foreground">giờ</div>
+            <div className="font-medium">{formatStudyTime(time)}</div>
           </div>
         </div>
       )

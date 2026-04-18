@@ -20,6 +20,7 @@ export interface UserScore {
   email: string;
   currentLevel: string;
   totalPoints: number;
+  ipaPoints: number;
   vocabularyPoints: number;
   grammarPoints: number;
   readingPoints: number;
@@ -63,13 +64,13 @@ export interface SkillAnalysis {
 export interface UserStudyHistoryEntry {
   lessonId: string;
   category:
-    | 'grammar'
-    | 'vocabulary'
-    | 'reading'
-    | 'listening'
-    | 'speaking'
-    | 'ipa'
-    | 'writing';
+  | 'grammar'
+  | 'vocabulary'
+  | 'reading'
+  | 'listening'
+  | 'speaking'
+  | 'ipa'
+  | 'writing';
   lessonTitle: string;
   status: 'passed' | 'failed' | 'in_progress';
   progress: number;

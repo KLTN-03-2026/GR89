@@ -11,23 +11,6 @@ import { Ipa } from '../models/ipa.model'
 import { Speaking } from '../models/speaking.model'
 import ErrorHandler from '../utils/ErrorHandler'
 
-type TotalsMap = Map<string, number>
-
-interface ListeningTotals {
-  points: TotalsMap
-  time: TotalsMap
-}
-
-interface SkillTotals {
-  vocabulary: TotalsMap
-  grammar: TotalsMap
-  reading: TotalsMap
-  listening: ListeningTotals
-  writing: TotalsMap
-  ipa: TotalsMap
-  speaking: TotalsMap
-}
-
 interface PaginatedResult<T> {
   users: T[]
   totalDocs: number
@@ -75,20 +58,25 @@ interface PaginatedQuery {
   isActive?: boolean
 }
 
-const toObjectId = (ids: string[]): Types.ObjectId[] => ids.map((id) => new Types.ObjectId(id))
-
-const buildTotalsMap = (docs: Array<{ _id: Types.ObjectId; total: number }>): TotalsMap => {
-  const map = new Map<string, number>()
-  docs.forEach(doc => map.set(String(doc._id), doc.total || 0))
-  return map
+interface UserSkillTotals {
+  vocabularyPoints: number
+  grammarPoints: number
+  readingPoints: number
+  listeningPoints: number
+  speakingPoints: number
+  writingPoints: number
+  ipaPoints: number
+  totalStudyTime: number
 }
 
-const sumMapValues = (map: TotalsMap): number => {
-  let total = 0
-  map.forEach(value => {
-    total += value || 0
-  })
-  return total
+interface ActiveLessonIds {
+  vocabulary: any[]
+  grammar: any[]
+  reading: any[]
+  listening: any[]
+  speaking: any[]
+  writing: any[]
+  ipa: any[]
 }
 
 export class UserScoreService {
@@ -102,17 +90,11 @@ export class UserScoreService {
     totalStudyTime: number;
   }> {
     const users = await User.find({ role: "user" });
-    const totals = await this.collectSkillTotals(users.map((u) => String(u._id)));
-    const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, totals)));
+    const activeLessonIds = await this.getActiveLessonIds();
+    const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, activeLessonIds)));
 
     const totalUsers = users.length;
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const activeUsers = users.filter((user) => {
-      const lastActive = user.lastActiveDate || (user as any).updatedAt || (user as any).createdAt;
-      return new Date(lastActive) >= sevenDaysAgo;
-    }).length;
+    const activeUsers = await User.countDocuments({ role: "user", isActive: true });
 
     const totalPointsSum = summaries.reduce((sum, item) => sum + (item.totalPoints || 0), 0);
     const totalStudyTime = summaries.reduce((sum, item) => sum + (item.totalStudyTime || 0), 0);
@@ -141,20 +123,21 @@ export class UserScoreService {
       ];
     }
 
-    const totals = await this.collectSkillTotals(users.map((u) => String(u._id)));
-    const userCount = users.length;
-
-    const averageOf = (map: TotalsMap): number =>
-      userCount ? Math.round(sumMapValues(map) / userCount) : 0;
+    const activeLessonIds = await this.getActiveLessonIds();
+    const summaries = await Promise.all(users.map((user) => this.getUserSkillTotals(String(user._id), activeLessonIds)));
+    const userCount = summaries.length;
+    const sumBy = (key: keyof UserSkillTotals) => summaries.reduce((sum, item) => sum + (item[key] || 0), 0);
+    const averageOf = (key: keyof UserSkillTotals): number =>
+      userCount ? Math.round(sumBy(key) / userCount) : 0;
 
     return [
-      { name: "Từ vựng", avg: averageOf(totals.vocabulary) },
-      { name: "Ngữ pháp", avg: averageOf(totals.grammar) },
-      { name: "Đọc hiểu", avg: averageOf(totals.reading) },
-      { name: "Nghe hiểu", avg: averageOf(totals.listening.points) },
-      { name: "Nói", avg: averageOf(totals.speaking) },
-      { name: "Viết", avg: averageOf(totals.writing) },
-      { name: "IPA", avg: averageOf(totals.ipa) },
+      { name: "Từ vựng", avg: averageOf("vocabularyPoints") },
+      { name: "Ngữ pháp", avg: averageOf("grammarPoints") },
+      { name: "Đọc hiểu", avg: averageOf("readingPoints") },
+      { name: "Nghe hiểu", avg: averageOf("listeningPoints") },
+      { name: "Nói", avg: averageOf("speakingPoints") },
+      { name: "Viết", avg: averageOf("writingPoints") },
+      { name: "IPA", avg: averageOf("ipaPoints") },
     ];
   }
 
@@ -165,8 +148,8 @@ export class UserScoreService {
       throw new ErrorHandler("Không tìm thấy người dùng hoặc không có quyền cập nhật", 404);
     }
 
-    const totals = await this.collectSkillTotals([userId]);
-    const summary = await this.buildUserScore(user, totals);
+    const activeLessonIds = await this.getActiveLessonIds();
+    const summary = await this.buildUserScore(user, activeLessonIds);
 
     const updatedUser = await User.findById(userId);
     if (updatedUser) {
@@ -209,8 +192,8 @@ export class UserScoreService {
     }
 
     const users = await User.find(filter).select("-password");
-    const totals = await this.collectSkillTotals(users.map((u) => String(u._id)));
-    const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, totals)));
+    const activeLessonIds = await this.getActiveLessonIds();
+    const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, activeLessonIds)));
 
     this.sortUserScores(summaries, sortBy, sortOrder);
 
@@ -240,8 +223,8 @@ export class UserScoreService {
   // (USER) Lấy danh sách người dùng có điểm số cao nhất (Bảng xếp hạng)
   static async getTopUsers(limit: number = 5): Promise<UserScoreSummary[]> {
     const users = await User.find({ role: "user" }).select("-password").sort({ createdAt: -1 });
-    const totals = await this.collectSkillTotals(users.map((u) => String(u._id)));
-    const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, totals)));
+    const activeLessonIds = await this.getActiveLessonIds();
+    const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, activeLessonIds)));
     this.sortUserScores(summaries, "totalPoints", "desc");
     return summaries.slice(0, limit);
   }
@@ -255,11 +238,11 @@ export class UserScoreService {
       throw new ErrorHandler("Không tìm thấy người dùng hoặc không có quyền xem", 404);
     }
 
-    const totals = await this.collectSkillTotals([userId]);
-    return await this.buildUserScore(user, totals);
+    const activeLessonIds = await this.getActiveLessonIds();
+    return await this.buildUserScore(user, activeLessonIds);
   }
 
-  private static async collectSkillTotals(userIds?: string[]): Promise<SkillTotals> {
+  private static async getActiveLessonIds(): Promise<ActiveLessonIds> {
     const [
       activeVocabularyTopicIds,
       activeGrammarTopicIds,
@@ -278,83 +261,81 @@ export class UserScoreService {
       Ipa.find({ isActive: true }).distinct("_id"),
     ]);
 
-    const matchByUserId = userIds && userIds.length
-      ? [{ $match: { userId: { $in: toObjectId(userIds) } } }]
-      : [];
-
-    const getSkillAggregation = (category: string, activeIds: any[]) => {
-      return StudyHistory.aggregate([
-        ...matchByUserId,
-        { $match: { category, lessonId: { $in: activeIds } } },
-        { $sort: { progress: -1, createdAt: -1 } },
-        { $group: { _id: { userId: "$userId", lessonId: "$lessonId" }, best: { $first: "$progress" } } },
-        { $group: { _id: "$_id.userId", total: { $sum: "$best" } } }
-      ]);
+    return {
+      vocabulary: activeVocabularyTopicIds,
+      grammar: activeGrammarTopicIds,
+      reading: activeReadingIds,
+      listening: activeListeningIds,
+      speaking: activeSpeakingIds,
+      writing: activeWritingIds,
+      ipa: activeIpaIds,
     };
+  }
 
-    const getListeningAggregation = (activeIds: any[]) => {
-      return Promise.all([
-        StudyHistory.aggregate([
-          ...matchByUserId,
-          { $match: { category: 'listening', lessonId: { $in: activeIds } } },
-          { $sort: { progress: -1, createdAt: -1 } },
-          { $group: { _id: { userId: "$userId", lessonId: "$lessonId" }, best: { $first: "$progress" } } },
-          { $group: { _id: "$_id.userId", total: { $sum: "$best" } } }
-        ]),
-        StudyHistory.aggregate([
-          ...matchByUserId,
-          { $match: { category: 'listening', lessonId: { $in: activeIds } } },
-          { $group: { _id: "$userId", total: { $sum: "$duration" } } }
-        ])
-      ]);
-    };
+  private static async getUserSkillTotals(
+    userId: string,
+    activeLessonIds: ActiveLessonIds
+  ): Promise<UserSkillTotals> {
 
     const [
       vocabularyTotalsRaw,
       grammarTotalsRaw,
       readingTotalsRaw,
-      [listeningPointsRaw, listeningTimeRaw],
+      listeningTotalsRaw,
       writingTotalsRaw,
       ipaTotalsRaw,
       speakingTotalsRaw,
+      durationRaw,
     ] = await Promise.all([
-      getSkillAggregation('vocabulary', activeVocabularyTopicIds),
-      getSkillAggregation('grammar', activeGrammarTopicIds),
-      getSkillAggregation('reading', activeReadingIds),
-      getListeningAggregation(activeListeningIds),
-      getSkillAggregation('writing', activeWritingIds),
-      getSkillAggregation('ipa', activeIpaIds),
-      getSkillAggregation('speaking', activeSpeakingIds),
+      this.aggregateBestProgressByCategory(userId, 'vocabulary', activeLessonIds.vocabulary),
+      this.aggregateBestProgressByCategory(userId, 'grammar', activeLessonIds.grammar),
+      this.aggregateBestProgressByCategory(userId, 'reading', activeLessonIds.reading),
+      this.aggregateBestProgressByCategory(userId, 'listening', activeLessonIds.listening),
+      this.aggregateBestProgressByCategory(userId, 'writing', activeLessonIds.writing),
+      this.aggregateBestProgressByCategory(userId, 'ipa', activeLessonIds.ipa),
+      this.aggregateBestProgressByCategory(userId, 'speaking', activeLessonIds.speaking),
+      StudyHistory.aggregate([
+        { $match: { userId: new Types.ObjectId(userId) } },
+        { $group: { _id: null, total: { $sum: "$duration" } } }
+      ]),
     ]);
 
-    const listeningPointsMap = buildTotalsMap(listeningPointsRaw);
-    const listeningTimeMap = buildTotalsMap(listeningTimeRaw);
-
     return {
-      vocabulary: buildTotalsMap(vocabularyTotalsRaw),
-      grammar: buildTotalsMap(grammarTotalsRaw),
-      reading: buildTotalsMap(readingTotalsRaw),
-      listening: {
-        points: listeningPointsMap,
-        time: listeningTimeMap,
-      },
-      writing: buildTotalsMap(writingTotalsRaw),
-      ipa: buildTotalsMap(ipaTotalsRaw),
-      speaking: buildTotalsMap(speakingTotalsRaw),
+      vocabularyPoints: vocabularyTotalsRaw[0]?.total || 0,
+      grammarPoints: grammarTotalsRaw[0]?.total || 0,
+      readingPoints: readingTotalsRaw[0]?.total || 0,
+      listeningPoints: listeningTotalsRaw[0]?.total || 0,
+      writingPoints: writingTotalsRaw[0]?.total || 0,
+      ipaPoints: ipaTotalsRaw[0]?.total || 0,
+      speakingPoints: speakingTotalsRaw[0]?.total || 0,
+      totalStudyTime: durationRaw[0]?.total || 0,
     };
   }
 
-  private static async buildUserScore(user: IUser, totals: SkillTotals): Promise<UserScoreSummary> {
-    const userObjectId = user._id as Types.ObjectId;
-    const userId = String(user._id);
+  private static async aggregateBestProgressByCategory(
+    userId: string,
+    category: string,
+    activeLessonIds: any[]
+  ): Promise<Array<{ _id: Types.ObjectId; total: number }>> {
+    return await StudyHistory.aggregate([
+      { $match: { userId: new Types.ObjectId(userId), category, lessonId: { $in: activeLessonIds } } },
+      { $sort: { progress: -1, createdAt: -1 } },
+      { $group: { _id: "$lessonId", best: { $first: "$progress" } } },
+      { $group: { _id: new Types.ObjectId(userId), total: { $sum: "$best" } } },
+    ]);
+  }
 
-    const vocabularyPoints = totals.vocabulary.get(userId) || 0;
-    const grammarPoints = totals.grammar.get(userId) || 0;
-    const readingPoints = totals.reading.get(userId) || 0;
-    const listeningPoints = totals.listening.points.get(userId) || 0;
-    const speakingPoints = totals.speaking.get(userId) || 0;
-    const writingPoints = totals.writing.get(userId) || 0;
-    const ipaPoints = totals.ipa.get(userId) || 0;
+  private static async buildUserScore(user: IUser, activeLessonIds: ActiveLessonIds): Promise<UserScoreSummary> {
+    const userObjectId = user._id as Types.ObjectId;
+    const totals = await this.getUserSkillTotals(String(user._id), activeLessonIds);
+
+    const vocabularyPoints = totals.vocabularyPoints;
+    const grammarPoints = totals.grammarPoints;
+    const readingPoints = totals.readingPoints;
+    const listeningPoints = totals.listeningPoints;
+    const speakingPoints = totals.speakingPoints;
+    const writingPoints = totals.writingPoints;
+    const ipaPoints = totals.ipaPoints;
 
     const totalPoints =
       vocabularyPoints +
@@ -364,7 +345,7 @@ export class UserScoreService {
       writingPoints +
       ipaPoints +
       speakingPoints;
-    const totalStudyTime = totals.listening.time.get(userId) ?? user.totalStudyTime ?? 0;
+    const totalStudyTime = totals.totalStudyTime;
 
     const isVip = user.isVip || false;
     const vipStartDate = user.vipStartDate || undefined;

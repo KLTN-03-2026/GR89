@@ -76,69 +76,47 @@ export function UserMain() {
 
   const fetchUsers = useCallback(async (pageNum: number = page, search: string = debouncedSearch, pageSize: number = limit, active?: boolean, role?: string, sortField?: string, sortDir?: string) => {
     setIsLoading(true)
-    try {
-      const params: UserQueryParams = {
-        page: pageNum,
-        limit: pageSize,
-        search: search || undefined,
-        isActive: active,
-        role: role !== 'all' ? role : undefined,
-        sortBy: sortField as 'fullName' | 'email' | 'createdAt',
-        sortOrder: sortDir as 'asc' | 'desc'
-      }
-
-      const response = await getAllUsersPaginated(params)
-
-      if (response.success) {
-        setUsers(response.data || [])
-        setPage(response.pagination?.page || pageNum)
-        setLimit(response.pagination?.limit || pageSize)
-        setTotal(response.pagination?.total || 0)
-        setPages(response.pagination?.pages || 0)
-
-        // Calculate stats from total and filtered counts
-        // We need to fetch stats separately for accurate counts
-        fetchStats()
-      } else {
-        toast.error('Không thể tải danh sách người dùng')
-        setUsers([])
-        setTotal(0)
-        setPages(0)
-      }
-    } catch (error: unknown) {
-      console.error('Error fetching users:', error)
-      const errorMessage = error instanceof Error && 'response' in error
-        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Có lỗi xảy ra khi tải dữ liệu'
-        : 'Có lỗi xảy ra khi tải dữ liệu'
-      toast.error(errorMessage)
-      setUsers([])
-      setTotal(0)
-      setPages(0)
-    } finally {
-      setIsLoading(false)
+    const params: UserQueryParams = {
+      page: pageNum,
+      limit: pageSize,
+      search: search || undefined,
+      isActive: active,
+      role: role !== 'all' ? role : undefined,
+      sortBy: sortField as 'fullName' | 'email' | 'createdAt',
+      sortOrder: sortDir as 'asc' | 'desc'
     }
+
+    await getAllUsersPaginated(params)
+      .then(res => {
+        setUsers(res.data || [])
+        setPage(res.pagination?.page || pageNum)
+        setLimit(res.pagination?.limit || pageSize)
+        setTotal(res.pagination?.total || 0)
+        setPages(res.pagination?.pages || 0)
+        fetchStats()
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [page, debouncedSearch, limit, fetchStats])
 
-  // Effect for debounced search - reset to page 1
   useEffect(() => {
     setPage(1)
   }, [debouncedSearch])
 
-  // Single effect for all changes
   useEffect(() => {
     fetchUsers(page, debouncedSearch, limit, isActive, roleFilter, sortBy, sortOrder)
   }, [page, limit, isActive, roleFilter, sortBy, sortOrder, refresh, fetchUsers, debouncedSearch])
 
-  // Handler functions
   const handleStatusFilter = (value: string) => {
     const newIsActive = value === 'all' ? undefined : value === 'active' ? true : false
     setIsActive(newIsActive)
-    setPage(1) // Reset to first page when filtering
+    setPage(1)
   }
 
   const handleRoleFilter = (value: string) => {
     setRoleFilter(value)
-    setPage(1) // Reset to first page when filtering
+    setPage(1)
   }
 
   const handleSort = (field: string) => {
@@ -148,12 +126,12 @@ export function UserMain() {
       setSortBy(field as 'fullName' | 'email' | 'createdAt')
       setSortOrder('desc')
     }
-    setPage(1) // Reset to first page when sorting
+    setPage(1)
   }
 
   const handlePageSizeChange = (newLimit: number) => {
     setLimit(newLimit)
-    setPage(1) // Reset to first page when changing page size
+    setPage(1)
   }
 
   const handlePageChange = (newPage: number) => {

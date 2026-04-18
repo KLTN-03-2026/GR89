@@ -7,13 +7,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 let isRefreshing = false
 let pendingRequests: (() => void)[] = []
 
-// =========================
-//  UTILITY FUNCTIONS
-// =========================
-
-/**
- * Dịch các message lỗi tiếng Anh phổ biến sang tiếng Việt
- */
 function translateErrorMessage(message: string): string {
   const translations: Record<string, string> = {
     "Duplicate title entered": "Tiêu đề đã tồn tại",

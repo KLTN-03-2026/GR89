@@ -40,3 +40,26 @@ export function onDownloadExcelTemplate(template: string) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+export function formatStudyTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  let result = "";
+
+  if (hours > 0) {
+    result += `${hours} giờ`;
+  }
+
+  if (minutes > 0) {
+    if (result) result += " ";
+    result += `${minutes} phút`;
+  }
+
+  // nếu < 1 phút
+  if (!result) {
+    result = "0 phút";
+  }
+
+  return result;
+}
