@@ -190,7 +190,7 @@ export function SheetAddEntertainment({
                   <Select
                     disabled={lockType}
                     value={data.type}
-                    onValueChange={(v) => setData({ ...data, type: v as any })}
+                    onValueChange={(v) => setData({ ...data, type: v as 'movie' | 'music' | 'podcast' | 'series' | 'episode' })}
                   >
                     <SelectTrigger className={`h-12 bg-white border-gray-200 rounded-2xl focus:ring-${theme}-500 font-bold px-4 shadow-sm`}>
                       <SelectValue placeholder="Chọn loại" />

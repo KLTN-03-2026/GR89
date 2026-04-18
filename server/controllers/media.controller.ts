@@ -53,7 +53,7 @@ export class MediaController {
   static getMediaList = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const {
       page = 1,
-      limit = 12,
+      limit,
       type,
       search = '',
       sortBy = 'createdAt',

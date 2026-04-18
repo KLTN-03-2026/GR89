@@ -165,7 +165,7 @@ export class AuthService {
     user.resetPasswordExpires = expires;
     await user.save();
 
-    const resetUrl = `${process.env.APP_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const resetUrl = `${process.env.CLIENT_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
     await sendMail({
       to: email,
       subject: 'Đặt lại mật khẩu',

@@ -56,8 +56,6 @@ export class PaymentService {
       vnp_ResponseCode,
       vnp_TxnRef,
       vnp_TransactionStatus,
-      vnp_SecureHash,
-      ...vnpayParams
     } = params;
 
     const vnpay = new VNPay({
@@ -244,7 +242,7 @@ export class PaymentService {
       planId,
       userId,
       ipAddr = "127.0.0.1",
-      returnUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/callback`,
+      returnUrl = `${process.env.CLIENT_BASE_URL || "http://localhost:3000"}/payment/callback`,
       couponCode,
     } = params;
 

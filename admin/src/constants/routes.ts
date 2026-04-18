@@ -372,27 +372,27 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
       },
     ],
   },
-  {
-    title: 'AI & Công nghệ',
-    icon: Zap,
-    subItems: [
-      {
-        title: "Tạo văn bản",
-        href: ROUTES_PATH.TEXT_GENERATION,
-        icon: Type,
-      },
-      {
-        title: "Tạo hình ảnh",
-        href: ROUTES_PATH.IMAGE_GENERATION,
-        icon: Image,
-      },
-      {
-        title: "Tạo âm thanh",
-        href: ROUTES_PATH.AUDIO_GENERATION,
-        icon: Speaker,
-      },
-    ],
-  },
+  // {
+  //   title: 'AI & Công nghệ',
+  //   icon: Zap,
+  //   subItems: [
+  //     {
+  //       title: "Tạo văn bản",
+  //       href: ROUTES_PATH.TEXT_GENERATION,
+  //       icon: Type,
+  //     },
+  //     {
+  //       title: "Tạo hình ảnh",
+  //       href: ROUTES_PATH.IMAGE_GENERATION,
+  //       icon: Image,
+  //     },
+  //     {
+  //       title: "Tạo âm thanh",
+  //       href: ROUTES_PATH.AUDIO_GENERATION,
+  //       icon: Speaker,
+  //     },
+  //   ],
+  // },
   // {
   //   title: 'Bảng xếp hạng & Nhiệm vụ',
   //   icon: Trophy,

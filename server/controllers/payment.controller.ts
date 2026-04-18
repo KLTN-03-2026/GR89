@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { PaymentService, IPaymentOptions } from "../services/payment.service";
 import ErrorHandler from "../utils/ErrorHandler";
-import { UserInfo } from "../services/auth.service";
 import { Payment } from "../models/payment.model";
 
 export class PaymentController {
@@ -115,7 +114,7 @@ export class PaymentController {
         ipAddr,
         returnUrl:
           returnUrl ||
-          `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/callback`,
+          `${process.env.CLIENT_BASE_URL || "http://localhost:3000"}/payment/callback`,
         couponCode: couponCode || undefined,
       });
 

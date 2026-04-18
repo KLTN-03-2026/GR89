@@ -43,9 +43,9 @@ export function NotificationsPage() {
   })
 
   const unreadCount = notifications.filter(n => !n.isRead).length
-  const markAsRead = (id: number) => { console.log('Mark as read:', id) }
-  const markAllAsRead = () => { console.log('Mark all as read') }
-  const deleteNotification = (id: number) => { console.log('Delete notification:', id) }
+  const markAsRead = (id: number) => { return id }
+  const markAllAsRead = () => { return }
+  const deleteNotification = (id: number) => { return id }
 
   const typeLabels: Record<NotificationType, string> = {
     achievement: 'Thành tích',

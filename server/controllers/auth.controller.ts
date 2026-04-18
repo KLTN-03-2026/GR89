@@ -53,7 +53,7 @@ export class AuthController {
   // XÁC NHẬN EMAIL
   static verifyEmail = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { token } = req.query
-    const appUrl = process.env.APP_BASE_URL || 'http://localhost:3000'
+    const appUrl = process.env.CLIENT_BASE_URL || 'http://localhost:3000'
 
     if (!token || typeof token !== 'string') {
       return res.status(400).render('auth/verify-error', {

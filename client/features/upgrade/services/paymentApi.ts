@@ -22,6 +22,6 @@ export interface PaymentCallbackResponse {
 }
 
 export async function handleVNPayCallback(params: Record<string, string>): Promise<PaymentCallbackResponse> {
-  const response = await authorizedAxios.post<PaymentCallbackResponse>('/payment/vnpay/callback', params)
+  const response = await authorizedAxios.post<PaymentCallbackResponse>('/payment/vnpay/callback', { params })
   return response.data
 }
