@@ -24,7 +24,7 @@ export function ListVocabularyLesson({ topic }: ListVocabularyLessonProps) {
       setSelectedWords([...selectedWords, word])
     }
   }
-
+// code mới hgh
   const handleSelectAll = () => {
     setSelectedWords(topic.vocabularies.map((word) => word._id))
   }
