@@ -193,10 +193,10 @@ export class ListeningController {
   static doListeningQuiz = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const userId = req.user?._id as string
-    const { time, result, studySession, mode } = req.body
+    const { formDataDictationResult, formDataQuizResult, studySession } = req.body
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession)
-    const listening = await ListeningService.doListeningQuiz(userId, id, time, result, studyTimeSeconds, mode)
-    await StreakService.updateStreak(userId)
+
+    const listening = await ListeningService.doListeningQuiz(userId, id, formDataDictationResult, formDataQuizResult, studyTimeSeconds)
     res.status(200).json({
       success: true,
       message: 'Làm bài nghe thành công',
@@ -208,11 +208,11 @@ export class ListeningController {
   static getListeningResult = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const userId = req.user?._id as string
-    const listening = await ListeningService.getListeningResult(userId, id)
+    const listeningResult = await ListeningService.getListeningResult(userId, id)
     res.status(200).json({
       success: true,
       message: 'Lấy kết quả bài nghe thành công',
-      data: listening
+      data: listeningResult
     })
   })
 

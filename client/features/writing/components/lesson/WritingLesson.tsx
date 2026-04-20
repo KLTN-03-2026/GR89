@@ -1,5 +1,6 @@
 'use client'
-import { writing } from '@/types'
+
+import { writing } from '../../types'
 import { WritingLessonMain } from './WritingLessonMain'
 import { ContentStateDisplay, ContentStateType } from '@/components/common/ContentStateDisplay'
 

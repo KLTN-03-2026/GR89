@@ -3,43 +3,13 @@ import { formatDate, getTime } from "@/libs/utils"
 import { IListeningProgress } from "@/features/listening/types"
 import Link from "next/link"
 import { useState } from "react"
-import { ContentStateDisplay, ContentStateType } from "@/components/common/ContentStateDisplay"
 
 interface ResultListeningPageProps {
   result: IListeningProgress
-  error?: { type: ContentStateType, message?: string } | null
 }
 
-export function ResultListeningPage({ result, error }: ResultListeningPageProps) {
+export function ResultListening({ result }: ResultListeningPageProps) {
   const [showAllMistakes, setShowAllMistakes] = useState(false)
-
-  if (error) {
-    return (
-      <ContentStateDisplay
-        type={error.type}
-        message={error.message}
-        onUpgradeSuccess={() => {
-          window.location.reload()
-        }}
-        backUrl="/skills/listening"
-        showBackButton={true}
-        variant="fullscreen"
-      />
-    )
-  }
-
-  if (!result || !result.listeningId) {
-    return (
-      <ContentStateDisplay
-        type="empty"
-        message="Không tìm thấy dữ liệu kết quả"
-        backUrl="/skills/listening"
-        showBackButton={true}
-        variant="fullscreen"
-      />
-    )
-  }
-
   const subtitleText = result.listeningId.subtitle || ''
   const subtitles = subtitleText.trim().length > 0 ? subtitleText.split(/\s+/) : []
   const wrongs = result.result.filter(r => !r.isCorrect)
@@ -78,11 +48,11 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: 'Điểm quiz', value: `${result.quizPoint ?? 0}/${result.quizTotal ?? 0}` },
-          { label: 'Số câu trả lời đúng', value: `${result.point}/${totalAnswers}` },
-          { label: 'Độ chính xác', value: `${result.progress}%` },
+          { label: 'Số từ đúng', value: `${result.point}/${totalAnswers}` },
+          { label: 'Độ chính xác', value: `${Math.round(result.progress)}%` },
           { label: 'Thời gian', value: getTime(result.time) }
         ].map((s) => (
-          <div key={s.label} className="rounded-xl bg-white p-5 border border-gray-200 shadow-sm">
+          <div key={s.label} className="rounded-xl bg-white flex flex-col justify-evenly p-5 border border-gray-200 shadow-sm">
             <div className="text-gray-500 text-sm">{s.label}</div>
             <div className="text-2xl font-semibold mt-1">{s.value}</div>
           </div>
@@ -143,7 +113,7 @@ export function ResultListeningPage({ result, error }: ResultListeningPageProps)
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="text-3xl font-bold text-indigo-700">{result.progress}%</div>
+                <div className="text-3xl font-bold text-indigo-700">{Math.round(result.progress)}%</div>
                 <div className="text-xs text-gray-500">Độ chính xác</div>
               </div>
             </div>

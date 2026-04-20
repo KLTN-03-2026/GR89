@@ -1,9 +1,7 @@
+import { IQuiz } from "../quizz";
+
 export interface IListening {
-  quiz?: {
-    question: string
-    options: string[]
-    answer: string
-  }[]
+  quizzes: IQuiz[]
   _id: string;
   title: string;
   description: string;
@@ -22,8 +20,8 @@ export interface IListeningProgress {
   progress: number
   point: number
   totalQuestions?: number
-  quizPoint?: number
-  quizTotal?: number
+  quizPoint: number
+  quizTotal: number
   quizProgress?: number
   time: number
   date: Date

@@ -1,15 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose'
+import { IQuizResult } from './quizzResult.model'
 
 export interface IListeningProgress extends Document {
-  userId: mongoose.Types.ObjectId
-  listeningId: mongoose.Types.ObjectId
-  isActive?: boolean
-  isCompleted?: boolean
-  progress: number
-  time: number
   studyTime: number
-  date?: Date
-  result: {
+  quizzesResults: IQuizResult[]
+  directionResults: {
     index: number
     text: string
     isCorrect: boolean
@@ -18,20 +13,12 @@ export interface IListeningProgress extends Document {
 
 const listeningProgressSchema = new Schema<IListeningProgress>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    listeningId: { type: Schema.Types.ObjectId, ref: 'Listening', required: true },
-    isActive: { type: Boolean, default: true },
-    isCompleted: { type: Boolean, default: false },
-    progress: { type: Number, default: 0 },
-    result: { type: [Object], default: [] },
-    time: { type: Number, default: 0 },
-    studyTime: { type: Number, default: 0 },
-    date: { type: Date, default: new Date() },
+    directionResults: { type: [Object], default: [] },
+    quizzesResults: { type: [mongoose.Types.ObjectId], ref: 'Quiz' },
+    studyTime: { type: Number, default: 0 }
   },
   { timestamps: true },
 )
-
-listeningProgressSchema.index({ userId: 1, listeningId: 1 }, { unique: true })
 
 export const ListeningProgress = mongoose.model<IListeningProgress>(
   'ListeningProgress',

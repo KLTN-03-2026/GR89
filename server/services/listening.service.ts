@@ -1,16 +1,35 @@
-import mongoose, { ObjectId } from "mongoose"
+import mongoose from "mongoose"
 import XLSX from 'xlsx'
 import { IListening, Listening, IListeningPaginateResult } from "../models/listening.model"
-import { ListeningQuiz } from "../models/listeningQuiz.model"
 import ErrorHandler from "../utils/ErrorHandler"
 import { StudyHistory } from '../models/studyHistory.model'
 import { StudyService } from './study.service'
 import { StreakService } from "./streak.service"
 import { User } from "../models/user.model"
 import { MediaService } from "./media.service"
+import { IQuiz, Quiz } from "../models/quiz.model"
+import { IQuizResult, QuizResult } from "../models/quizzResult.model"
+import { ListeningProgress } from "../models/listeningProgress.model"
+
+interface IListeningResult {
+  progress: number
+  point: number
+  totalQuestions?: number
+  quizPoint: number
+  quizTotal: number
+  quizProgress?: number
+  time: number
+  result: {
+    index: number
+    text: string
+    isCorrect: boolean
+  }[]
+  listeningId: IListening
+}
 
 export class ListeningService {
-  private static normalizeQuizInput(rawQuiz: unknown): { question: string; options: string[]; answer: string }[] {
+  // (Hỗ trợ Import) Normalize dữ liệu quiz từ input thành mảng IQuiz
+  private static normalizeQuizInput(rawQuiz: unknown): IQuiz[] {
     if (rawQuiz == null) return []
 
     let source: unknown = rawQuiz
@@ -39,10 +58,11 @@ export class ListeningService {
       if (!answer) throw new ErrorHandler(`quiz[${idx}].answer không được để trống`, 400)
       if (!options.includes(answer)) throw new ErrorHandler(`quiz[${idx}].answer phải nằm trong options`, 400)
 
-      return { question, options, answer }
-    })
+      return { question, options, answer, type: 'Multiple Choice', explanation: '' }
+    }) as IQuiz[]
   }
 
+  // (Hỗ trợ Import) Split subtitle thành mảng dòng
   private static splitSubtitleLines(text: string): string[] {
     return String(text || '')
       .split(/\r?\n/)
@@ -50,18 +70,20 @@ export class ListeningService {
       .filter(Boolean)
   }
 
+  // (Hỗ trợ Import) Lấy prefix speaker từ dòng subtitle
   private static getSpeakerPrefix(line: string): string | null {
     const match = String(line || '').trim().match(/^([A-Za-z][A-Za-z0-9_-]{0,20})\s*:/)
     if (!match) return null
     return match[1].toUpperCase()
   }
 
-  /** Chuẩn hoá dữ liệu trả về client: luôn có `quiz` (mảng câu hỏi), không phụ thuộc cách lưu DB */
+  // (Hỗ trợ Import) Format dữ liệu listening thành mảng IListening
   private static formatListeningResponse(listening: any, audioUrl: string | null) {
     const quizzesPopulated = listening.quizzes as any[] | undefined
-    const quiz =
+    const quizzes =
       Array.isArray(quizzesPopulated) && quizzesPopulated.length > 0 && typeof (quizzesPopulated[0] as any)?.question === 'string'
         ? quizzesPopulated.map((q: any) => ({
+          _id: q._id,
           question: q.question,
           options: Array.isArray(q.options) ? q.options : [],
           answer: q.answer,
@@ -71,11 +93,11 @@ export class ListeningService {
     return {
       ...rest,
       audio: audioUrl,
-      quiz,
+      quizzes,
     }
   }
 
-  /** Legacy: bài cũ lưu `quiz` nhúng trong document Listening — migrate sang ListeningQuiz + quizzes[] */
+  // (Hỗ trợ Import) Migrate legacy quiz from listening collection to Quiz collection
   private static async migrateLegacyQuizFromCollection(listeningId: string): Promise<void> {
     const raw = (await Listening.collection.findOne({
       _id: new mongoose.Types.ObjectId(listeningId),
@@ -90,24 +112,26 @@ export class ListeningService {
     }
   }
 
-  /** Xoá toàn bộ câu quiz của bài nghe và ghi lại từ mảng (import / cập nhật hàng loạt) */
+  // (Hỗ trợ Import) Xóa tất cả quiz cũ trong listening và thêm Quiz mới
   static async replaceListeningQuizzesFromItems(
     listeningId: string,
-    items: { question: string; options: string[]; answer: string }[]
+    items: IQuiz[]
   ): Promise<void> {
     const lid = new mongoose.Types.ObjectId(listeningId)
-    await ListeningQuiz.deleteMany({ listeningId: lid })
+    await Quiz.deleteMany({ listeningId: lid })
     if (!items.length) {
       await Listening.findByIdAndUpdate(listeningId, { quizzes: [] })
       await Listening.collection.updateOne({ _id: lid }, { $unset: { quiz: 1 } })
       return
     }
-    const docs = await ListeningQuiz.insertMany(
+    const docs = await Quiz.insertMany(
       items.map((q, i) => ({
         listeningId: lid,
         question: q.question,
         options: q.options,
         answer: q.answer,
+        type: q.type,
+        explanation: q.explanation,
         orderIndex: i,
       }))
     )
@@ -117,6 +141,7 @@ export class ListeningService {
     await Listening.collection.updateOne({ _id: lid }, { $unset: { quiz: 1 } })
   }
 
+  // (Hỗ trợ Import) Validate kiểm tra subtitle Tiếng Anh và Việt có khớp nhau không
   private static validateSubtitlePair(subtitle: string, subtitleVi: string) {
     const enLines = this.splitSubtitleLines(subtitle)
     const viLines = this.splitSubtitleLines(subtitleVi)
@@ -130,8 +155,6 @@ export class ListeningService {
     for (let i = 0; i < enLines.length; i++) {
       const enSpeaker = this.getSpeakerPrefix(enLines[i])
       const viSpeaker = this.getSpeakerPrefix(viLines[i])
-
-      // Dòng hội thoại có speaker prefix (A:, B:, Teacher:...) thì EN/VI phải đồng nhất
       if (!!enSpeaker !== !!viSpeaker) {
         throw new ErrorHandler(
           `Dòng ${i + 1} không đồng nhất speaker prefix giữa EN và VI`,
@@ -207,11 +230,13 @@ export class ListeningService {
     const listenings = await Listening.find().sort({ orderIndex: 1 }).lean()
     const rows: any[][] = [['ID', 'title', 'description', 'level', 'audioID', 'subtitle', 'subtitleVi', 'quizJson', 'isActive', 'orderIndex']]
     for (const l of listenings as any[]) {
-      const quizDocs = await ListeningQuiz.find({ listeningId: l._id }).sort({ orderIndex: 1 }).lean()
+      const quizDocs = await Quiz.find({ listeningId: l._id }).sort({ orderIndex: 1 }).lean()
       const quizPayload = quizDocs.map((q) => ({
         question: q.question,
         options: q.options,
         answer: q.answer,
+        type: q.type,
+        explanation: q.explanation || '',
       }))
       rows.push([
         String(l._id),
@@ -230,7 +255,6 @@ export class ListeningService {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Listenings')
     return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
   }
-
 
   // (ADMIN) Import dữ liệu Listening từ JSON
   static async importListeningFromJson(options: {
@@ -455,7 +479,7 @@ export class ListeningService {
     const deletedListenings = await Listening.deleteMany({ _id: { $in: ids } })
     if (!deletedListenings) throw new ErrorHandler('Không tìm thấy bài nghe để xóa', 404)
     const oidList = ids.map((id) => new mongoose.Types.ObjectId(id))
-    await ListeningQuiz.deleteMany({ listeningId: { $in: oidList } })
+    await Quiz.deleteMany({ listeningId: { $in: oidList } })
     return listeningsToDelete as unknown as IListening[]
   }
 
@@ -493,7 +517,7 @@ export class ListeningService {
     await this.migrateLegacyQuizFromCollection(id)
     const listening = await Listening.findById(id)
       .populate({ path: 'audio', select: 'url' })
-      .populate({ path: 'quizzes', model: 'ListeningQuiz' })
+      .populate({ path: 'quizzes', model: 'Quiz' })
     if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
 
     const audioUrl = (listening.audio as any)?.url || null
@@ -503,7 +527,7 @@ export class ListeningService {
   // (ADMIN) Danh sách câu quiz của một bài nghe (document ListeningQuiz)
   static async getListeningQuizzes(listeningId: string) {
     await this.migrateLegacyQuizFromCollection(listeningId)
-    return ListeningQuiz.find({ listeningId: new mongoose.Types.ObjectId(listeningId) }).sort({ orderIndex: 1 })
+    return Quiz.find({ listeningId: new mongoose.Types.ObjectId(listeningId) }).sort({ orderIndex: 1 })
   }
 
   static async addListeningQuiz(
@@ -513,12 +537,14 @@ export class ListeningService {
     const listening = await Listening.findById(listeningId)
     if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
     const [normalized] = this.normalizeQuizInput([item])
-    const orderIndex = await ListeningQuiz.countDocuments({ listeningId: listening._id })
-    const doc = await ListeningQuiz.create({
+    const orderIndex = await Quiz.countDocuments({ listeningId: listening._id })
+    const doc = await Quiz.create({
       listeningId: listening._id,
       question: normalized.question,
       options: normalized.options,
       answer: normalized.answer,
+      type: 'Multiple Choice',
+      explanation: '',
       orderIndex,
     })
     await Listening.findByIdAndUpdate(listeningId, { $push: { quizzes: doc._id } })
@@ -531,13 +557,15 @@ export class ListeningService {
     item: { question: string; options: string[]; answer: string }
   ) {
     const [normalized] = this.normalizeQuizInput([item])
-    const doc = await ListeningQuiz.findOneAndUpdate(
+    const doc = await Quiz.findOneAndUpdate(
       { _id: quizId, listeningId: new mongoose.Types.ObjectId(listeningId) },
       {
         $set: {
           question: normalized.question,
           options: normalized.options,
           answer: normalized.answer,
+          type: 'Multiple Choice',
+          explanation: '',
         },
       },
       { new: true }
@@ -547,7 +575,7 @@ export class ListeningService {
   }
 
   static async deleteListeningQuizItem(listeningId: string, quizId: string): Promise<void> {
-    const res = await ListeningQuiz.findOneAndDelete({
+    const res = await Quiz.findOneAndDelete({
       _id: quizId,
       listeningId: new mongoose.Types.ObjectId(listeningId),
     })
@@ -559,108 +587,99 @@ export class ListeningService {
   static async doListeningQuiz(
     userId: string,
     listeningId: string,
-    time: number,
-    result: { index: number, text: string, isCorrect: boolean }[],
+    dictationResults: { index: number, text: string, isCorrect: boolean }[],
+    quizResults: IQuizResult[],
     studyTimeSeconds: number = 0,
-    mode: 'quiz' | 'dictation' = 'dictation'
   ) {
+    // Kiểm tra listening
     const listening = await Listening.findById(listeningId)
-    if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
+    if (!listening) return new ErrorHandler('Bài nghe không tồn tại', 404)
 
-    const point = result.filter(r => r.isCorrect).length
-    const totalQuestions = Array.isArray(result) ? result.length : 0
-    const computedProgress = totalQuestions > 0
-      ? Math.round(((point / totalQuestions) * 100) * 100) / 100
-      : 0
-    const progress = mode === 'quiz' ? 0 : computedProgress
-    const sessionDuration = Math.max(0, studyTimeSeconds > 0 ? studyTimeSeconds : Number(time) || 0)
+    // Tạo mảng quizResult
+    const quizResultIds = await QuizResult.create(quizResults)
 
-    // Lưu kết quả qua StudyService (Unified)
+    // Tạo listening progress
+    const listeningProgress = await ListeningProgress.create({
+      directionResults: dictationResults,
+      quizzesResults: quizResultIds,
+      studyTime: studyTimeSeconds,
+    })
+
+    // Progress 30% Quiz và 70% Dictionary
+    const correctQuiz = quizResults.filter(r => r.isCorrect).length
+    const correctDictation = dictationResults.filter(r => r.isCorrect).length
+
+    const quizPercent = quizResults.length ? correctQuiz / quizResults.length : 0
+    const dictationPercent = dictationResults.length ? correctDictation / dictationResults.length : 0
+
+    const progressQuiz = quizPercent * 30
+    const progressDictionary = dictationPercent * 70
+
+    const progress = Math.round(progressQuiz + progressDictionary)
+
+    // Tạo story history
     const history = await StudyService.saveStudyResult({
-      userId,
+      userId: userId,
       lessonId: listeningId,
       category: 'listening',
       level: (listening as any).level || 'A1',
-      progress,
-      point,
-      isCompleted: mode === 'dictation',
-      studyTime: sessionDuration,
-      resultData: { mode, answers: result },
-      correctAnswers: point,
-      totalQuestions
+      progress: progress,
+      isCompleted: false,
+      studyTime: studyTimeSeconds,
+      resultId: [listeningProgress._id as mongoose.Types.ObjectId],
+      resultModel: 'ListeningProgress',
     })
 
-    // Luôn cập nhật streak khi có tham gia làm bài
-    await StreakService.updateStreak(userId);
-
+    await StreakService.updateStreak(userId)
     return history
   }
 
   // (USER) Lấy kết quả bài nghe
-  static async getListeningResult(userId: string, listeningId: string): Promise<any> {
-    const histories = await StudyHistory.find({
+  static async getListeningResult(userId: string, listeningId: string): Promise<IListeningResult> {
+    const getListeningHistory = await StudyHistory.find({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(listeningId),
       category: 'listening'
-    }).sort({ createdAt: -1 })
-
-    const parseMode = (history: any): 'quiz' | 'dictation' => {
-      const raw = history?.resultData
-      if (raw && typeof raw === 'object' && raw.mode === 'quiz') return 'quiz'
-      return 'dictation'
-    }
-
-    const parseAnswers = (history: any): any[] => {
-      const raw = history?.resultData
-      if (Array.isArray(raw)) return raw
-      if (raw && typeof raw === 'object' && Array.isArray(raw.answers)) return raw.answers
-      return []
-    }
-
-    const latestQuizHistory = histories.find((h: any) => parseMode(h) === 'quiz')
-    const latestDictationHistory = histories.find((h: any) => parseMode(h) === 'dictation')
-    const history = latestDictationHistory || histories[0]
-
-    if (!history) throw new ErrorHandler('Kết quả bài nghe không tồn tại', 404)
-
-    await this.migrateLegacyQuizFromCollection(listeningId)
+    }).sort({ progress: -1, createdAt: -1 })
     const listening = await Listening.findById(listeningId)
-      .populate({ path: 'audio', select: 'url' })
-      .populate({ path: 'quizzes', model: 'ListeningQuiz' })
     if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
 
-    const rawResult = parseAnswers(history as any)
-    const detailResult = rawResult.filter(
-      (item: any) =>
-        item &&
-        typeof item.index === 'number' &&
-        typeof item.text === 'string' &&
-        typeof item.isCorrect === 'boolean'
-    )
-    const computedPoint = detailResult.filter((item: any) => item.isCorrect).length
-    const computedProgress = detailResult.length > 0
-      ? Math.round((computedPoint / detailResult.length) * 10000) / 100
-      : Number((history as any).progress || 0)
-    const quizPoint = latestQuizHistory ? Number((latestQuizHistory as any).correctAnswers || 0) : 0
-    const quizTotal = latestQuizHistory ? Number((latestQuizHistory as any).totalQuestions || 0) : 0
-    const quizProgress = quizTotal > 0
-      ? Math.round((quizPoint / quizTotal) * 10000) / 100
-      : 0
+    if (getListeningHistory.length === 0) throw new ErrorHandler('Bài nghe chưa được học', 404)
+    const listengResultId = getListeningHistory[0]?.resultId
 
-    const audioUrl = ((listening as any).audio as any)?.url || null
+    if (!listengResultId || listengResultId.length === 0) throw new ErrorHandler('Bài nghe chưa được học', 404)
+
+    const listeningResult = await ListeningProgress.findById(listengResultId).populate({ path: 'quizzesResults', model: 'QuizResult' })
+    if (listeningResult === null) throw new ErrorHandler('Bài nghe chưa được học', 404)
 
     return {
-      progress: computedProgress,
-      point: computedPoint,
-      totalQuestions: detailResult.length,
-      quizPoint,
-      quizTotal,
-      quizProgress,
-      time: Number((history as any).duration || 0),
-      date: (history as any).createdAt,
-      result: detailResult,
-      listeningId: this.formatListeningResponse((listening as any).toObject(), audioUrl),
+      progress: getListeningHistory[0].progress,
+      point: listeningResult.directionResults.filter(r => r.isCorrect).length,
+      totalQuestions: listeningResult.directionResults.length,
+      quizPoint: listeningResult.quizzesResults.filter(r => r.isCorrect).length,
+      quizTotal: listeningResult.quizzesResults.length,
+      quizProgress: listeningResult.quizzesResults.filter(r => r.isCorrect).length / listeningResult.quizzesResults.length * 100,
+      time: getListeningHistory[0].duration,
+      result: listeningResult.quizzesResults.map(r => ({ index: r.questionNumber, text: r.userAnswer, isCorrect: r.isCorrect })),
+      listeningId: listening
     }
+
+    {/*
+      progress: number
+      point: number
+      totalQuestions?: number
+      quizPoint: number
+      quizTotal: number
+      quizProgress?: number
+      time: number
+      date: Date
+      result: {
+        index: number
+        text: string
+        isCorrect: boolean
+      }[]
+      listeningId: IListening
+  */}
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
@@ -736,7 +755,7 @@ export class ListeningService {
   static async deleteListening(id: string): Promise<IListening> {
     const deletedListening = await Listening.findByIdAndDelete(id)
     if (!deletedListening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
-    await ListeningQuiz.deleteMany({ listeningId: new mongoose.Types.ObjectId(id) })
+    await Quiz.deleteMany({ listeningId: new mongoose.Types.ObjectId(id) })
     return deletedListening
   }
 

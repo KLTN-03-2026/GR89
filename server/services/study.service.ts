@@ -6,34 +6,33 @@ export interface ISaveProgressOptions {
   lessonId: string | Types.ObjectId;
   category: 'grammar' | 'vocabulary' | 'reading' | 'listening' | 'speaking' | 'ipa' | 'writing';
   level?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
-
-  // Progress data
   progress?: number;
   point?: number;
   isCompleted?: boolean;
   studyTime?: number;
 
-  // History & Result data
-  resultId?: Types.ObjectId[] | string[]; // Dùng cho Quizz (Grammar, Reading, Vocab)
-  resultData?: any;                       // Dùng cho Listening, Writing, Speaking...
-  correctAnswers?: number;
-  totalQuestions?: number;
-  weakPoints?: string[];
+  resultId?: Types.ObjectId[] | string[];
+  resultModel: "QuizResult" | "WritingUser" | "SpeakingProgress" | "IpaScoring" | "ListeningProgress";
 }
 
 export class StudyService {
-  /**
-   * Chỉ lưu vào lịch sử (StudyHistory)
-   */
   static async saveStudyResult(options: ISaveProgressOptions) {
     const {
-      userId, lessonId, category, level = 'A1',
-      progress = 0, isCompleted = false, studyTime = 0,
-      resultId = [], resultData = {}, correctAnswers = 0, totalQuestions = 0, weakPoints = [],
+      userId,
+      lessonId,
+      category,
+      level = 'A1',
+      progress = 0,
+      isCompleted = false,
+      studyTime = 0,
+      resultId
     } = options;
 
-    const userIdObj = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
-    const lessonIdObj = typeof lessonId === 'string' ? new Types.ObjectId(lessonId) : lessonId;
+    const userIdObj =
+      typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+
+    const lessonIdObj =
+      typeof lessonId === 'string' ? new Types.ObjectId(lessonId) : lessonId;
 
     const getResultModel = (cat: string) => {
       switch (cat) {
@@ -50,16 +49,23 @@ export class StudyService {
         case 'listening':
           return 'ListeningProgress';
         default:
-          return 'StudyHistory';
+          throw new Error('Invalid category');
       }
     };
 
     const resultModel = getResultModel(category);
-    const hasResultId = Array.isArray(resultId) && resultId.length > 0;
-    const finalResultId = hasResultId ? resultId : [];
-    const finalResultModel = hasResultId ? resultModel : undefined;
 
-    // Lưu vào StudyHistory (Tạo mới mỗi lần làm)
+    // convert resultId
+    const resultIds = (resultId || []).map((id) =>
+      typeof id === 'string' ? new Types.ObjectId(id) : id
+    );
+
+    // status
+    let status: 'passed' | 'failed' | 'in_progress' = 'in_progress';
+    if (isCompleted) {
+      status = progress >= 80 ? 'passed' : 'failed';
+    }
+
     const history = await StudyHistory.create({
       userId: userIdObj,
       lessonId: lessonIdObj,
@@ -67,13 +73,9 @@ export class StudyService {
       level,
       progress,
       duration: studyTime,
-      correctAnswers,
-      totalQuestions,
-      weakPoints,
-      status: isCompleted ? 'passed' : 'failed',
-      ...(finalResultId.length > 0 ? { resultId: finalResultId } : {}),
-      ...(finalResultModel ? { resultModel: finalResultModel } : {}),
-      ...(resultData !== undefined ? { resultData } : {}),
+      status,
+      resultId: resultIds,
+      resultModel
     });
 
     return history;

@@ -4,7 +4,6 @@ import type { IReadingResult } from "@/features/reading/types"
 import Link from "next/link"
 import { ContentStateDisplay, ContentStateType } from "@/components/common/ContentStateDisplay"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/card"
 import { CheckCircle2, XCircle, Clock, Award, Target, Brain } from "lucide-react"
 
 interface ResultReadingPageProps {
@@ -50,8 +49,8 @@ export function ResultReadingPage({ result, error }: ResultReadingPageProps) {
           <h1 className="text-3xl font-bold tracking-tight">Kết quả luyện đọc</h1>
           <p className="text-muted-foreground mt-1">Hoàn thành vào {new Date(result.createdAt).toLocaleDateString('vi-VN')}</p>
         </div>
-        <Link 
-          href="/skills/reading" 
+        <Link
+          href="/skills/reading"
           className="inline-flex items-center text-sm font-medium text-primary hover:underline"
         >
           ← Quay lại danh sách
@@ -108,9 +107,9 @@ export function ResultReadingPage({ result, error }: ResultReadingPageProps) {
             <CheckCircle2 className="text-green-500" size={20} />
             Chi tiết câu trả lời
           </h2>
-          
+
           <div className="space-y-4">
-            {quizResults?.map((q, idx) => (
+            {quizResults?.map((q) => (
               <Card key={q._id} className={`border-l-4 ${q.isCorrect ? 'border-l-green-500' : 'border-l-red-500'}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-4">
@@ -177,11 +176,11 @@ export function ResultReadingPage({ result, error }: ResultReadingPageProps) {
             </CardHeader>
             <CardContent>
               <p className="text-sm leading-relaxed">
-                {progress >= 80 
+                {progress >= 80
                   ? "Bạn đã nắm vững nội dung bài đọc này. Hãy thử sức với các bài đọc ở cấp độ cao hơn để mở rộng vốn từ vựng và cải thiện kỹ năng đọc hiểu."
                   : "Bạn nên xem lại các câu trả lời sai và tra cứu nghĩa của các từ mới trong bài đọc. Luyện tập thêm với các bài cùng chủ đề sẽ giúp bạn tiến bộ nhanh hơn."}
               </p>
-              <Link 
+              <Link
                 href="/skills/reading"
                 className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
               >

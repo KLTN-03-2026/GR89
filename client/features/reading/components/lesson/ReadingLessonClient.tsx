@@ -8,7 +8,6 @@ import { IQuizResultData } from "@/features/quizz/types"
 import { useState } from "react"
 import { toast } from "react-toastify"
 import { doReadingQuiz } from "@/features/quizz/services/quizzApi"
-import { useRouter } from "next/navigation"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, HelpCircle } from "lucide-react"
@@ -18,24 +17,13 @@ interface ReadingLessonClientProps {
 }
 
 export function ReadingLessonClient({ reading }: ReadingLessonClientProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState("passage")
-  const router = useRouter()
 
   const handleSubmitQuiz = async (results: IQuizResultData[]) => {
-    setIsSubmitting(true)
-    try {
-      const response = await doReadingQuiz(reading._id, results)
-      if (response.success) {
+    await doReadingQuiz(reading._id, results)
+      .then(() => {
         toast.success("Nộp bài thành công!")
-        // Chuyển hướng sang trang kết quả sau khi nộp bài
-        router.push(`/skills/reading/result/${reading._id}`)
-      }
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Nộp bài thất bại")
-    } finally {
-      setIsSubmitting(false)
-    }
+      })
   }
 
   return (
@@ -56,14 +44,14 @@ export function ReadingLessonClient({ reading }: ReadingLessonClientProps) {
               description={reading.description}
               content={reading.paragraphEn}
               vocabulary={reading.vocabulary}
-              image={reading.image as any}
+              image={reading.image}
             />
           </section>
 
           {/* Right: Question Section */}
           <section className="w-full md:w-[450px] lg:w-[500px] shrink-0 min-h-0 flex flex-col">
             <QuizPanel
-              quizzes={reading.quizzes as any}
+              quizzes={reading.quizzes}
               onSubmit={handleSubmitQuiz}
             />
           </section>
@@ -98,12 +86,12 @@ export function ReadingLessonClient({ reading }: ReadingLessonClientProps) {
                   description={reading.description}
                   content={reading.paragraphEn}
                   vocabulary={reading.vocabulary}
-                  image={reading.image as any}
+                  image={reading.image}
                 />
               </TabsContent>
               <TabsContent value="quiz" className="h-full m-0 p-0 overflow-hidden">
                 <QuizPanel
-                  quizzes={reading.quizzes as any}
+                  quizzes={reading.quizzes}
                   onSubmit={handleSubmitQuiz}
                 />
               </TabsContent>

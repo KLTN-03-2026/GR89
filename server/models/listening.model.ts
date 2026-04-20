@@ -36,7 +36,7 @@ export interface IListeningModel extends mongoose.Model<IListening> {
 
 const listeningSchema = new Schema<IListening>({
   quizzes: {
-    type: [{ type: Schema.Types.ObjectId, ref: 'ListeningQuiz' }],
+    type: [{ type: Schema.Types.ObjectId, ref: 'Quiz' }],
     default: [],
   },
   title: { type: String, required: true, unique: true, trim: true },
