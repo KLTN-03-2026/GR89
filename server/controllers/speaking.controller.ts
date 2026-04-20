@@ -167,50 +167,22 @@ export class SpeakingController {
     });
   });
 
-  // (USER) Lưu / chấm lại từng câu khi hoàn thành bài (upload audio)
-  static submitSpeakingSentencePractice = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { speakingId, sentenceId } = req.params;
-    const userId = req.user?._id;
-    const audioFile = req.file as Express.Multer.File;
-
-    if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập', 401));
-    if (!audioFile?.buffer?.length) {
-      return next(new ErrorHandler('Vui lòng gửi file âm thanh', 400));
-    }
-
-    const audioBuffer = Buffer.from(audioFile.buffer);
-    const data = await SpeakingService.submitSentencePractice(
-      String(userId),
-      speakingId,
-      sentenceId,
-      audioBuffer
-    );
-
-    res.status(200).json({
-      success: true,
-      message: data.message,
-      data,
-    });
-  });
-
   // (USER) Lưu điểm tổng bài nói sau khi hoàn thành
   static saveHighestSpeakingScore = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as UserInfo;
-    const { userId } = req.params;
-    const { lessonId, score, studySession } = req.body;
+    const { lessonId } = req.params;
+    const { sentenceEvaluations, studySession } = req.body;
 
-    if (!user?._id || !userId || !lessonId || score === undefined) {
+    if (!user?._id || !lessonId || !sentenceEvaluations || !studySession) {
       return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400));
     }
-    if (String(user._id) !== String(userId)) {
-      return next(new ErrorHandler('Không được phép lưu điểm cho tài khoản khác', 403));
-    }
-    if (typeof score !== 'number' || score < 0 || score > 100) {
-      return next(new ErrorHandler('Điểm số phải là số từ 0 đến 100', 400));
+
+    if (!Array.isArray(sentenceEvaluations) || sentenceEvaluations.length === 0) {
+      return next(new ErrorHandler('Dữ liệu sentenceEvaluations phải là mảng', 400));
     }
 
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession);
-    const result = await SpeakingService.saveHighestScore(user._id, lessonId, score, studyTimeSeconds);
+    const result = await SpeakingService.saveHighestScore(user._id, lessonId, studyTimeSeconds, sentenceEvaluations);
 
     res.status(200).json({
       success: true,

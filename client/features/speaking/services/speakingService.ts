@@ -1,12 +1,12 @@
-import 'server-only'
 import { fetchServer } from '@/libs/apis/fetch-server'
 import type { LessonStatsResponse, SpeakingOverview } from '@/libs/apis/api'
-import type { ISpeakingResult, Speaking } from '../types'
+import type { ISpeakingResult, SpeakingData } from '../types'
+import { SentenceEvaluation } from '../components/lesson/types'
 
 export async function getSpeakingData() {
   const [statsOverview, speakings] = await Promise.all([
     fetchServer<LessonStatsResponse>('/user/lesson-stats'),
-    fetchServer<Speaking[]>('/speaking/user')
+    fetchServer<SpeakingData[]>('/speaking/user')
   ])
 
   const speakingStats = statsOverview?.speaking || {
@@ -34,10 +34,10 @@ export async function getSpeakingData() {
 }
 
 export async function getSpeakingLesson(_id: string) {
-  const speaking = await fetchServer<Speaking>(`/speaking/user/${_id}`)
+  const speaking = await fetchServer<SpeakingData>(`/speaking/user/${_id}`)
   return speaking
 }
 
 export async function getSpeakingResult(_id: string) {
-  return fetchServer<ISpeakingResult>(`/speaking/user/${_id}/result`)
+  return fetchServer<SentenceEvaluation[]>(`/speaking/user/${_id}/result`)
 }

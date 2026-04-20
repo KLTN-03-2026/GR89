@@ -626,10 +626,8 @@ export class ListeningService {
       category: 'listening',
       level: (listening as any).level || 'A1',
       progress: progress,
-      isCompleted: false,
       studyTime: studyTimeSeconds,
       resultId: [listeningProgress._id as mongoose.Types.ObjectId],
-      resultModel: 'ListeningProgress',
     })
 
     await StreakService.updateStreak(userId)

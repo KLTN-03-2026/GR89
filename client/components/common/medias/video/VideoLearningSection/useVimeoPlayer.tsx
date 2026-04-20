@@ -14,7 +14,7 @@ interface UseVimeoPlayerParams {
   replayTrigger?: number
   vimeoContainerRef: React.RefObject<HTMLDivElement | null>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  vimeoPlayerRef: React.MutableRefObject<any>
+  vimeoPlayerRef: React.RefObject<any>
   setIsPlaying: (value: boolean) => void
   setVideoEnded: (value: boolean) => void
   setReady: (value: boolean) => void

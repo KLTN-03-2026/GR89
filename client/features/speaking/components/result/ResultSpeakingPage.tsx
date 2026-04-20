@@ -1,62 +1,33 @@
 'use client'
 
-import { ContentStateDisplay, ContentStateType } from '@/components/common/ContentStateDisplay'
 import type { ISpeakingResult } from '@/features/speaking/types'
 import { formatDate, getTime } from '@/libs/utils'
 import Link from 'next/link'
 
 interface ResultSpeakingPageProps {
   result: ISpeakingResult
-  error?: { type: ContentStateType; message?: string } | null
 }
 
-export function ResultSpeakingPage({ result, error }: ResultSpeakingPageProps) {
-  if (error) {
-    return (
-      <ContentStateDisplay
-        type={error.type}
-        message={error.message}
-        onUpgradeSuccess={() => {
-          window.location.reload()
-        }}
-        backUrl="/skills/speaking"
-        showBackButton
-        variant="fullscreen"
-      />
-    )
-  }
-
-  if (!result?.speakingLesson?._id) {
-    return (
-      <ContentStateDisplay
-        type="empty"
-        message="Không tìm thấy dữ liệu thành tích"
-        backUrl="/skills/speaking"
-        showBackButton
-        variant="fullscreen"
-      />
-    )
-  }
-
+export function ResultSpeakingPage({ result }: ResultSpeakingPageProps) {
   const title = result.speakingLesson.title || 'Bài nói'
   const tone =
     result.progress >= 80
       ? {
-          title: 'Xuất sắc!',
-          color: 'text-emerald-600',
-          sub: 'Phát âm và nhịp nói của bạn rất tốt.',
-        }
+        title: 'Xuất sắc!',
+        color: 'text-emerald-600',
+        sub: 'Phát âm và nhịp nói của bạn rất tốt.',
+      }
       : result.progress >= 50
         ? {
-            title: 'Khá tốt!',
-            color: 'text-amber-600',
-            sub: 'Tiếp tục luyện từng câu để nâng điểm trung bình.',
-          }
+          title: 'Khá tốt!',
+          color: 'text-amber-600',
+          sub: 'Tiếp tục luyện từng câu để nâng điểm trung bình.',
+        }
         : {
-            title: 'Cố gắng thêm!',
-            color: 'text-rose-600',
-            sub: 'Nghe mẫu, luyện lại các câu điểm thấp bên dưới.',
-          }
+          title: 'Cố gắng thêm!',
+          color: 'text-rose-600',
+          sub: 'Nghe mẫu, luyện lại các câu điểm thấp bên dưới.',
+        }
 
   const sentenceCount = result.sentences?.length ?? 0
   const totalAttempts = result.sentences?.reduce((s, x) => s + (x.attempts || 0), 0) ?? 0

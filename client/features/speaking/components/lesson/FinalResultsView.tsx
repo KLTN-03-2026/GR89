@@ -2,40 +2,27 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { RotateCcw, Sparkles, Volume2 } from 'lucide-react'
-import type { SentenceEvaluation, AssessmentResult } from './types'
+import type { SentenceEvaluation } from './types'
 import { getWordColorForFinal } from './utils'
+import { useRouter } from 'next/navigation'
 
 interface FinalResultsViewProps {
-  averageScore: number
   results: SentenceEvaluation[]
-  router: { push: (path: string) => void }
-  setShowFinalResults: (value: boolean) => void
-  setCurrentSubtitleIndex: (index: number | ((prev: number) => number)) => void
-  setCompletedSubtitles: React.Dispatch<React.SetStateAction<number[]>>
-  setScores: React.Dispatch<React.SetStateAction<number[]>>
-  setAssessmentResult: (result: AssessmentResult | null) => void
-  setSentenceResults: React.Dispatch<React.SetStateAction<SentenceEvaluation[]>>
-  setFinalAverageScore: (value: number) => void
-  setFinalResults: React.Dispatch<React.SetStateAction<SentenceEvaluation[]>>
-  setReplayTrigger: (value: number | ((prev: number) => number)) => void
-  sentenceResultsRef: React.MutableRefObject<SentenceEvaluation[]>
-  saveAllResultsToServer: (results: Array<{ index: number; score: number; audioBlob?: File }>) => Promise<void>
+  onRetry?: () => void
+  speakingId?: string
 }
 
 export function FinalResultsView({
   results,
-  router,
-  setShowFinalResults,
-  setCurrentSubtitleIndex,
-  setCompletedSubtitles,
-  setScores,
-  setAssessmentResult,
-  setSentenceResults,
-  setFinalAverageScore,
-  setFinalResults,
-  setReplayTrigger,
-  sentenceResultsRef
+  onRetry,
+  speakingId
 }: FinalResultsViewProps) {
+  const router = useRouter()
+
+  const handleFinish = () => {
+    router.push('/skills/speaking')
+  }
+
   const playRecordedAudio = (audioBlob?: Blob) => {
     if (!audioBlob) return
     const url = URL.createObjectURL(audioBlob)
@@ -48,21 +35,13 @@ export function FinalResultsView({
   }
 
   const handleRetry = () => {
-    setCurrentSubtitleIndex(0)
-    setCompletedSubtitles([])
-    setScores([])
-    setAssessmentResult(null)
-    setSentenceResults([])
-    sentenceResultsRef.current = []
-    setShowFinalResults(false)
-    setFinalAverageScore(0)
-    setFinalResults([])
-    setReplayTrigger(0)
+    if (!onRetry) {
+      router.replace(`/skills/speaking/lesson/${speakingId}`)
+    } else {
+      onRetry()
+    }
   }
 
-  const handleFinish = () => {
-    router.push('/skills/speaking')
-  }
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
       <Card className="shadow-xl rounded-2xl border-slate-200">
@@ -133,7 +112,7 @@ export function FinalResultsView({
             )}
 
             <div className="flex items-center justify-center gap-4 pt-6 border-t border-gray-300">
-              <Button onClick={handleRetry} variant="outline" size="lg" className="flex items-center gap-2 px-6 rounded-xl">
+              <Button onClick={() => handleRetry()} variant="outline" size="lg" className="flex items-center gap-2 px-6 rounded-xl">
                 <RotateCcw className="w-5 h-5" />
                 Làm lại
               </Button>

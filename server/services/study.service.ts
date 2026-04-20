@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { StudyHistory } from '../models/studyHistory.model';
 
 export interface ISaveProgressOptions {
@@ -11,8 +11,7 @@ export interface ISaveProgressOptions {
   isCompleted?: boolean;
   studyTime?: number;
 
-  resultId?: Types.ObjectId[] | string[];
-  resultModel: "QuizResult" | "WritingUser" | "SpeakingProgress" | "IpaScoring" | "ListeningProgress";
+  resultId?: mongoose.Types.ObjectId[] | string[];
 }
 
 export class StudyService {
@@ -23,7 +22,6 @@ export class StudyService {
       category,
       level = 'A1',
       progress = 0,
-      isCompleted = false,
       studyTime = 0,
       resultId
     } = options;
@@ -62,9 +60,7 @@ export class StudyService {
 
     // status
     let status: 'passed' | 'failed' | 'in_progress' = 'in_progress';
-    if (isCompleted) {
-      status = progress >= 80 ? 'passed' : 'failed';
-    }
+    status = progress >= 80 ? 'passed' : 'failed';
 
     const history = await StudyHistory.create({
       userId: userIdObj,

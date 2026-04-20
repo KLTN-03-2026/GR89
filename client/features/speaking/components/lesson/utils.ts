@@ -63,7 +63,7 @@ export const mapSpeechAceResponseToSpeakingResult = (
     overallScore,
     words,
     averageScore,
-    aiFeedback: (data as any)?.aiFeedback ? String((data as any).aiFeedback) : undefined,
+    aiFeedback: data?.aiFeedback ? String(data.aiFeedback) : undefined,
   }
 }
 
@@ -78,4 +78,3 @@ export const getWordColorForFinal = (score: number): string => {
   if (score >= 60) return 'bg-amber-100 border-amber-500 text-amber-800'
   return 'bg-rose-100 border-rose-500 text-rose-800'
 }
-

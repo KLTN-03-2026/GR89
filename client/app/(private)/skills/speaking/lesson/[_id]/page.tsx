@@ -1,4 +1,4 @@
-import { SpeakingLesson, getSpeakingLesson } from '@/features/speaking'
+import { SpeakingLessonPage, getSpeakingLesson } from '@/features/speaking'
 
 export default async function page({ params }: { params: Promise<{ _id: string }> }) {
   const { _id } = await params
@@ -7,5 +7,5 @@ export default async function page({ params }: { params: Promise<{ _id: string }
 
   if (!speaking) return null
 
-  return <SpeakingLesson speaking={speaking} />
+  return <SpeakingLessonPage speaking={speaking} />
 }
