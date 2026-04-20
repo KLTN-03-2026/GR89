@@ -205,9 +205,6 @@ export class SpeakingController {
     const pronunciationResult = await SpeakingService.assessPronunciationSpeaking(
       text,
       audioBuffer,
-      userId ? String(userId) : undefined,
-      speakingId,
-      Number(studyTime) || 0
     )
 
     res.status(200).json({

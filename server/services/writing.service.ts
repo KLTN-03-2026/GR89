@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import XLSX from 'xlsx'
 import { StreakService } from "./streak.service";
 import { User } from "../models/user.model";
+import { writingUserModel } from "../models/writingUser.model";
 
 const countWords = (text: string) => {
   if (!text) return 0
@@ -302,12 +303,8 @@ export class WritingService {
 
   /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
-  static async getAllWritingByUser(userId: string): Promise<IWriting[]> {
-    return this.getWritingListByUser(userId)
-  }
-
   // (USER) Lấy danh sách bài viết kèm tiến độ của người dùng
-  static async getWritingListByUser(userId: string): Promise<IWriting[]> {
+  static async getAllWritingByUser(userId: string): Promise<IWriting[]> {
     const writings = await writingModel.find({ isActive: true }).sort({ orderIndex: 1 });
 
     // Lấy bản ghi tốt nhất từ StudyHistory
@@ -323,7 +320,7 @@ export class WritingService {
       const writingObj = writing.toObject()
       return {
         ...writingObj,
-        isCompleted: p?.status === 'passed',
+        isCompleted: p && p?.resultId && p?.resultId.length > 0,
         isActive: true,
         progress: p?.progress || 0,
         point: p?.progress || 0,
@@ -432,23 +429,29 @@ export class WritingService {
       content: content,
     }
 
+    const newWritingUser = await writingUserModel.create({
+      writing: writingId,
+      user: userId,
+      content: content,
+      revisedContent: resultAI.revisedContent,
+      rubricContent: resultAI.rubricContent,
+      rubricStructure: resultAI.rubricStructure,
+      rubricGrammar: resultAI.rubricGrammar,
+      rubricVocabulary: resultAI.rubricVocabulary,
+      overallFeedback: resultAI.overallFeedback,
+      suggested: resultAI.suggested,
+    })
+
     // Lưu qua StudyService
     await StudyService.saveStudyResult({
       userId,
       lessonId: writingId,
       category: 'writing',
-      level: (writing as any).level || 'A1',
+      level: writing.level || 'A1',
       progress: pointResult,
-      point: pointResult,
-      isCompleted: true, // Chỉ cần có làm là tính hoàn thành
       studyTime: studyTimeSeconds,
-      resultData: result,
-      correctAnswers: 1,
-      totalQuestions: 1
+      resultId: [newWritingUser._id],
     })
-
-    // Luôn cập nhật streak khi có tham gia làm bài
-    await StreakService.updateStreak(userId)
 
     return result
   }
@@ -461,16 +464,11 @@ export class WritingService {
       category: 'writing'
     }).sort({ progress: -1, createdAt: -1 })
 
-    if (!history) throw new ErrorHandler('Kết quả bài viết không tồn tại', 404)
+    if (!history || !history.resultId || history.resultId.length === 0) throw new ErrorHandler('Kết quả bài viết không tồn tại', 404)
 
-    // Load detailed result from WritingUser if exists
-    let detailedResult = null;
-    if (history.resultId && history.resultId.length > 0) {
-      const WritingUser = mongoose.model('WritingUser');
-      detailedResult = await WritingUser.findById(history.resultId[0]).lean();
-    }
+    const resultData = await writingUserModel.findById(history.resultId[0]).lean();
 
-    return history.resultData
+    return resultData
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

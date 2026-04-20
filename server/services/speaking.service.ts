@@ -512,12 +512,7 @@ export class SpeakingService {
   static async assessPronunciationSpeaking(
     text: string,
     audioBuffer: Buffer,
-    userId?: string,
-    speakingId?: string,
-    studyTimeSeconds: number = 0,
-    options?: { persistStudyHistory?: boolean }
   ): Promise<any> {
-    const persistStudyHistory = options?.persistStudyHistory !== false;
     if (!text || !text.trim()) {
       throw new ErrorHandler('Cần có văn bản mẫu', 400)
     }
@@ -581,33 +576,6 @@ export class SpeakingService {
       ])
     } catch {
       aiFeedback = ""
-    }
-
-    // Nếu có userId và speakingId thì lưu kết quả (có thể tắt khi lưu theo từng câu qua submitSentencePractice)
-    if (userId && speakingId && persistStudyHistory) {
-      const speaking = await Speaking.findById(speakingId)
-      if (speaking) {
-        const score = result.overall_metrics?.pronunciation || 0
-        const isCompleted = score >= 80
-
-        await StudyService.saveStudyResult({
-          userId,
-          lessonId: speakingId,
-          category: 'speaking',
-          level: (speaking as any).level || 'A1',
-          progress: score,
-          point: score,
-          isCompleted,
-          studyTime: studyTimeSeconds,
-          resultData: result,
-          correctAnswers: isCompleted ? 1 : 0, // Tạm thời
-          totalQuestions: 1
-        })
-
-        if (isCompleted) {
-          await StreakService.updateStreak(userId)
-        }
-      }
     }
 
     return {

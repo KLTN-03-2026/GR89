@@ -23,9 +23,6 @@ export interface IWritingUser extends Document {
   }
   overallFeedback: string
   suggested: string[]
-  isActive: boolean
-  isCompleted: boolean
-  studyTime: number
 }
 
 const writingUserSchema = new Schema<IWritingUser>({
@@ -51,9 +48,6 @@ const writingUserSchema = new Schema<IWritingUser>({
   },
   overallFeedback: { type: String },
   suggested: { type: [String] },
-  isActive: { type: Boolean, default: true },
-  isCompleted: { type: Boolean, default: false },
-  studyTime: { type: Number, default: 0 },
 })
 
 writingUserSchema.index({ writing: 1, user: 1 })
