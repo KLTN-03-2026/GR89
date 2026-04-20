@@ -34,7 +34,7 @@ export function ListeningLessonPage({ listening }: props) {
 
   useEffect(() => {
     startSession()
-  }, [])
+  }, [startSession])
 
   const handleChangePage = (page: 'dictation' | 'quiz') => {
     setCurrenPage(page)
@@ -107,7 +107,10 @@ export function ListeningLessonPage({ listening }: props) {
     listeningId: listening,
   }
   if (currenPage === 'result') {
-    return <ResultListening result={result} />
+    return <ResultListening
+      result={result}
+      onRetry={onRetry}
+    />
   }
 
   return null

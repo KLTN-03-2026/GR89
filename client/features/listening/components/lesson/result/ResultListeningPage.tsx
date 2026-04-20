@@ -3,12 +3,16 @@ import { formatDate, getTime } from "@/libs/utils"
 import { IListeningProgress } from "@/features/listening/types"
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 interface ResultListeningPageProps {
   result: IListeningProgress
+  onRetry?: () => void
 }
 
-export function ResultListening({ result }: ResultListeningPageProps) {
+export function ResultListening({ result, onRetry }: ResultListeningPageProps) {
+  const router = useRouter()
   const [showAllMistakes, setShowAllMistakes] = useState(false)
   const subtitleText = result.listeningId.subtitle || ''
   const subtitles = subtitleText.trim().length > 0 ? subtitleText.split(/\s+/) : []
@@ -25,6 +29,14 @@ export function ResultListening({ result }: ResultListeningPageProps) {
         ? { title: 'Khá tốt!', color: 'text-amber-600', sub: 'Bạn đang tiến bộ, hãy luyện thêm để tăng độ chính xác.' }
         : { title: 'Cố gắng thêm!', color: 'text-rose-600', sub: 'Làm lại bài và tập trung vào các từ sai bên dưới.' }
 
+  const handleRetry = () => {
+    if (!onRetry) {
+      router.replace(`/skills/listening/lesson/${result.listeningId._id}`)
+    }
+    else {
+      onRetry()
+    }
+  }
   return (
     <div className="mx-auto max-w-6xl p-6 space-y-6">
       <div className="rounded-2xl overflow-hidden border border-indigo-100 shadow-sm">
@@ -76,7 +88,7 @@ export function ResultListening({ result }: ResultListeningPageProps) {
                   const correctWord = subtitles[w.index] || ''
                   return (
                     <div key={i} className="flex items-center gap-2 rounded-lg border border-gray-100 p-2">
-                      <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 line-through">{w.text.trim() || '(-)'}</span>
+                      <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 line-through">{w.text.trim() || '(không điền)'}</span>
                       <span className="text-gray-400">→</span>
                       <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">{correctWord}</span>
                     </div>
@@ -129,11 +141,14 @@ export function ResultListening({ result }: ResultListeningPageProps) {
             </div>
           </div>
           <div className="mt-5 flex w-full gap-2">
-            <Link href={`/skills/listening/${result.listeningId._id}`} className="flex-1">
-              <button className="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Làm lại</button>
-            </Link>
+            <Button
+              className="w-full px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium"
+              onClick={handleRetry}
+            >
+              Làm lại
+            </Button>
             <Link href="/skills/listening" className="flex-1">
-              <button className="w-full px-3 py-2 rounded-lg border text-sm font-medium">Danh sách</button>
+              <Button className="w-full px-3 py-2 rounded-lg border text-sm font-medium">Danh sách</Button>
             </Link>
           </div>
         </div>

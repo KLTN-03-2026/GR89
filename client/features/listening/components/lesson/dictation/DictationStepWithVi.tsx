@@ -39,9 +39,22 @@ const normalizeWord = (v: string) =>
   v
     .toLowerCase()
     .normalize('NFD')
+    .replace(/[’‘]/g, "'")
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[.,?!;:"'()\-]/g, '')
     .trim()
+
+const protectTitles = (text: string) => {
+  return text
+    .replace(/\bMr\./g, 'Mr<DOT>')
+    .replace(/\bMrs\./g, 'Mrs<DOT>')
+    .replace(/\bMs\./g, 'Ms<DOT>')
+    .replace(/\bDr\./g, 'Dr<DOT>')
+}
+
+const restoreTitles = (text: string) => {
+  return text.replace(/<DOT>/g, '.')
+}
 
 export function DictationStepWithVi({
   listeningId,
@@ -56,21 +69,30 @@ export function DictationStepWithVi({
   const router = useRouter()
   const normalizedSubtitleEn = sanitizeSubtitleForDictation(subtitleEn)
   const normalizedSubtitleVi = sanitizeSubtitleForDictation(subtitleVi)
-  const wordsEn = normalizedSubtitleEn.trim().split(/\s+/)
-  const sentencesEn = normalizedSubtitleEn.split(/(?<=[.!?])\s+/).filter(Boolean)
-  const sentencesVi = normalizedSubtitleVi.trim().split(/(?<=[.!?])\s+/).filter(Boolean)
+
+  const safeTextEn = protectTitles(normalizedSubtitleEn)
+  const safeTextVi = protectTitles(normalizedSubtitleVi)
+
+  const wordsEn = safeTextEn.trim().split(/\s+/)
+  const sentencesEn = safeTextEn
+    .split('\n')
+    .filter(Boolean)
+    .map(restoreTitles)
+
+  const sentencesVi = safeTextVi
+    .split('\n')
+    .filter(Boolean)
+    .map(restoreTitles)
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [inputText, setInputText] = useState('')
 
   const [hasStarted, setHasStarted] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
-
-  const [isSavingResult, setIsSavingResult] = useState(false)
   const [completedSentences, setCompletedSentences] = useState<number[]>([])
-
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false)
 
+  // Tìm chỉ số câu dựa trên chỉ số từ
   const getSentenceIndexForWordIndex = (wordIdx: number) => {
     let count = 0
     for (let i = 0; i < sentencesEn.length; i++) {
@@ -81,6 +103,7 @@ export function DictationStepWithVi({
     return -1
   }
 
+  // Handle keyboard events
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Click left giảm 5s audio
     if (e.key === 'ArrowLeft') {
@@ -135,13 +158,16 @@ export function DictationStepWithVi({
     }
   }
 
+  // Tính điểm và tỷ lệ đúng
   const correctCount = formDataDictationResult.filter(r => r.isCorrect).length
   const pct = formDataDictationResult.length ? Math.round((correctCount / formDataDictationResult.length) * 100) : 0
 
+  // Handle go to result page
   const handleGoToResultPage = async () => {
     handleSubmit()
   }
 
+  // Handle retry
   const handleRetry = () => {
     if (!onRetry) {
       router.replace(`/skills/listening/lesson/${listeningId}`)
@@ -152,7 +178,6 @@ export function DictationStepWithVi({
       setFormDataDictationResult([])
       setHasStarted(false)
       setIsCompleted(false)
-      setIsSavingResult(false)
       setCompletedSentences([])
       setShowCompleteConfirm(false)
       onRetry()
@@ -254,7 +279,6 @@ export function DictationStepWithVi({
         handleGoToResultPage={handleGoToResultPage}
         showCompleteConfirm={showCompleteConfirm}
         setShowCompleteConfirm={setShowCompleteConfirm}
-        isSavingResult={isSavingResult}
       />
     </div>
   )

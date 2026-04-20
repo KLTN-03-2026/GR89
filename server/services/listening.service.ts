@@ -10,6 +10,7 @@ import { MediaService } from "./media.service"
 import { IQuiz, Quiz } from "../models/quiz.model"
 import { IQuizResult, QuizResult } from "../models/quizzResult.model"
 import { ListeningProgress } from "../models/listeningProgress.model"
+import { Media } from "../models/media.model"
 
 interface IListeningResult {
   progress: number
@@ -526,8 +527,9 @@ export class ListeningService {
 
   // (ADMIN) Danh sách câu quiz của một bài nghe (document ListeningQuiz)
   static async getListeningQuizzes(listeningId: string) {
-    await this.migrateLegacyQuizFromCollection(listeningId)
-    return Quiz.find({ listeningId: new mongoose.Types.ObjectId(listeningId) }).sort({ orderIndex: 1 })
+    const listening = await Listening.findById(listeningId).populate({ path: 'quizzes', model: 'Quiz' })
+    if (!listening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
+    return listening.quizzes
   }
 
   static async addListeningQuiz(
@@ -660,26 +662,9 @@ export class ListeningService {
       quizTotal: listeningResult.quizzesResults.length,
       quizProgress: listeningResult.quizzesResults.filter(r => r.isCorrect).length / listeningResult.quizzesResults.length * 100,
       time: getListeningHistory[0].duration,
-      result: listeningResult.quizzesResults.map(r => ({ index: r.questionNumber, text: r.userAnswer, isCorrect: r.isCorrect })),
-      listeningId: listening
+      result: listeningResult.directionResults,
+      listeningId: listening.toObject()
     }
-
-    {/*
-      progress: number
-      point: number
-      totalQuestions?: number
-      quizPoint: number
-      quizTotal: number
-      quizProgress?: number
-      time: number
-      date: Date
-      result: {
-        index: number
-        text: string
-        isCorrect: boolean
-      }[]
-      listeningId: IListening
-  */}
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
@@ -722,33 +707,22 @@ export class ListeningService {
 
   // (ADMIN) Cập nhật bài nghe
   static async updateListening(id: string, listening: IListening): Promise<IListening> {
-    const updatePayload: any = { ...(listening as any) }
-    delete updatePayload.quiz
-    delete updatePayload.quizzes
+    const existingListening = await Listening.findById(id).select('subtitle subtitleVi')
+    if (!existingListening) throw new ErrorHandler('Bài nghe không tồn tại', 404)
 
-    const existing = await Listening.findById(id).select('subtitle subtitleVi')
-    if (!existing) throw new ErrorHandler('Bài nghe không tồn tại', 404)
+    this.validateSubtitlePair(listening.subtitle, listening.subtitleVi)
 
-    const finalSubtitle = typeof updatePayload.subtitle === 'string' ? updatePayload.subtitle : (existing as any).subtitle
-    const finalSubtitleVi = typeof updatePayload.subtitleVi === 'string' ? updatePayload.subtitleVi : (existing as any).subtitleVi
-    this.validateSubtitlePair(finalSubtitle, finalSubtitleVi)
+    const audio = await Media.findById(listening.audio)
+    if (!audio) throw new ErrorHandler('Media không tồn tại', 404)
 
-    if (listening && (listening as any).audio) {
-      try {
-        updatePayload.audio = new mongoose.Types.ObjectId((listening as any).audio)
-      } catch {
-        throw new ErrorHandler('ID Media không hợp lệ', 400)
-      }
-    }
+    await existingListening.save()
 
-    await Listening.findByIdAndUpdate(id, updatePayload, { new: true })
+    const listeningUpdated = await Listening.findByIdAndUpdate(
+      id,
+      { ...listening, quizzes: existingListening.quizzes },
+      { new: true })
 
-    if (Object.prototype.hasOwnProperty.call(listening as any, 'quiz')) {
-      const items = this.normalizeQuizInput((listening as any).quiz)
-      await this.replaceListeningQuizzesFromItems(id, items)
-    }
-
-    return await this.getListeningById(id)
+    return listeningUpdated as IListening
   }
 
   // (ADMIN) Xóa một bài nghe

@@ -314,6 +314,7 @@ export class ListeningController {
   // (ADMIN) Cập nhật nội dung bài nghe
   static updateListening = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
+
     const listening = await ListeningService.updateListening(id, { ...(req.body || {}), updatedBy: req.user?._id as string })
     await ListeningController.logAdminAction(req, {
       action: 'update',
@@ -322,6 +323,7 @@ export class ListeningController {
       description: 'Cập nhật bài nghe',
       metadata: { updatedFields: Object.keys(req.body || {}) }
     })
+
     res.status(200).json({
       success: true,
       message: 'Cập nhật bài nghe thành công',

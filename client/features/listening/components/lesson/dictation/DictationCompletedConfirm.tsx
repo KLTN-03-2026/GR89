@@ -2,21 +2,28 @@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogDescription, DialogTitle, DialogContent, DialogHeader, DialogFooter } from '@/components/ui/dialog'
 import { CheckCircle2 } from 'lucide-react'
+import { useState } from 'react'
 
 interface Props {
   handleRetry: () => void
   showCompleteConfirm: boolean
   setShowCompleteConfirm: (showCompleteConfirm: boolean) => void
   handleGoToResultPage: () => void
-  isSavingResult: boolean
 }
 export default function DictationCompletedConfirm({
   handleRetry,
   showCompleteConfirm,
   setShowCompleteConfirm,
   handleGoToResultPage,
-  isSavingResult
 }: Props) {
+  const [isSavingResult, setIsSavingResult] = useState(false)
+
+  const handleSubmit = () => {
+    setIsSavingResult(true)
+    handleGoToResultPage()
+    setIsSavingResult(false)
+  }
+
   return (
     <Dialog open={showCompleteConfirm} onOpenChange={setShowCompleteConfirm}>
       <DialogContent
@@ -46,8 +53,8 @@ export default function DictationCompletedConfirm({
             Làm lại
           </Button>
 
-          <Button onClick={handleGoToResultPage} disabled={isSavingResult}>
-            {isSavingResult ? 'Đang lưu...' : 'Sang kết quả'}
+          <Button onClick={handleSubmit} disabled={isSavingResult}>
+            {isSavingResult ? 'Đang lưu...' : 'Nộp bài'}
           </Button>
         </DialogFooter>
       </DialogContent>
