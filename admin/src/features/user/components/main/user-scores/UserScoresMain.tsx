@@ -130,10 +130,10 @@ export function UserScoresMain() {
     setPage(1)
   }
 
-  const handlePageSizeChange = (newLimit: number) => {
+  const handlePageSizeChange = useCallback((newLimit: number) => {
     setLimit(newLimit)
     setPage(1)
-  }
+  }, [setLimit, setPage])
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage)

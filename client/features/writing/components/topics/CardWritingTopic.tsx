@@ -2,7 +2,7 @@ import { EnhancedPopover } from "@/components/common/popoves";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
-import { writingTopics } from "@/types";
+import { writingTopics } from "@/features/writing/types";
 import {
   Star,
   Clock,
@@ -16,7 +16,7 @@ interface CardWritingTopicProps {
 }
 
 export default function CardWritingTopic({ topic }: CardWritingTopicProps) {
-  const level = (topic as any)?.level as string | undefined
+  const level = topic.level as string | undefined
   return (
     <Popover>
       <PopoverTrigger className='w-full text-center group'>

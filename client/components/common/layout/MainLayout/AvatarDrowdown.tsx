@@ -38,7 +38,7 @@ export default function AvatarDrowdown() {
             <div className="grid flex-1 text-left text-sm leading-tight">
               <div className="flex items-center gap-2">
                 <span className="truncate font-medium">{user?.fullName}</span>
-                {user?.isVip && (
+                {user?.vipStartDate && user?.vipExpireDate && user?.vipExpireDate > new Date() && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm">
                     <Crown className="w-2.5 h-2.5" />
                     VIP

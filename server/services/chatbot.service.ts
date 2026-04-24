@@ -83,7 +83,7 @@ export class ChatbotService {
       _id: String(user._id),
       fullName: user.fullName,
       currentLevel: user.currentLevel,
-      isVip: user.isVip || false,
+      isVip: user.vipStartDate && user.vipExpireDate && user.vipExpireDate > new Date() || false,
       currentStreak: user.currentStreak || 0,
       longestStreak: user.longestStreak || 0,
       totalStudyTime: user.totalStudyTime || 0,

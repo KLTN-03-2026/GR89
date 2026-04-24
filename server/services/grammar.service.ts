@@ -520,10 +520,6 @@ export class GrammarService {
     const point = correctCount
     const progress = Math.round(((correctCount / (quizResults.length || 1)) * 100) * 100) / 100
 
-    // Lấy tags của các câu sai để làm weakPoints
-    // const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
-    const weakPoints = Array.from([])
-
     // Lưu qua StudyService (Unified)
     const history = await StudyService.saveStudyResult({
       userId,
@@ -535,9 +531,6 @@ export class GrammarService {
       isCompleted: true, // Chỉ cần có làm là tính hoàn thành
       studyTime: studyTimeSeconds,
       resultId, // Lưu ID vào Progress/History
-      correctAnswers: correctCount,
-      totalQuestions: quizResults.length,
-      weakPoints
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài

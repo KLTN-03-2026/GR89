@@ -676,8 +676,7 @@ export class IpaService {
       progress,
       point: progress,
       isCompleted: true, // Chỉ cần có làm là tính hoàn thành
-      studyTime: Math.max(0, studyTimeSeconds),
-      resultData: { score: progress }
+      studyTime: Math.max(0, studyTimeSeconds)
     })
 
     return {

@@ -1,7 +1,7 @@
 "use client"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import ActionsCell from "./ActionsCell"
 import { TrendingUp, Clock } from "lucide-react"
 import { formatScore } from "@/lib/scoreUtils"
@@ -40,6 +40,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       return (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
+            <AvatarImage src={user.avatar || '/images/avatar-default.jpg'} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary">
               {getInitials(user.fullName)}
             </AvatarFallback>
@@ -86,7 +87,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       return (
         <div className="grid grid-cols-4 gap-2 text-center">
           {skills.map((skill, index) => (
-            <div key={index}>
+            <div key={index} className="line-clamp-2">
               <div className="text-xs font-medium">{skill.name}</div>
               <div className="text-xs text-muted-foreground">
                 {formatScore(skill.points)}
@@ -104,7 +105,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const streak = row.original.currentStreak
       return (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 line-clamp-1">
           <TrendingUp className="w-4 h-4 text-muted-foreground" />
           <div className="text-center">
             <div className="font-medium">{streak}</div>
@@ -121,7 +122,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const time = row.original.totalStudyTime
       return (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 line-clamp-1">
           <Clock className="w-4 h-4 text-muted-foreground" />
           <div className="text-center">
             <div className="font-medium">{formatStudyTime(time)}</div>
@@ -140,7 +141,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       // Kiểm tra nếu không có lastActiveDate hoặc giá trị không hợp lệ
       if (!lastActiveDate) {
         return (
-          <div className="text-center">
+          <div className="text-center line-clamp-1">
             <div className="text-sm text-muted-foreground">Chưa có</div>
           </div>
         )
@@ -151,7 +152,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       // Kiểm tra nếu ngày không hợp lệ (NaN hoặc năm 1970)
       if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
         return (
-          <div className="text-center">
+          <div className="text-center line-clamp-1">
             <div className="text-sm text-muted-foreground">Chưa có</div>
           </div>
         )
@@ -161,7 +162,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 
       return (
-        <div className="text-center">
+        <div className="text-center line-clamp-2">
           <div className="text-sm">
             {diffDays === 0 ? 'Hôm nay' :
               diffDays === 1 ? 'Hôm qua' :
@@ -180,7 +181,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     accessorKey: "isActive",
     header: () => <div className="text-center">Trạng thái</div>,
     cell: ({ row }) => (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center line-clamp-1">
         <Badge variant={row.original.isActive ? "default" : "secondary"}>
           {row.original.isActive ? "Hoạt động" : "Tạm khóa"}
         </Badge>

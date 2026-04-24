@@ -47,10 +47,14 @@ export default function ActionsCell({ user }: { user: User }) {
         <DropdownMenuContent align="end" className="rounded-xl border-gray-100 shadow-xl w-48">
           <DropdownMenuLabel className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-3 py-2">Quản lý học viên</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setOpenView(true)} className="rounded-lg font-bold text-gray-600 focus:bg-blue-50 focus:text-blue-600 cursor-pointer">
-            <Eye className="w-4 h-4 mr-2" />
-            Xem chi tiết
-          </DropdownMenuItem>
+          {
+            user.role === 'user' && (
+              <DropdownMenuItem onClick={() => setOpenView(true)} className="rounded-lg font-bold text-gray-600 focus:bg-indigo-50 focus:text-indigo-600 cursor-pointer">
+                <Eye className="w-4 h-4 mr-2" />
+                Xem chi tiết
+              </DropdownMenuItem>
+            )
+          }
           <DropdownMenuItem onClick={() => setOpenEdit(true)} className="rounded-lg font-bold text-gray-600 focus:bg-indigo-50 focus:text-indigo-600 cursor-pointer">
             <Pencil className="w-4 h-4 mr-2" />
             Chỉnh sửa
@@ -130,20 +134,15 @@ export default function ActionsCell({ user }: { user: User }) {
               variant={user.isActive ? "destructive" : "default"}
               onClick={async () => {
                 setLoading(true)
-                try {
-                  const response = await updateUserStatus(user._id, !user.isActive)
-                  if (response.success) {
+                await updateUserStatus(user._id, !user.isActive)
+                  .then(() => {
                     toast.success(`Đã ${!user.isActive ? 'kích hoạt' : 'khóa'} tài khoản thành công`)
                     setOpenToggleStatus(false)
                     handleRefresh()
-                  } else {
-                    toast.error(response.message || 'Có lỗi xảy ra')
-                  }
-                } catch (error: any) {
-                  toast.error(error?.response?.data?.message || 'Có lỗi xảy ra')
-                } finally {
-                  setLoading(false)
-                }
+                  })
+                  .finally(() => {
+                    setLoading(false)
+                  })
               }}
               disabled={loading}
               className={cn(

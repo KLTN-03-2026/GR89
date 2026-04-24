@@ -1,6 +1,6 @@
 import { fetchServer } from '@/libs/apis/fetch-server'
 import type { LessonStatsResponse, SpeakingOverview } from '@/libs/apis/api'
-import type { ISpeakingResult, SpeakingData } from '../types'
+import type { SpeakingData } from '../types'
 import { SentenceEvaluation } from '../components/lesson/types'
 
 export async function getSpeakingData() {

@@ -8,7 +8,7 @@ export interface UserProfile {
   longestStreak?: number
   totalStudyTime?: number
   totalPoints?: number
-  isVip?: boolean
+  vipExpireDate?: Date | null
   vipPlanId?: string
   vipStartDate?: Date | null
 }

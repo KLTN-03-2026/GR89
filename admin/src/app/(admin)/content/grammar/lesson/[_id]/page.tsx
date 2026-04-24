@@ -4,7 +4,7 @@ import { fetchServer } from '@/lib/apis/fetch-server'
 
 export default async function GrammarLessonPage({ params }: { params: { _id: string } }) {
   const { _id } = await params
-  const lessons = await fetchServer<GrammarLessonDraft>(`/grammar/${_id}`)
+  const lessons = await fetchServer<GrammarLessonDraft>(`/grammar/${_id}/admin`)
 
   return (
     <div>

@@ -14,7 +14,7 @@ interface CardReadingTopicProps {
 }
 
 export default function CardReadingTopic({ topic }: CardReadingTopicProps) {
-  const level = (topic as any)?.level as string | undefined
+  const level = topic.level as string | undefined
   return (
     <Popover>
       <PopoverTrigger className='w-full text-center group'>

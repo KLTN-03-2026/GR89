@@ -15,14 +15,11 @@ import {
   PenTool,
   Settings,
   Shield,
-  Speaker,
   TrendingUp,
-  Type,
   Users,
   Video,
   Volume2,
   Wrench,
-  Zap,
   Globe,
   Award,
   Crown,
@@ -45,7 +42,7 @@ export interface ISidebarRouteGroup {
 const ROUTES_PATH = {
   // Dashboard
   DASHBOARD: '/',
-  OVERVIEW: '/dashboard/overview',
+  OVERVIEW: '/',
   REPORTS: '/dashboard/reports',
   ANALYTICS: '/dashboard/analytics',
 

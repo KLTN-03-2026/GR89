@@ -575,10 +575,6 @@ export class VocabularyService {
     const point = Math.round(((correctCount / (quizResults.length || 1)) * 100) * 100) / 100
     const progress = point // Với vocab, point chính là progress
 
-    // Lấy tags của các câu sai để làm weakPoints
-    // const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
-    const weakPoints = Array.from([])
-
     // Lưu qua StudyService (Unified)
     const history = await StudyService.saveStudyResult({
       userId,
@@ -590,9 +586,6 @@ export class VocabularyService {
       isCompleted: true, // Không cần >= 80, chỉ cần có làm là tính hoàn thành
       studyTime: studyTimeSeconds,
       resultId, // Lưu ID vào Progress/History
-      correctAnswers: correctCount,
-      totalQuestions: quizResults.length,
-      weakPoints
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài

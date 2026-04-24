@@ -6,8 +6,6 @@ const router = express.Router();
 
 /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
-router.post("/vnpay/callback", PaymentController.vnpayCallback);
-router.get("/vnpay/callback", PaymentController.vnpayCallback);
 
 /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
 
@@ -18,6 +16,8 @@ router.get("/", authenticateTokenAdmin, requireRole(["admin", "content"]), Payme
 router.get("/user", authenticateTokenUser, PaymentController.getUserPayments);
 router.post("/create-url", authenticateTokenUser, PaymentController.createPaymentUrl);
 
+//https://900a-2402-800-6e27-3bba-28e0-c926-865a-f07f.ngrok-free.app/webhook
+router.post("/webhook", PaymentController.payOSWebhook)
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
 router.get("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), PaymentController.getPaymentById);

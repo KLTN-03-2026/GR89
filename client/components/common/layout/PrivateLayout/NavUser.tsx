@@ -1,12 +1,19 @@
 "use client"
 
-import { LogOut, UserCircle, MoreVertical, Bell, Crown } from "lucide-react"
+import {
+  LogOut,
+  UserCircle,
+  MoreVertical,
+  Bell,
+  Crown
+} from "lucide-react"
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,12 +23,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+
 import { useAuth } from "@/libs/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -37,11 +46,20 @@ export function NavUser() {
     setAvatarError(false)
   }, [user?.avatar])
 
+  const defaultAvatar = user?.avatar || "/images/avatar-default.jpg"
+
+  const isVipActive = user?.vipExpireDate && new Date((user.vipExpireDate || new Date())) > new Date()
+
+  const VipBadge = () => (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white shadow-md">
+      <Crown className="w-3 h-3" />
+      VIP
+    </span>
+  )
+
   const handleLogout = async () => {
     await logout()
   }
-
-  const defaultAvatar = user?.avatar || "/images/avatar-default.jpg"
 
   if (isLoading || !user) {
     return (
@@ -49,11 +67,9 @@ export function NavUser() {
         <SidebarMenuItem>
           <SidebarMenuButton size="lg">
             <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarFallback className="rounded-lg">--</AvatarFallback>
+              <AvatarFallback>--</AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">Loading...</span>
-            </div>
+            <span className="text-sm">Loading...</span>
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
@@ -64,89 +80,89 @@ export function NavUser() {
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
+
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <Avatar className="h-8 w-8 rounded-lg grayscale bg-gray-400">
+            <SidebarMenuButton size="lg">
+              <Avatar className="h-8 w-8 rounded-lg bg-gray-300">
                 <AvatarImage
-                  src={avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)}
+                  src={avatarError ? defaultAvatar : defaultAvatar}
                   alt={user.fullName}
                   onError={() => setAvatarError(true)}
                 />
-                <AvatarFallback className="rounded-lg">
-                  {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                <AvatarFallback>
+                  {user.fullName?.charAt(0)?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
+
+              <div className="flex-1 text-left text-sm leading-tight">
                 <div className="flex items-center gap-2">
-                  <span className="truncate font-medium">{user.fullName}</span>
-                  {user.isVip && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm">
-                      <Crown className="w-2.5 h-2.5" />
-                      VIP
-                    </span>
-                  )}
+                  <span className="font-medium truncate">
+                    {user.fullName}
+                  </span>
+
+                  {isVipActive && <VipBadge />}
                 </div>
-                <span className="text-muted-foreground truncate text-xs">
+
+                <span className="text-xs text-muted-foreground truncate">
                   {user.email}
                 </span>
               </div>
-              <MoreVertical className="ml-auto size-4" />
+
+              <MoreVertical className="ml-auto w-4 h-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) bg-white min-w-56 rounded-lg border-gray-200"
+            className="w-56 bg-white rounded-lg border shadow-md"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg bg-gray-400">
-                  <AvatarImage src={
-                    avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)}
-                    alt={user.fullName}
-                    onError={() => setAvatarError(true)}
-                  />
-                  <AvatarFallback className="rounded-lg">
-                    {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
+
+            <DropdownMenuLabel>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage src={defaultAvatar} />
+                  <AvatarFallback>
+                    {user.fullName?.charAt(0)?.toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
+
+                <div className="flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="truncate font-medium">{user.fullName}</span>
-                    {user.isVip && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm">
-                        <Crown className="w-2.5 h-2.5" />
-                        VIP
-                      </span>
-                    )}
+                    <span className="font-medium">{user.fullName}</span>
+                    {isVipActive && <VipBadge />}
                   </div>
-                  <span className="text-muted-foreground truncate text-xs">
+                  <span className="text-xs text-muted-foreground">
                     {user.email}
                   </span>
                 </div>
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => router.push('/account')} >
+              <DropdownMenuItem onClick={() => router.push("/account")}>
                 <UserCircle />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/notifications')} >
+
+              <DropdownMenuItem onClick={() => router.push("/notifications")}>
                 <Bell />
                 Notifications
               </DropdownMenuItem>
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>
+
           </DropdownMenuContent>
+
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>

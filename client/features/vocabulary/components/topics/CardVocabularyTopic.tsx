@@ -1,7 +1,7 @@
 import { EnhancedPopover } from "@/components/common/popoves";
 import { Card } from "@/components/ui/card";
 import { Popover } from "@/components/ui/popover";
-import { VocabularyTopics } from "@/types/vocabulary";
+import { VocabularyTopics } from "@/features/vocabulary/types";
 import { PopoverTrigger } from "@radix-ui/react-popover";
 import { Star, Crown } from "lucide-react";
 import Image from "next/image";
@@ -11,7 +11,7 @@ interface CardVocabularyTopicProps {
 }
 
 export default function CardVocabularyTopic({ topic }: CardVocabularyTopicProps) {
-  const level = (topic as any)?.level as string | undefined
+  const level = topic.level as string | undefined
   return (
     <div className="w-full cursor-pointer h-full">
       <Popover>

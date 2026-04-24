@@ -73,17 +73,17 @@ export async function getAllUserScoresPaginated(
 
   const url = `/user-scores/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
   const res = await AuthorizedAxios.get(url)
-  const payload = res.data as PaginatedUserScoreResponse
+  const payload = res.data as ApiResponse<UserScore[]>
 
   const pagination: UserScorePaginationMeta = {
-    page: payload.page ?? params?.page ?? 1,
-    limit: payload.limit ?? params?.limit ?? 10,
-    total: payload.total ?? 0,
-    pages: payload.pages ?? 0,
-    hasPrev: payload.hasPrev ?? false,
-    hasNext: payload.hasNext ?? false,
-    prev: payload.prev ?? null,
-    next: payload.next ?? null,
+    page: payload.pagination?.page ?? params?.page ?? 1,
+    limit: payload.pagination?.limit ?? params?.limit ?? 10,
+    total: payload.pagination?.total ?? 0,
+    pages: payload.pagination?.pages ?? 0,
+    hasPrev: payload.pagination?.hasPrev ?? false,
+    hasNext: payload.pagination?.hasNext ?? false,
+    prev: payload.pagination?.prev ?? null,
+    next: payload.pagination?.next ?? null,
   }
 
   return {

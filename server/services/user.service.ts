@@ -2,7 +2,6 @@ import { IUser, User, IUserPaginateResult } from "../models/user.model";
 import ErrorHandler from "../utils/ErrorHandler";
 import XLSX from 'xlsx'
 import mongoose from "mongoose";
-import { Plan } from "../models/plan.model";
 import { UserInfo } from "./auth.service";
 import { MediaService } from "./media.service";
 import { StudyHistory } from "../models/studyHistory.model";
@@ -47,7 +46,7 @@ export class UserService {
         user.email,
         user.role,
         user.isActive ? "true" : "false",
-        user.isVip ? "true" : "false",
+        user.vipStartDate && user.vipExpireDate && new Date(user.vipExpireDate) > new Date() ? "true" : "false",
         user.currentLevel || "Beginner",
         String(user.totalPoints || 0),
         String(user.currentStreak || 0),
@@ -111,7 +110,7 @@ export class UserService {
       select: "-password",
       lean: false,
       customLabels: {
-        docs: "users",
+        docs: "docs",
         totalDocs: "total",
         limit: "limit",
         page: "page",
@@ -123,7 +122,13 @@ export class UserService {
       },
     };
 
-    return await User.paginate(query, paginateOptions);
+    return await User.paginate(query, {
+      ...paginateOptions,
+      populate: {
+        path: "avatar",
+        select: "url"
+      }
+    });
   }
 
   // (ADMIN) Cập nhật trạng thái cho nhiều người dùng
@@ -180,9 +185,10 @@ export class UserService {
       totalStudyTime: user.totalStudyTime,
       totalPoints: user.totalPoints,
       isActive: user.isActive,
-      isVip: user.isVip,
+      isVip: user.vipStartDate && user.vipExpireDate && user.vipExpireDate > new Date() || false,
       vipPlanId: user.vipPlanId?.toString() || "",
       vipStartDate: user.vipStartDate,
+      vipExpireDate: user.vipExpireDate || null
     } as unknown as IUser;
   }
 
@@ -449,26 +455,5 @@ export class UserService {
     }
 
     return user;
-  }
-
-  // (USER) MIDDLEWARE KIỂM TRA VIP
-  static async checkVip(userId: string): Promise<void> {
-    const user = await User.findById(userId).select("-password");
-    if (!user) throw new ErrorHandler("Không tìm thấy người dùng", 404);
-    if (user.role === 'user' && user.isVip && user.vipStartDate) {
-      const vipPlan = await Plan.findById(user.vipPlanId)
-      if (!vipPlan) throw new ErrorHandler('Gói vip không tồn tại', 404)
-      if (vipPlan.isActive === false) throw new ErrorHandler('Gói vip đã bị khóa', 403)
-      const durationDays = vipPlan.billingCycle === 'monthly' ? 30
-        : vipPlan.billingCycle === 'yearly' ? 365
-          : 365000 // ~1000 years
-      if (new Date(user.vipStartDate).getTime() + durationDays * 24 * 60 * 60 * 1000 < new Date().getTime()) {
-        user.isVip = false
-        user.vipPlanId = undefined
-        user.vipStartDate = undefined
-        await user.save()
-        throw new ErrorHandler('Gói vip đã hết hạn', 403)
-      }
-    }
   }
 }

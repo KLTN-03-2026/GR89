@@ -139,7 +139,7 @@ export default function ProfileTab({ isEditing, onEdit, onCancel, setIsEditing }
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-medium text-gray-900">{form.fullName || user?.fullName || 'Người dùng'}</h3>
-                {user?.isVip && (
+                {user?.vipStartDate && user?.vipExpireDate && user?.vipExpireDate > new Date() && (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm">
                     <Crown className="w-3 h-3" />
                     VIP

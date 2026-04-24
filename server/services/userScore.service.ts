@@ -29,6 +29,7 @@ interface UserScoreSummary {
   userId: Types.ObjectId
   fullName: string
   email: string
+  avatar: string
   totalPoints: number
   vocabularyPoints: number
   grammarPoints: number
@@ -191,9 +192,13 @@ export class UserScoreService {
       filter.isActive = isActive;
     }
 
-    const users = await User.find(filter).select("-password");
+    const users = await User.find(filter).select("-password").populate({
+      path: "avatar",
+      select: "url",
+    });
     const activeLessonIds = await this.getActiveLessonIds();
     const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, activeLessonIds)));
+
 
     this.sortUserScores(summaries, sortBy, sortOrder);
 
@@ -347,28 +352,14 @@ export class UserScoreService {
       speakingPoints;
     const totalStudyTime = totals.totalStudyTime;
 
-    const isVip = user.isVip || false;
+    const isVip = user.vipStartDate && user.vipExpireDate && new Date(user.vipExpireDate) > new Date() || false;
     const vipStartDate = user.vipStartDate || undefined;
     const vipPlanId = user.vipPlanId || undefined;
     let vipPlanName: string | undefined = undefined;
-    let vipExpiryDate: Date | undefined = undefined;
 
     if (isVip && vipPlanId && vipStartDate) {
       const plan = await Plan.findById(vipPlanId);
-      if (plan) {
-        vipPlanName = plan.name;
-
-        const startDate = new Date(vipStartDate);
-        if (plan.billingCycle === "monthly") {
-          vipExpiryDate = new Date(startDate);
-          vipExpiryDate.setMonth(vipExpiryDate.getMonth() + 1);
-        } else if (plan.billingCycle === "yearly") {
-          vipExpiryDate = new Date(startDate);
-          vipExpiryDate.setFullYear(vipExpiryDate.getFullYear() + 1);
-        } else if (plan.billingCycle === "lifetime") {
-          vipExpiryDate = undefined;
-        }
-      }
+      if (plan) { vipPlanName = plan.name; }
     }
 
     return {
@@ -376,6 +367,7 @@ export class UserScoreService {
       userId: userObjectId,
       fullName: user.fullName,
       email: user.email,
+      avatar: user.avatar && (user.avatar as any).url ? (user.avatar as any).url : null,
       totalPoints,
       vocabularyPoints,
       grammarPoints,
@@ -393,7 +385,7 @@ export class UserScoreService {
       vipStartDate: vipStartDate ? new Date(vipStartDate).toISOString() : undefined,
       vipPlanId: vipPlanId ? String(vipPlanId) : undefined,
       vipPlanName,
-      vipExpiryDate: vipExpiryDate ? vipExpiryDate.toISOString() : undefined,
+      vipExpiryDate: user.vipExpireDate || undefined,
     };
   }
 

@@ -83,13 +83,13 @@ export function ListCardIpa({ ipaList }: ListCardIpaProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl bg-white">
+    <div className="overflow-x-auto rounded-xl bg-white xl:px-10">
       <table className="min-w-[980px] w-full border-collapse text-center">
         <thead>
           <tr className="bg-gray-100 text-sm font-semibold text-gray-800">
             <th className="w-14" />
-            <th colSpan={4} className="py-1 text-xl">Nguyên âm đơn</th>
-            <th colSpan={3} className="py-1 text-xl">Nguyên âm đôi</th>
+            <th colSpan={4} className="py-5 mx-1 text-md md:text-xl uppercase">Nguyên âm đơn</th>
+            <th colSpan={3} className="py-5 mx-1 text-md md:text-xl uppercase">Nguyên âm đôi</th>
           </tr>
         </thead>
 
@@ -101,7 +101,7 @@ export function ListCardIpa({ ipaList }: ListCardIpaProps) {
                   rowSpan={3}
                   className="bg-[#ececec] align-middle"
                 >
-                  <span className="[writing-mode:vertical-rl] rotate-180 text-xl font-semibold tracking-wide">
+                  <span className="[writing-mode:vertical-rl] uppercase rotate-180 text-md md:text-xl font-semibold tracking-wide">
                     NGUYÊN ÂM
                   </span>
                 </td>
@@ -126,7 +126,7 @@ export function ListCardIpa({ ipaList }: ListCardIpaProps) {
                   rowSpan={3}
                   className="bg-[#f5f5aa] align-middle"
                 >
-                  <span className="[writing-mode:vertical-rl] rotate-180 text-xl font-semibold tracking-wide">
+                  <span className="[writing-mode:vertical-rl] uppercase rotate-180 text-md md:text-xl font-semibold tracking-wide">
                     PHỤ ÂM
                   </span>
                 </td>

@@ -16,12 +16,12 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  User as UserIcon, 
-  Mail, 
-  ShieldCheck, 
-  Activity, 
-  Save, 
+import {
+  User as UserIcon,
+  Mail,
+  ShieldCheck,
+  Activity,
+  Save,
   X,
   Loader2,
   Sparkles,
@@ -59,27 +59,20 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
 
   const handleUpdate = async () => {
     setLoading(true)
-    try {
-      const response = await updateUser(user._id, {
-        fullName,
-        email,
-        role,
-        isActive
-      })
-
-      if (response.success) {
+    await updateUser(user._id, {
+      fullName,
+      email,
+      role,
+      isActive
+    })
+      .then(() => {
         toast.success('Cập nhật người dùng thành công')
         setIsOpen(false)
         callback()
-      } else {
-        toast.error(response.message || 'Có lỗi xảy ra')
-      }
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || 'Có lỗi xảy ra khi cập nhật người dùng'
-      toast.error(errorMessage)
-    } finally {
-      setLoading(false)
-    }
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   return (
@@ -109,7 +102,7 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
                 <Info className="w-4 h-4" />
                 Thông Tin Định Danh
               </div>
-              
+
               <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label htmlFor="fullname-edit" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
@@ -152,12 +145,12 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Vai Trò Hệ Thống
                   </Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as any)}>
+                  <Select value={role} onValueChange={(v) => setRole(v as 'content')}>
                     <SelectTrigger className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-indigo-500 font-bold px-4 shadow-sm">
                       <SelectValue placeholder="Chọn vai trò" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
-                      <SelectItem value="admin" className="rounded-xl font-bold text-rose-600">Quản trị viên (Admin)</SelectItem>
+                      {/* <SelectItem value="admin" className="rounded-xl font-bold text-rose-600">Quản trị viên (Admin)</SelectItem> */}
                       <SelectItem value="content" className="rounded-xl font-bold text-indigo-600">Biên tập viên (Content)</SelectItem>
                       <SelectItem value="user" className="rounded-xl font-bold text-gray-700">Học viên (User)</SelectItem>
                     </SelectContent>
@@ -187,14 +180,14 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
                 <History className="w-4 h-4" />
                 Lịch Sử Hoạt Động
               </div>
-              
+
               <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     <Activity className="w-3 h-3" /> Đăng nhập lần cuối
                   </div>
                   <div className="text-xs font-bold text-slate-700">
-                    {user.lastLogin ? format(new Date(user.lastLogin), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'Chưa từng đăng nhập'}
+                    {user.lastActiveDate ? format(new Date(user.lastActiveDate), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'Chưa từng đăng nhập'}
                   </div>
                 </div>
 
@@ -216,16 +209,16 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
         <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
           <div className="flex items-center justify-end gap-4 w-full">
             <SheetClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-12 px-8 rounded-2xl border-gray-200 font-bold text-gray-600 hover:bg-white transition-all active:scale-95"
                 disabled={loading}
               >
                 Hủy Bỏ
               </Button>
             </SheetClose>
-            <Button 
-              onClick={handleUpdate} 
+            <Button
+              onClick={handleUpdate}
               disabled={loading}
               className="h-12 px-10 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-200 font-black transition-all active:scale-95"
             >

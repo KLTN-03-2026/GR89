@@ -21,9 +21,9 @@ export interface IUser extends Document {
   isActive: boolean;
   lastActiveDate?: Date;
   lastLearnDate?: Date;
-  isVip?: boolean;
   vipPlanId?: mongoose.Types.ObjectId;
   vipStartDate?: Date;
+  vipExpireDate?: Date;
   freezeCount?: number;
   isEmailVerified?: boolean;
   verificationToken?: string;
@@ -141,10 +141,6 @@ const userSchema = new Schema<IUser>({
     type: Date,
     default: null,
   },
-  isVip: {
-    type: Boolean,
-    default: false,
-  },
   vipPlanId: {
     type: Schema.Types.ObjectId,
     ref: 'Plan',
@@ -153,6 +149,10 @@ const userSchema = new Schema<IUser>({
   vipStartDate: {
     type: Date,
     default: null,
+  },
+  vipExpireDate: {
+    type: Date,
+    default: null
   },
   freezeCount: {
     type: Number,

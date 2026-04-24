@@ -5,19 +5,6 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { Payment } from "../models/payment.model";
 
 export class PaymentController {
-  /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
-
-  // (VNPay) Callback xử lý kết quả thanh toán từ VNPay
-  static vnpayCallback = CatchAsyncError(async (req: Request, res: Response) => {
-    const vnpParams = req.body
-    const result = await PaymentService.handleVNPayCallback(vnpParams);
-
-    res.status(200).json({
-      success: result.success,
-      message: result.message,
-    });
-  });
-
   /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
 
   // (ADMIN) Lấy danh sách giao dịch (có phân trang & tìm kiếm)
@@ -53,12 +40,12 @@ export class PaymentController {
 
       const result = await PaymentService.getAllPaymentsPaginated(options);
 
-
       const paidCount = await Payment.countDocuments({ status: "paid" });
       const totalRevenue = await Payment.aggregate([
         { $match: { status: "paid" } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]);
+
       res.status(200).json({
         success: true,
         message: "Lấy danh sách giao dịch thành công",
@@ -100,21 +87,15 @@ export class PaymentController {
   static createPaymentUrl = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
       const userId = req.user?._id as string;
-      const { planId, returnUrl, couponCode } = req.body;
+      const { planId, couponCode } = req.body;
 
       if (!planId) {
         return next(new ErrorHandler("Vui lòng lựa chọn gói khóa học", 400));
       }
 
-      const ipAddr = req.ip || req.socket.remoteAddress || "127.0.0.1";
-
       const result = await PaymentService.createQRPayment({
         userId,
         planId,
-        ipAddr,
-        returnUrl:
-          returnUrl ||
-          `${process.env.CLIENT_BASE_URL || "http://localhost:3000"}/payment/callback`,
         couponCode: couponCode || undefined,
       });
 
@@ -125,6 +106,17 @@ export class PaymentController {
       });
     }
   );
+
+  static payOSWebhook = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const payload = req.body
+
+    const result = await PaymentService.payOSWebhook(payload)
+    return res.status(200).json({
+      success: true,
+      message: "Webhook received successfully",
+      date: result
+    })
+  })
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 

@@ -54,8 +54,7 @@ export function UpgradeDialog({ open, onClose, onUpgradeSuccess }: UpgradeDialog
       setIsProcessingPayment(true)
       const res = await createPaymentUrl({
         planId,
-        couponCode: coupon,
-        returnUrl: `${window.location.origin}/payment/callback`
+        couponCode: coupon
       })
 
       if (res.success && res.data?.paymentUrl) {

@@ -70,8 +70,6 @@ export const authenticateTokenUser = CatchAsyncError(
       await StreakService.checkAndResetStreak(req.user._id)
       // Cập nhật lastActiveDate
       await updateLastActiveDateForUser(req.user._id)
-      // Kiểm tra vip
-      await UserService.checkVip(req.user._id)
     }
 
     next();

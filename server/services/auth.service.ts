@@ -7,7 +7,6 @@ import { sendMail } from '../providers/mailer.provider';
 import bcrypt from 'bcrypt';
 import { StreakService } from './streak.service'
 import axios from 'axios';
-import { Plan } from '../models/plan.model';
 
 interface RegisterData {
   fullName: string;
@@ -38,9 +37,9 @@ export interface UserInfo {
   totalStudyTime: number;
   totalPoints: number;
   isActive: boolean;
-  isVip: boolean;
   vipPlanId: string;
-  vipStartDate: Date;
+  vipStartDate?: Date;
+  vipExpireDate?: Date
 }
 
 interface AuthResponse {
@@ -76,9 +75,9 @@ export class AuthService {
         city: user.city || '',
         role: user.role,
         isActive: user.isActive,
-        isVip: user.isVip || false,
         vipPlanId: user.vipPlanId?.toString() || '',
         vipStartDate: user.vipStartDate || null,
+        vipExpireDate: user.vipExpireDate || null,
       } as unknown as UserInfo
     };
   }
@@ -244,7 +243,7 @@ export class AuthService {
         city: user.city || '',
         role: user.role,
         isActive: user.isActive,
-        isVip: user.isVip || false,
+        vipExpireDate: user.vipExpireDate || null,
         vipPlanId: user.vipPlanId?.toString() || '',
         vipStartDate: user.vipStartDate || null,
       } as unknown as UserInfo,
@@ -306,7 +305,7 @@ export class AuthService {
         city: existingUser.city || '',
         role: existingUser.role,
         isActive: existingUser.isActive,
-        isVip: existingUser.isVip || false,
+        vipExpireDate: existingUser.vipExpireDate || null,
         vipPlanId: existingUser.vipPlanId?.toString() || '',
         vipStartDate: existingUser.vipStartDate || null,
       } as unknown as UserInfo,
@@ -363,7 +362,7 @@ export class AuthService {
       city: newUser.city || '',
       role: newUser.role,
       isActive: newUser.isActive,
-      isVip: newUser.isVip || false,
+      vipExpireDate: newUser.vipExpireDate || null,
       vipPlanId: newUser.vipPlanId?.toString() || '',
       vipStartDate: newUser.vipStartDate || null,
     } as unknown as UserInfo

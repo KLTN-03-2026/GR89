@@ -477,7 +477,7 @@ export class SpeakingService {
   static async saveHighestScore(userId: string, speakingId: string, studyTimeSeconds: number = 0, speakingProgresses: ISpeakingProgress[]): Promise<IStudyHistory> {
     const speaking = await Speaking.findById(speakingId);
     if (!speaking) throw new ErrorHandler("Bài nói không tồn tại", 404);
-    console.log('vào')
+
     if (speakingProgresses.length === 0) throw new ErrorHandler("Không có kết quả luyện nói", 400);
     const newSpeakingProgresses = await SpeakingProgress.create(speakingProgresses.map(sp => ({
       userId,

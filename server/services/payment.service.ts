@@ -1,11 +1,10 @@
 import mongoose from "mongoose";
 import { IPayment, IPaymentPaginateResult, Payment } from "../models/payment.model";
 import ErrorHandler from "../utils/ErrorHandler";
-import { dateFormat, HashAlgorithm, ignoreLogger, ProductCode, VNPay, VnpLocale } from "vnpay";
-import { Plan } from "../models/plan.model";
+import { IPlan, Plan } from "../models/plan.model";
 import { CouponService } from "./coupon.service";
-import { UserInfo } from "./auth.service";
 import { User } from "../models/user.model";
+import { payOSProvider } from "../providers/payOS.provider";
 
 export interface IPaymentData {
   userId: string;
@@ -46,62 +45,17 @@ const formatVNPayDate = (date: Date): string => {
 export class PaymentService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
-  // (VNPay) Xử lý callback từ VNPay sau khi người dùng thanh toán
-  static async handleVNPayCallback(params: any): Promise<{
-    success: boolean;
-    paymentId?: string;
-    message: string;
-  }> {
-    const {
-      vnp_ResponseCode,
-      vnp_TxnRef,
-      vnp_TransactionStatus,
-    } = params;
-
-    const vnpay = new VNPay({
-      tmnCode: process.env.VNPAY_TMN_CODE || "",
-      secureSecret: process.env.VNPAY_HASH_SECRET || "",
-      vnpayHost: process.env.VNPAY_URL || "",
-      testMode: true,
-      hashAlgorithm: HashAlgorithm.SHA512,
-      loggerFn: ignoreLogger,
-    });
-
-    const isValid = vnpay.verifyReturnUrl(params);
-    if (!isValid) {
-      return { success: false, message: "Chữ ký không hợp lệ" };
-    }
-
-    const paymentId = vnp_TxnRef;
-    const payment = await Payment.findById(paymentId);
-    if (!payment) {
-      return { success: false, message: "Không tìm thấy giao dịch" };
-    }
-
-    if (payment.status !== "pending") {
-      return {
-        success: payment.status === "paid",
-        paymentId,
-        message: "Giao dịch đã được xử lý trước đó",
-      };
-    }
-
-    if (vnp_ResponseCode === "00" && vnp_TransactionStatus === "00") {
-      payment.status = "paid";
-      payment.paymentDate = new Date();
-      await payment.save();
-
-      if (payment.couponId) {
-        await CouponService.incrementCouponUsage(String(payment.couponId));
-      }
-
-      await this.syncVipStatus(String(payment.userId), String(payment.planId));
-
-      return { success: true, paymentId, message: "Thanh toán thành công" };
-    } else {
-      payment.status = "failed";
-      await payment.save();
-      return { success: false, paymentId, message: "Thanh toán thất bại hoặc bị hủy" };
+  // Helper Lấy thời gian của gói vip
+  private static async getTimePlan(plan: IPlan): Promise<number> {
+    switch (plan.billingCycle) {
+      case 'monthly':
+        return 30 * 24 * 60 * 60 * 1000;
+      case 'yearly':
+        return 365 * 24 * 60 * 60 * 1000;
+      case 'lifetime':
+        return 1000 * 365 * 24 * 60 * 60 * 1000
+      default:
+        return 0
     }
   }
 
@@ -110,32 +64,19 @@ export class PaymentService {
     const plan = await Plan.findById(planId);
     if (!plan) return;
 
-    let durationDays = 0;
-    switch (plan.billingCycle) {
-      case "monthly":
-        durationDays = 30;
-        break;
-      case "yearly":
-        durationDays = 365;
-        break;
-      case "lifetime":
-        durationDays = 36500; // ~100 years
-        break;
-    }
-
     const user = await User.findById(userId);
     if (!user) return;
 
-    const now = new Date();
-    let startDate = now;
+    const timePlan = await this.getTimePlan(plan)
 
-    if (user.isVip && user.vipStartDate && user.vipStartDate > now) {
-      startDate = user.vipStartDate;
+    const now = new Date();
+    if (user.vipExpireDate && user.vipExpireDate > now) {
+      user.vipExpireDate = new Date(user.vipExpireDate.getTime() + timePlan);
+    } else {
+      user.vipStartDate = now;
+      user.vipExpireDate = new Date(now.getTime() + timePlan);
     }
 
-    user.isVip = true;
-    user.vipPlanId = new mongoose.Types.ObjectId(planId);
-    user.vipStartDate = user.vipStartDate || now;
 
     await user.save();
   }
@@ -230,19 +171,15 @@ export class PaymentService {
     return payments;
   }
 
-  // (USER) Tạo link thanh toán VNPay (QR Code)
+  // (USER) Tạo link thanh toán PayOS (QR Code)
   static async createQRPayment(params: {
     planId: string;
-    userId?: string;
-    ipAddr?: string;
-    returnUrl?: string;
+    userId: string;
     couponCode?: string;
   }): Promise<{ paymentUrl: string; paymentId: string }> {
     const {
       planId,
       userId,
-      ipAddr = "127.0.0.1",
-      returnUrl = `${process.env.CLIENT_BASE_URL || "http://localhost:3000"}/payment/callback`,
       couponCode,
     } = params;
 
@@ -259,48 +196,71 @@ export class PaymentService {
       finalAmount = Math.max(0, plan.price - discountAmount);
       couponId = coupon._id as mongoose.Types.ObjectId;
     }
+    const orderCode = Date.now() + Math.floor(Math.random() * 1000);
 
     const newPayment = await Payment.create({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userId,
       planId: plan._id,
       amount: finalAmount,
-      provider: "vnpay",
+      provider: "payos",
       status: "pending",
       couponId,
       discountAmount,
+      orderCode: orderCode,
     });
 
-    const vnpay = new VNPay({
-      tmnCode: process.env.VNPAY_TMN_CODE || "",
-      secureSecret: process.env.VNPAY_HASH_SECRET || "",
-      vnpayHost: process.env.VNPAY_URL || "",
-      testMode: true,
-      hashAlgorithm: HashAlgorithm.SHA512,
-      loggerFn: ignoreLogger,
-    });
+    if (finalAmount > 0) {
+      const paymentData = {
+        orderCode: newPayment.orderCode,
+        amount: Math.round(finalAmount),
+        description: `Thanh toán gói ${plan.name}`,
+        items: [
+          {
+            name: `${plan.name} - ${finalAmount.toLocaleString('vi-VN')} VND`,
+            quantity: 1,
+            price: finalAmount,
+          },
+        ],
+        cancelUrl: `${process.env.CLIENT_BASE_URL}/payment/cancel`,
+        returnUrl: `${process.env.CLIENT_BASE_URL}/payment/success`,
+      };
+      const paymentLink = await payOSProvider.paymentRequests.create(paymentData);
 
-    const createDate = new Date();
-    const expireDate = new Date(Date.now() + 10 * 60 * 1000);
-    const vnpAmount = Math.round(finalAmount);
-
-    const vnpayResponse = await vnpay.buildPaymentUrl({
-      vnp_Amount: vnpAmount,
-      vnp_IpAddr: ipAddr,
-      vnp_TxnRef: String(newPayment._id),
-      vnp_OrderInfo: `Thanh toán gói ${plan.name}${discountAmount > 0 ? ` - Giảm ${discountAmount.toLocaleString("vi-VN")}đ` : ""
-        } - ${finalAmount.toLocaleString("vi-VN")}đ`,
-      vnp_OrderType: ProductCode.Other,
-      vnp_ReturnUrl: returnUrl,
-      vnp_Locale: VnpLocale.VN,
-      vnp_CreateDate: Number(formatVNPayDate(createDate)),
-      vnp_ExpireDate: Number(formatVNPayDate(expireDate)),
-    });
-
-    const paymentUrl =
-      typeof vnpayResponse === "string" ? vnpayResponse : (vnpayResponse as any).url;
-
-    return { paymentUrl, paymentId: String(newPayment._id) };
+      return { paymentUrl: paymentLink.checkoutUrl, paymentId: String(newPayment._id) };
+    }
+    else {
+      newPayment.status = 'paid'
+      await newPayment.save();
+      await this.syncVipStatus(userId, planId)
+      return { paymentUrl: `${process.env.CLIENT_BASE_URL}/payment/success`, paymentId: String(newPayment._id) };
+    }
   }
+
+  static async payOSWebhook(payload: any): Promise<void> {
+    const isValid = payOSProvider.webhooks.verify(payload);
+    if (!isValid) throw new ErrorHandler("Webhook không hợp lệ", 400);
+    const { orderCode } = payload;
+    const payment = await Payment.findOne({ orderCode });
+    if (!payment) throw new ErrorHandler("Giao dịch không tồn tại", 404);
+
+    if (payload.data.code === "00" && payload.code === "00") {
+      payment.status = "paid";
+      payment.paymentDate = new Date();
+      await payment.save();
+      await this.syncVipStatus(payment.userId.toString(), payment.planId.toString());
+      const coupon = await CouponService.getCouponById(payment.couponId?.toString() || "");
+      if (coupon) {
+        coupon.usedCount = coupon.usedCount + 1;
+        await coupon.save();
+      }
+    }
+    else {
+      payment.status = "failed";
+      await payment.save();
+    }
+  }
+
+
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 

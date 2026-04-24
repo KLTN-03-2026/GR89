@@ -64,7 +64,6 @@ export async function validateCoupon(
 export async function createPaymentUrl(body: {
   planId: string
   couponCode?: string
-  returnUrl?: string
 }): Promise<ApiResponse<CreatePaymentResponse>> {
   const response = await authorizedAxios.post<ApiResponse<CreatePaymentResponse>>('/payment/create-url', body)
   return response.data

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { User } from "@/features/user/types"
 import { Role } from "@/features/role/types"
 import ActionsCell from "./ActionsCell"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Shield } from "lucide-react"
 
 // Mock roles data - replace with real API
@@ -13,7 +13,6 @@ const mockRoles: Record<string, Role> = {
   "admin": { _id: "admin", name: "Quản trị viên", description: "Quản trị viên", permissions: ["all"] },
   "user": { _id: "user", name: "Học viên", description: "Học viên", permissions: ["read"] },
   "content": { _id: "content", name: "Quản lý nội dung", description: "Quản lý nội dung", permissions: ["content:read", "content:write", "content:delete"] },
-  "moderator": { _id: "moderator", name: "Điều hành viên", description: "Điều hành viên", permissions: ["read", "write"] }
 }
 
 function getRoleInfo(role: string) {
@@ -77,6 +76,7 @@ export const columnsUser = (): ColumnDef<User>[] => [
       return (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
+            <AvatarImage src={user.avatar?.url || '/images/avatar-default.jpg'} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary">
               {getInitials(user.fullName)}
             </AvatarFallback>
@@ -117,7 +117,6 @@ export const columnsUser = (): ColumnDef<User>[] => [
       )
     }
   },
-
 
   {
     accessorKey: "isActive",

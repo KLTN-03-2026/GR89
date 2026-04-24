@@ -13,7 +13,7 @@ export interface User {
   longestStreak: number;
   totalStudyTime: number;
   totalPoints: number;
-  isVip?: boolean;
   vipPlanId?: string;
   vipStartDate?: Date | null;
+  vipExpireDate?: Date | null;
 }

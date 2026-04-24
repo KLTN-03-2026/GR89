@@ -375,7 +375,7 @@ export class ListeningController {
       resourceType: 'listening',
       resourceId: id,
       description: 'Bật/tắt VIP cho bài nghe',
-      metadata: { isVipRequired: (listening as any)?.isVipRequired }
+      metadata: { isVipRequired: listening.isVipRequired }
     })
     res.status(200).json({
       success: true,

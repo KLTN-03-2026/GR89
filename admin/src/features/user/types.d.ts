@@ -3,12 +3,15 @@ export interface User {
   fullName: string;
   email: string;
   isActive: boolean;
+  avatar?: {
+    url: string
+  }
   role: 'user' | 'admin' | 'content';
   currentStreak: number;
   longestStreak: number;
   totalStudyTime: number;
   totalPoints: number;
-  avatar?: string;
+  lastActiveDate?: Date;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -18,6 +21,7 @@ export interface UserScore {
   userId: string;
   fullName: string;
   email: string;
+  avatar: string;
   currentLevel: string;
   totalPoints: number;
   ipaPoints: number;
