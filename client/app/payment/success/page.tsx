@@ -25,7 +25,7 @@ export default function PaymentResultPage() {
   const status = searchParams.get('status')
   const cancel = searchParams.get('cancel')
 
-  const isSuccess = code === '00' && status === 'PAID'
+  const isSuccess = code === '00' ? code === '00' && status === 'PAID' : true
   const isCancel = cancel === 'true' || status === 'CANCELLED'
 
   const ui = isSuccess
@@ -80,7 +80,6 @@ export default function PaymentResultPage() {
 
         {/* BUTTONS */}
         <div className="mt-8 flex flex-col gap-3">
-
           {isSuccess ? (
             <>
               <button

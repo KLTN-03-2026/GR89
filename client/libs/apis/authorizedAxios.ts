@@ -7,6 +7,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 let isRefreshing = false
 let pendingRequests: (() => void)[] = []
 
+export const AuthorizedAxios = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+})
+
 function translateErrorMessage(message: string): string {
   const translations: Record<string, string> = {
     "Duplicate title entered": "Tiêu đề đã tồn tại",

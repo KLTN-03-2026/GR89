@@ -43,6 +43,7 @@ export class ReadingController {
   // (ADMIN) Lấy thống kê tổng quan về Reading
   static getOverviewStats = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const stats = await ReadingService.getOverviewStats()
+
     res.status(200).json({
       success: true,
       message: 'Lấy thống kê tổng quan Reading thành công',

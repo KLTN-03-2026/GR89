@@ -7,6 +7,7 @@ import { login, loginGoogle, logout, register } from '@/features/auth/services/a
 import { getMyProfile, updateMyAvatar, updateMyProfile } from '@/features/account/services/accountApi'
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
+import { AuthorizedAxios } from "../apis/authorizedAxios";
 
 interface LoginRequest {
   email: string
@@ -112,12 +113,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   })
 
   const logoutUser = async () => {
+    setIsLoading(true)
     await logout()
-      .then(() => {
-        setUser(null)
-        toast.success('Đăng xuất thành công')
-        localStorage.removeItem('user')
-        router.push('/')
+      .then(async () => {
+        await AuthorizedAxios.post('/auth/logout', { role: 'user' })
+          .then(() => {
+            router.push('/')
+            setUser(null)
+            localStorage.removeItem('user')
+            toast.success('Đăng xuất thành công')
+          })
+          .finally(() => {
+            setIsLoading(false)
+          })
       })
       .finally(() => {
         setIsLoading(false)
