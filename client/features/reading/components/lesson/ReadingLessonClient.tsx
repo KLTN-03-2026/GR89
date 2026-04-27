@@ -5,12 +5,13 @@ import { LessonHeader } from "./LessonHeader"
 import { PassageSection } from "./PassageSection"
 import QuizPanel from "../exam/QuizPanel"
 import { IQuizResultData } from "@/features/quizz/types"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "react-toastify"
 import { doReadingQuiz } from "@/features/quizz/services/quizzApi"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BookOpen, HelpCircle } from "lucide-react"
+import { useStudySession } from "@/libs/hooks/useStudySession"
 
 interface ReadingLessonClientProps {
   reading: IReading
@@ -18,9 +19,14 @@ interface ReadingLessonClientProps {
 
 export function ReadingLessonClient({ reading }: ReadingLessonClientProps) {
   const [activeTab, setActiveTab] = useState("passage")
+  const { startSession, getSessionPayload } = useStudySession()
+
+  useEffect(() => {
+    startSession()
+  }, [startSession])
 
   const handleSubmitQuiz = async (results: IQuizResultData[]) => {
-    await doReadingQuiz(reading._id, results)
+    await doReadingQuiz(reading._id, results, getSessionPayload())
       .then(() => {
         toast.success("Nộp bài thành công!")
       })

@@ -651,6 +651,7 @@ export class VocabularyService {
       .filter(t => completedTopicIds.has(String(t._id)))
       .reduce((sum, t: any) => sum + (Array.isArray(t.vocabularies) ? t.vocabularies.length : 0), 0)
 
+
     const completedTopics = activeProgresses.filter(p => p.best.status === 'passed').length
     const totalTopics = topics.length
     const learnedProgresses = activeProgresses.filter(p => (p.best.resultId?.length || 0) > 0 || (p.best.progress || 0) > 0 || p.best.status === 'passed')
@@ -660,7 +661,7 @@ export class VocabularyService {
     const totalScore = Math.round(activeProgresses.reduce((s: number, p: any) => s + (p.best.progress || 0), 0) * 100) / 100
     const totalTime = activeProgresses.reduce((sum: number, p: any) => sum + (p.totalTime || 0), 0)
 
-    return { learnedWords, completedTopics, totalTopics, avgScore, totalScore, totalTime }
+    return { learnedWords, completedTopics, totalAvailable: activeProgresses.length, totalTopics, avgScore, totalScore, totalTime }
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

@@ -11,6 +11,7 @@ interface WritingHeaderProps {
 }
 
 export function WritingHeader({ overview }: WritingHeaderProps) {
+  console.log(overview)
   const descriptions: IDescription[] = [
     { text: 'Luyện kỹ năng viết tiếng Anh với các chủ đề đa dạng. Từ đoạn văn đến bài luận, nâng cao khả năng diễn đạt.' }
   ]
@@ -25,11 +26,10 @@ export function WritingHeader({ overview }: WritingHeaderProps) {
   const streakCard: IStreakCardProps = {
     icon: '✍️',
     title: 'Tiến độ viết',
-    value: completionPercent,
     valueText: `${completionPercent}%`,
     progress: completionPercent,
     progressDescription: totalAvailable > 0
-      ? `Đã hoàn thành ${completed}/${totalAvailable} bài viết`
+      ? `Hoàn thành ${completionPercent}%`
       : 'Chưa có bài viết nào',
     color: 'from-teal-500 to-teal-400'
   }
@@ -40,7 +40,7 @@ export function WritingHeader({ overview }: WritingHeaderProps) {
     title: 'Luyện Viết',
     titleHighlight: 'Tiếng Anh',
     badge: ' Sáng tạo',
-    badge2: `✍️ Hoàn thành ${completionPercent}%`,
+    badge2: `✍️ Tiến độ viết ${completionPercent}%`,
     descriptions,
     background: 'from-teal-500 via-cyan-500 to-blue-200'
   }
@@ -48,7 +48,7 @@ export function WritingHeader({ overview }: WritingHeaderProps) {
   const statsOverview: IStatsOverview[] = [
     {
       title: 'Bài viết',
-      value: `${completed}/${totalAvailable}`,
+      value: `${overview?.total ? overview?.total : 0}/${overview?.totalAvailable ?? 0}`,
       change: '',
       Icon: FileText,
       color: 'from-teal-500 to-teal-400'

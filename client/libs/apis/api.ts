@@ -79,6 +79,7 @@ export interface WritingOverview {
 export interface VocabularyOverview {
   learnedWords: number
   completedTopics: number
+  totalAvailable: number
   totalTopics: number
   avgScore: number
   totalScore: number

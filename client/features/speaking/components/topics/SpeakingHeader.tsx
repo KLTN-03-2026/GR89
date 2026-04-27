@@ -15,16 +15,15 @@ export function SpeakingHeader({ overview }: SpeakingHeaderProps) {
     { text: 'Luyện kỹ năng nói tiếng Anh với các chủ đề đa dạng. Từ hội thoại đến thuyết trình, nâng cao khả năng giao tiếp.' }
   ]
 
-  const completionPercent = overview && overview.total > 0
-    ? Math.round((overview.completed / overview.total) * 100)
+  const completionPercent = overview && overview.totalAvailable > 0
+    ? Math.round((overview.completed / overview.totalAvailable) * 100)
     : 0
 
   const streakCard: IStreakCardProps = {
     icon: '🎤',
     title: 'Tiến độ nói',
-    value: completionPercent,
     valueText: `${completionPercent}%`,
-    progress: 100,
+    progress: completionPercent,
     progressDescription: 'Dự kiến hoàn thành: 1.5 tháng nữa',
     color: 'from-orange-500 to-orange-400'
   }
@@ -41,7 +40,7 @@ export function SpeakingHeader({ overview }: SpeakingHeaderProps) {
   }
 
   const statsOverview: IStatsOverview[] = [
-    { title: 'Bài nói', value: `${overview?.completed ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: MessageCircle, color: 'from-orange-500 to-orange-400' },
+    { title: 'Bài nói', value: `${overview?.total ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: MessageCircle, color: 'from-orange-500 to-orange-400' },
     { title: 'Điểm trung bình', value: `${Number(overview?.avgProgress ?? 0).toFixed(2)}`, change: '', Icon: Brain, color: 'from-amber-500 to-amber-400' },
     { title: 'Tổng điểm', value: `${Number(overview?.totalScore ?? 0).toFixed(2)}`, change: '', Icon: Target, color: 'from-yellow-500 to-yellow-400' },
     { title: 'Thời gian học', value: formatStudyTime(overview?.totalTime || 0), change: '', Icon: Clock, color: 'from-slate-500 to-slate-400' },

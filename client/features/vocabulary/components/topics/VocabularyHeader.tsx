@@ -22,9 +22,8 @@ export function VocabularyHeader({ overview }: VocabularyHeaderProps) {
   const streakCard: IStreakCardProps = {
     icon: '📚',
     title: 'Tiến độ từ vựng',
-    value: completionPercent,
     valueText: `${completionPercent}%`,
-    progress: 100,
+    progress: completionPercent,
     progressDescription: 'Dự kiến hoàn thành: 1 tháng nữa',
     color: 'from-emerald-500 to-emerald-400'
   }
@@ -41,7 +40,7 @@ export function VocabularyHeader({ overview }: VocabularyHeaderProps) {
   }
 
   const statsOverview: IStatsOverview[] = [
-    { title: 'Chủ đề hoàn thành', value: `${overview?.completedTopics ?? 0}/${overview?.totalTopics ?? 0}`, change: '', Icon: BookOpen, color: 'from-emerald-500 to-emerald-400' },
+    { title: 'Chủ đề hoàn thành', value: `${overview?.totalAvailable ?? 0}/${overview?.totalTopics ?? 0}`, change: '', Icon: BookOpen, color: 'from-emerald-500 to-emerald-400' },
     { title: 'Điểm trung bình', value: `${Number(overview?.avgScore ?? 0).toFixed(2)}`, change: '', Icon: Brain, color: 'from-green-500 to-green-400' },
     { title: 'Tổng điểm', value: `${Number(overview?.totalScore ?? 0).toFixed(2)}`, change: '', Icon: Target, color: 'from-teal-500 to-teal-400' },
     { title: 'Thời gian học', value: formatStudyTime(overview?.totalTime || 0), change: '', Icon: Clock, color: 'from-slate-500 to-slate-400' },

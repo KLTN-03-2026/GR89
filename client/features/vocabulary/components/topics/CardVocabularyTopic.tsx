@@ -96,7 +96,7 @@ export default function CardVocabularyTopic({ topic }: CardVocabularyTopicProps)
             <EnhancedPopover
               href={`/study/vocabulary/${topic._id}`}
               skill="vocabulary"
-              isCompleted={topic.isCompleted}
+              isCompleted={topic.isResult}
               resultId={topic._id}
             />
           </PopoverTrigger>

@@ -15,16 +15,15 @@ export function ListeningHeader({ overview }: ListeningHeaderProps) {
     { text: 'Luyện kỹ năng nghe hiểu tiếng Anh với các bài nghe đa dạng. Từ hội thoại đến bài giảng.' }
   ]
 
-  const completionPercent = overview && overview.total > 0
-    ? Math.round((overview.completed / overview.total) * 100)
+  const completionPercent = overview && overview.totalAvailable > 0
+    ? Math.round((overview.completed / overview.totalAvailable) * 100)
     : 0
 
   const streakCard: IStreakCardProps = {
     icon: '🎧',
     title: 'Tiến độ nghe',
-    value: completionPercent,
     valueText: `${completionPercent}%`,
-    progress: 100,
+    progress: completionPercent,
     progressDescription: 'Dự kiến hoàn thành: 1.5 tháng nữa',
     color: 'from-pink-500 to-pink-400'
   }
@@ -41,7 +40,7 @@ export function ListeningHeader({ overview }: ListeningHeaderProps) {
   }
 
   const statsOverview: IStatsOverview[] = [
-    { title: 'Bài nghe', value: `${overview?.completed ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: BookOpen, color: 'from-pink-500 to-pink-400' },
+    { title: 'Bài nghe', value: `${overview?.total ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: BookOpen, color: 'from-pink-500 to-pink-400' },
     { title: 'Điểm trung bình', value: `${Number(overview?.avgProgress ?? 0).toFixed(2)}`, change: '', Icon: Brain, color: 'from-rose-500 to-rose-400' },
     { title: 'Tổng điểm', value: `${Number(overview?.totalScore ?? 0).toFixed(2)}`, change: '', Icon: Target, color: 'from-red-500 to-red-400' },
     { title: 'Thời gian học', value: formatStudyTime(overview?.totalTime || 0), change: '', Icon: Clock, color: 'from-slate-500 to-slate-400' },

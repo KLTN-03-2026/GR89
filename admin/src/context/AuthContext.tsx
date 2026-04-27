@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .then((res) => {
         setUser(res.data as User)
         toast.success('Đăng nhập thành công')
-        router.push('/dashboard/overview')
+        router.push('/')
         localStorage.setItem('admin', JSON.stringify(res.data))
       })
       .finally(() => {

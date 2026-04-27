@@ -13,6 +13,7 @@ export async function getVocabularyData() {
     overview: overview || {
       learnedWords: 0,
       completedTopics: 0,
+      totalAvailable: 0,
       totalTopics: 0,
       avgScore: 0,
       totalScore: 0,

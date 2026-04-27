@@ -4,7 +4,6 @@ export interface IStreakCardProps {
   icon: string
   title: string
   color: string
-  value: number
   valueText: string
   progress: number
   progressDescription: string

@@ -15,16 +15,15 @@ export function ReadingHeader({ overview }: ReadingHeaderProps) {
     { text: 'Luyện kỹ năng đọc hiểu tiếng Anh với các bài đọc đa dạng. Từ tin tức đến văn học, nâng cao khả năng đọc hiểu.' }
   ]
 
-  const completionPercent = overview && overview.total > 0
-    ? Math.round((overview.completed / overview.total) * 100)
+  const completionPercent = overview && overview.totalAvailable > 0
+    ? Math.round((overview.completed / overview.totalAvailable) * 100)
     : 0
 
   const streakCard: IStreakCardProps = {
     icon: '📖',
     title: 'Tiến độ đọc',
-    value: completionPercent,
     valueText: `${completionPercent}%`,
-    progress: 100,
+    progress: completionPercent,
     progressDescription: 'Dự kiến hoàn thành: 2 tháng nữa',
     color: 'from-indigo-500 to-indigo-400'
   }
@@ -41,7 +40,7 @@ export function ReadingHeader({ overview }: ReadingHeaderProps) {
   }
 
   const statsOverview: IStatsOverview[] = [
-    { title: 'Bài đọc', value: `${overview?.completed ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: BookOpen, color: 'from-indigo-500 to-indigo-400' },
+    { title: 'Bài đọc', value: `${overview?.total ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: BookOpen, color: 'from-indigo-500 to-indigo-400' },
     { title: 'Điểm trung bình', value: `${Number(overview?.avgProgress ?? 0).toFixed(2)}`, change: '', Icon: Brain, color: 'from-blue-500 to-blue-400' },
     { title: 'Tổng điểm', value: `${Number(overview?.totalScore ?? 0).toFixed(2)}`, change: '', Icon: Target, color: 'from-cyan-500 to-cyan-400' },
     { title: 'Thời gian học', value: formatStudyTime(overview?.totalTime || 0), change: '', Icon: Clock, color: 'from-slate-500 to-slate-400' },

@@ -16,15 +16,14 @@ export function IPAHeader({ overview }: IPAHeaderProps) {
   ]
 
   const completionPercent = overview && overview.total > 0
-    ? Math.round((overview.completed / overview.total) * 100)
+    ? Math.round((overview.completed / overview.totalAvailable) * 100)
     : 0
 
   const streakCard: IStreakCardProps = {
     icon: '🎤',
     title: 'Tiến độ IPA',
-    value: completionPercent,
     valueText: `${completionPercent}%`,
-    progress: 100,
+    progress: completionPercent,
     progressDescription: 'Dự kiến hoàn thành: 1 tháng nữa',
     color: 'from-purple-400 to-purple-300'
   }
@@ -41,7 +40,7 @@ export function IPAHeader({ overview }: IPAHeaderProps) {
   }
 
   const statsOverview: IStatsOverview[] = [
-    { title: 'Bài học IPA', value: `${overview?.completed ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: BookOpen, color: 'from-indigo-600 to-indigo-700' },
+    { title: 'Bài học IPA', value: `${overview?.total ?? 0}/${overview?.totalAvailable ?? 0}`, change: '', Icon: BookOpen, color: 'from-indigo-600 to-indigo-700' },
     { title: 'Điểm trung bình', value: `${Number(overview?.avgProgress ?? 0).toFixed(2)}`, change: '', Icon: Volume2, color: 'from-purple-600 to-purple-700' },
     { title: 'Tổng điểm', value: `${Number(overview?.totalScore ?? 0).toFixed(2)}`, change: '', Icon: Target, color: 'from-emerald-600 to-emerald-700' },
     { title: 'Thời gian học', value: formatStudyTime(overview?.totalTime || 0), change: '', Icon: Clock, color: 'from-slate-500 to-slate-400' },

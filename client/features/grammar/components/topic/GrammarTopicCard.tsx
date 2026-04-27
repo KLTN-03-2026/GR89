@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function GrammarTopicCard({ topic }: Props) {
+  console.log(topic)
   const level = topic?.level as string | undefined
   return (
     <Popover>
@@ -67,7 +68,7 @@ export default function GrammarTopicCard({ topic }: Props) {
       <EnhancedPopover
         href={`/study/grammar/${topic._id}`}
         skill="grammar"
-        isCompleted={topic.progress === 100}
+        isCompleted={topic.isResult}
         resultId={topic._id}
       />
     </Popover>

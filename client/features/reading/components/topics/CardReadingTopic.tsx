@@ -68,7 +68,7 @@ export default function CardReadingTopic({ topic }: CardReadingTopicProps) {
         href={`/skills/reading/lesson/${topic._id}`}
         skill="reading"
         resultId={topic._id}
-        isCompleted={topic.isCompleted}
+        isCompleted={topic.isResult}
       />
     </Popover>
   );
