@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -43,16 +44,22 @@ function useDebounce<T>(value: T, delay: number): T {
 export function PlansMain() {
   const [isLoading, setIsLoading] = useState(false)
   const [plans, setPlans] = useState<PlanRow[]>([])
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = Number(searchParams.get('limit')) || 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = searchParams.get('isActive') === 'true' ? true : searchParams.get('isActive') === 'false' ? false : undefined
+  const urlDisplayType = searchParams.get('displayType') || "all"
+  const urlBillingCycle = searchParams.get('billingCycle') || "all"
+  const urlSortBy = searchParams.get('sortBy') || "sortOrder"
+  const urlSortOrder = (searchParams.get('sortOrder') === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc'
+
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
-  const [search, setSearch] = useState("")
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
-  const [displayType, setDisplayType] = useState<"default" | "vip" | "premium" | "all">("all")
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly" | "lifetime" | "all">("all")
-  const [sortBy] = useState<string>("sortOrder")
-  const [sortOrder] = useState<'asc' | 'desc'>('asc')
+  const [search, setSearch] = useState(urlSearch)
   const [selectedRows, setSelectedRows] = useState<PlanRow[]>([])
   const [openPublishDialog, setOpenPublishDialog] = useState(false)
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
@@ -62,13 +69,35 @@ export function PlansMain() {
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
 
+  useEffect(() => {
+    if (urlSearch !== debouncedSearch) {
+      setSearch(urlSearch)
+    }
+  }, [urlSearch, debouncedSearch])
+
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '' || value === 'all') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
   const fetchPlans = useCallback(async (params: PlanQueryParams) => {
     setIsLoading(true)
     try {
       const res = await getPlansPaginated(params)
       setPlans(res.data.map(p => ({ ...p, active: p.isActive })))
-      setPage(res.pagination.page)
-      setLimit(res.pagination.limit)
       setTotal(res.pagination.total)
       setPages(res.pagination.pages)
     } catch (error: unknown) {
@@ -81,18 +110,17 @@ export function PlansMain() {
   }, [])
 
   useEffect(() => {
-    const params: PlanQueryParams = {
-      page,
-      limit,
-      search: debouncedSearch,
-      sortBy,
-      sortOrder,
-      isActive: isActive,
-      displayType: displayType !== "all" ? displayType : undefined,
-      billingCycle: billingCycle !== "all" ? billingCycle : undefined,
-    }
-    fetchPlans(params)
-  }, [page, limit, debouncedSearch, sortBy, sortOrder, isActive, displayType, billingCycle, fetchPlans, refreshKey])
+    fetchPlans({
+      page: urlPage,
+      limit: urlLimit,
+      search: urlSearch,
+      sortBy: urlSortBy,
+      sortOrder: urlSortOrder,
+      isActive: urlIsActive,
+      displayType: urlDisplayType !== "all" ? urlDisplayType as any : undefined,
+      billingCycle: urlBillingCycle !== "all" ? urlBillingCycle as any : undefined,
+    })
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, urlDisplayType, urlBillingCycle, fetchPlans, refreshKey])
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1)
@@ -215,7 +243,7 @@ export function PlansMain() {
                 className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[250px] transition-all font-medium"
               />
             </div>
-            <Select value={isActive === undefined ? "all" : isActive ? "active" : "inactive"} onValueChange={(v) => setIsActive(v === "all" ? undefined : v === "active")}>
+            <Select value={urlIsActive === undefined ? "all" : urlIsActive ? "active" : "inactive"} onValueChange={(v) => updateUrl({ isActive: v === "all" ? undefined : v === "active", page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
@@ -225,7 +253,7 @@ export function PlansMain() {
                 <SelectItem value="inactive">Tạm tắt</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={displayType} onValueChange={(v: "all" | "default" | "vip" | "premium") => setDisplayType(v)}>
+            <Select value={urlDisplayType} onValueChange={(v) => updateUrl({ displayType: v, page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Loại hiển thị" />
               </SelectTrigger>
@@ -236,7 +264,7 @@ export function PlansMain() {
                 <SelectItem value="premium">Premium</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={billingCycle} onValueChange={(v: "all" | "monthly" | "yearly" | "lifetime") => setBillingCycle(v)}>
+            <Select value={urlBillingCycle} onValueChange={(v) => updateUrl({ billingCycle: v, page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Chu kỳ" />
               </SelectTrigger>
@@ -257,16 +285,13 @@ export function PlansMain() {
             isLoading={isLoading}
             serverSidePagination={true}
             pagination={{
-              page,
+              page: urlPage,
               pages,
               total,
-              limit,
+              limit: urlLimit,
             }}
-            onPageChange={(newPage) => setPage(newPage)}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit)
-              setPage(1)
-            }}
+            onPageChange={(newPage) => updateUrl({ page: newPage })}
+            onLimitChange={(newLimit) => updateUrl({ limit: newLimit, page: 1 })}
             onSelectedRowsChange={(rows) => setSelectedRows(rows)}
           />
         </CardContent>

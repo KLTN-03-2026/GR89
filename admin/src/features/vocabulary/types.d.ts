@@ -32,16 +32,8 @@ export interface Vocabulary {
   };
   isVipRequired: boolean;
   vocabularyTopicId: string;
-  createdBy: {
-    _id: string;
-    fullName: string;
-    email: string;
-  };
-  updatedBy?: {
-    _id: string;
-    fullName: string;
-    email: string;
-  };
+  createdBy: User;
+  updatedBy?: User;
   createdAt: string;
   updatedAt: string;
 }

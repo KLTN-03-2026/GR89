@@ -22,6 +22,7 @@ import { SheetAddCoupon } from "./SheetAddCoupon"
 import { SheetUpdateCoupon } from "./SheetUpdateCoupon"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -39,14 +40,21 @@ function useDebounce<T>(value: T, delay: number): T {
 export function CouponsMain() {
   const [isLoading, setIsLoading] = useState(false)
   const [coupons, setCoupons] = useState<Coupon[]>([])
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const rawIsActive = searchParams.get('isActive')
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = Number(searchParams.get('limit')) || 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
+  const urlSortBy = searchParams.get('sortBy') || 'createdAt'
+  const urlSortOrder = (searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc'
+
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
-  const [search, setSearch] = useState("")
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
-  const [sortBy, setSortBy] = useState<string>("createdAt")
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [search, setSearch] = useState(urlSearch)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Coupon | null>(null)
   const [plans, setPlans] = useState<Plan[]>([])
@@ -58,13 +66,35 @@ export function CouponsMain() {
 
   const debouncedSearch = useDebounce(search, 500)
 
+  useEffect(() => {
+    if (urlSearch !== debouncedSearch) {
+      setSearch(urlSearch)
+    }
+  }, [urlSearch, debouncedSearch])
+
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '' || value === 'all') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
   const fetchCoupons = useCallback(async (params: CouponQueryParams) => {
     setIsLoading(true)
     await getCouponsPaginated(params)
       .then(res => {
         setCoupons(res.data)
-        setPage(res.pagination.page)
-        setLimit(res.pagination.limit)
         setTotal(res.pagination.total)
         setPages(res.pagination.pages)
       })
@@ -74,16 +104,15 @@ export function CouponsMain() {
   }, [])
 
   useEffect(() => {
-    const params: CouponQueryParams = {
-      page,
-      limit,
-      search: debouncedSearch,
-      sortBy,
-      sortOrder,
-      isActive: isActive,
-    }
-    fetchCoupons(params)
-  }, [page, limit, debouncedSearch, sortBy, sortOrder, isActive, fetchCoupons])
+    fetchCoupons({
+      page: urlPage,
+      limit: urlLimit,
+      search: urlSearch,
+      sortBy: urlSortBy,
+      sortOrder: urlSortOrder,
+      isActive: urlIsActive,
+    })
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, fetchCoupons])
 
   // Fetch plans once so both Add and Edit sheets can use them.
   useEffect(() => {
@@ -137,13 +166,13 @@ export function CouponsMain() {
   }
 
   const refreshParams = useCallback(() => ({
-    page,
-    limit,
-    search: debouncedSearch,
-    sortBy,
-    sortOrder,
-    isActive
-  }), [page, limit, debouncedSearch, sortBy, sortOrder, isActive])
+    page: urlPage,
+    limit: urlLimit,
+    search: urlSearch,
+    sortBy: urlSortBy,
+    sortOrder: urlSortOrder,
+    isActive: urlIsActive
+  }), [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
 
   const handleEdit = useCallback((row: Coupon) => {
     setEditing(row)
@@ -272,7 +301,7 @@ export function CouponsMain() {
                 className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[250px] transition-all font-medium"
               />
             </div>
-            <Select value={isActive === undefined ? "all" : isActive ? "active" : "inactive"} onValueChange={(v) => setIsActive(v === "all" ? undefined : v === "active")}>
+            <Select value={urlIsActive === undefined ? "all" : urlIsActive ? "active" : "inactive"} onValueChange={(v) => updateUrl({ isActive: v === "all" ? undefined : v === "active", page: 1 })}>
               <SelectTrigger className="h-11 w-[180px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
@@ -283,11 +312,8 @@ export function CouponsMain() {
               </SelectContent>
             </Select>
             <Select
-              value={sortBy}
-              onValueChange={(v) => {
-                setSortBy(v)
-                setPage(1)
-              }}
+              value={urlSortBy}
+              onValueChange={(v) => updateUrl({ sortBy: v, page: 1 })}
             >
               <SelectTrigger className="h-11 w-[180px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Sắp xếp theo" />
@@ -303,11 +329,8 @@ export function CouponsMain() {
               </SelectContent>
             </Select>
             <Select
-              value={sortOrder}
-              onValueChange={(v: 'asc' | 'desc') => {
-                setSortOrder(v)
-                setPage(1)
-              }}
+              value={urlSortOrder}
+              onValueChange={(v: 'asc' | 'desc') => updateUrl({ sortOrder: v, page: 1 })}
             >
               <SelectTrigger className="h-11 w-[150px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Thứ tự" />
@@ -327,16 +350,13 @@ export function CouponsMain() {
             isLoading={isLoading}
             serverSidePagination={true}
             pagination={{
-              page,
+              page: urlPage,
               pages,
               total,
-              limit,
+              limit: urlLimit,
             }}
-            onPageChange={(newPage) => setPage(newPage)}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit)
-              setPage(1)
-            }}
+            onPageChange={(newPage) => updateUrl({ page: newPage })}
+            onLimitChange={(newLimit) => updateUrl({ limit: newLimit, page: 1 })}
             onSelectedRowsChange={(rows) => setSelectedRows(rows)}
           />
         </CardContent>
