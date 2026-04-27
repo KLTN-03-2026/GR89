@@ -152,7 +152,7 @@ export const columnsIpa = (callback: () => void, allIpas: Ipa[]): ColumnDef<Ipa>
     accessorKey: "sound",
     header: () => <div className="text-center">Âm</div>,
     cell: ({ row }) => {
-      return <div className="text-center">{row.original.sound}</div>
+      return <div className="text-center">/{row.original.sound}/</div>
     }
   },
 

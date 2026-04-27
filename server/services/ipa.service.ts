@@ -256,7 +256,7 @@ export class IpaService {
     const paginateOptions = {
       page,
       limit,
-      sort: { orderIndex: 1 },
+      sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
       populate: [
         { path: 'image', select: 'url' },
         { path: 'video', select: 'url' },
@@ -517,9 +517,9 @@ export class IpaService {
 
   // (ADMIN) Cập nhật IPA
   static async updateIpa(id: string, ipa: IIpa): Promise<IIpa> {
-    const updatedIpa = await Ipa.findByIdAndUpdate(id, ipa, { new: true })
+    const updatedIpa = await Ipa.findByIdAndUpdate(id, { ...ipa, updatedBy: new mongoose.Types.ObjectId(ipa.updatedBy) }, { new: true })
     if (!updatedIpa) throw new ErrorHandler('IPA không tồn tại', 404)
-    return updatedIpa
+    return updatedIpa as unknown as IIpa
   }
 
   // (ADMIN) Xóa một IPA
