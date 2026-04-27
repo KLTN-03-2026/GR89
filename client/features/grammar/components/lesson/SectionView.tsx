@@ -3,7 +3,7 @@
 import { Volume2, Info, Lightbulb, Zap, Table as TableIcon, List as ListIcon } from 'lucide-react'
 import type { LessonSection } from '@/features/grammar/types'
 import { motion } from 'framer-motion'
-import { cn } from '@/libs/utils'
+import { cn, playAudio } from '@/libs/utils'
 
 interface SectionViewProps {
   section: LessonSection
@@ -11,7 +11,7 @@ interface SectionViewProps {
 
 export function SectionView({ section }: SectionViewProps) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -31,7 +31,7 @@ export function SectionView({ section }: SectionViewProps) {
 
       {/* Note Section */}
       {section.note && (
-        <motion.div 
+        <motion.div
           whileHover={{ scale: 1.01 }}
           className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-5 dark:from-amber-900/10 dark:to-orange-900/10 dark:border-amber-800/50 group"
         >
@@ -74,14 +74,17 @@ export function SectionView({ section }: SectionViewProps) {
           </div>
           <div className="grid gap-4">
             {section.examples.map((example, idx) => (
-              <motion.div 
+              <motion.div
                 key={example.en}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 className="group flex gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md transition-all cursor-default"
               >
-                <button className="mt-1 h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-600 group-hover:scale-110 transition-transform active:scale-95 shadow-sm">
+                <button
+                  className="mt-1 h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-sky-100 dark:bg-sky-900/30 text-sky-600 group-hover:scale-110 transition-transform active:scale-95 shadow-sm"
+                  onClick={() => playAudio(example.en)}
+                >
                   <Volume2 className="h-5 w-5" />
                 </button>
                 <div className="space-y-1.5 py-1">
