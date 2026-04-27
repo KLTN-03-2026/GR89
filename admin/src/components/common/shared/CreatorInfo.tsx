@@ -1,6 +1,6 @@
 'use client'
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { User } from "@/features/user/types"
 import { User as UserIcon, Clock, Edit } from "lucide-react"
@@ -186,6 +186,7 @@ export function CreatorBadge({ createdBy }: { createdBy: User }) {
   return (
     <div className="flex items-center gap-2">
       <Avatar className="h-6 w-6">
+        <AvatarImage src={createdBy.avatar?.url ? createdBy.avatar?.url : '/images/avatar-default.jpg'} />
         <AvatarFallback className="text-xs">
           {getInitials(createdBy.fullName)}
         </AvatarFallback>

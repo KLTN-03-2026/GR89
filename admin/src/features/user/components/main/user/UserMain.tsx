@@ -25,24 +25,35 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
-
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 export function UserMain() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const rawSortBy = searchParams.get('sortBy')
+  const rawSortOrder = searchParams.get('sortOrder')
+  const rawIsActive = searchParams.get('isActive')
+  const rawRoleFilter = searchParams.get('roleFilter')
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = [5, 10, 20, 50].includes(Number(searchParams.get('limit'))) ? Number(searchParams.get('limit')) : 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
+  const urlSortBy = ['fullName', 'email', 'createdAt'].includes(rawSortBy || '') ? (rawSortBy as 'fullName' | 'email' | 'createdAt') : 'createdAt'
+  const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'desc'
+  const urlRoleFilter = ['all', 'user', 'content'].includes(rawRoleFilter || '') ? rawRoleFilter || 'all' : 'all'
+
   const [isLoading, setIsLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [refresh, setRefresh] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState(urlSearch)
   const debouncedSearch = useDebounce(searchTerm, 500)
-  const [roleFilter, setRoleFilter] = useState("all")
-  const [sortBy, setSortBy] = useState<'fullName' | 'email' | 'createdAt'>('createdAt')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
   const [openAdd, setOpenAdd] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
   // Pagination states
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
 
@@ -74,23 +85,45 @@ export function UserMain() {
     }
   }, [])
 
-  const fetchUsers = useCallback(async (pageNum: number = page, search: string = debouncedSearch, pageSize: number = limit, active?: boolean, role?: string, sortField?: string, sortDir?: string) => {
+  useEffect(() => {
+    if (urlSearch !== debouncedSearch) {
+      setSearchTerm(urlSearch)
+    }
+  }, [urlSearch, debouncedSearch])
+
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '' || (key === 'roleFilter' && value === 'all')) {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true)
     const params: UserQueryParams = {
-      page: pageNum,
-      limit: pageSize,
-      search: search || undefined,
-      isActive: active,
-      role: role !== 'all' ? role : undefined,
-      sortBy: sortField as 'fullName' | 'email' | 'createdAt',
-      sortOrder: sortDir as 'asc' | 'desc'
+      page: urlPage,
+      limit: urlLimit,
+      search: urlSearch || undefined,
+      isActive: urlIsActive,
+      role: urlRoleFilter !== 'all' ? urlRoleFilter : undefined,
+      sortBy: urlSortBy,
+      sortOrder: urlSortOrder
     }
 
     await getAllUsersPaginated(params)
       .then(res => {
         setUsers(res.data || [])
-        setPage(res.pagination?.page || pageNum)
-        setLimit(res.pagination?.limit || pageSize)
         setTotal(res.pagination?.total || 0)
         setPages(res.pagination?.pages || 0)
         fetchStats()
@@ -98,54 +131,36 @@ export function UserMain() {
       .finally(() => {
         setIsLoading(false)
       })
-  }, [page, debouncedSearch, limit, fetchStats])
+  }, [urlPage, urlSearch, urlLimit, urlIsActive, urlRoleFilter, urlSortBy, urlSortOrder, fetchStats])
 
   useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch])
-
-  useEffect(() => {
-    fetchUsers(page, debouncedSearch, limit, isActive, roleFilter, sortBy, sortOrder)
-  }, [page, limit, isActive, roleFilter, sortBy, sortOrder, refresh, fetchUsers, debouncedSearch])
+    fetchUsers()
+  }, [fetchUsers, refresh])
 
   const handleStatusFilter = (value: string) => {
     const newIsActive = value === 'all' ? undefined : value === 'active' ? true : false
-    setIsActive(newIsActive)
-    setPage(1)
+    updateUrl({ isActive: newIsActive, page: 1 })
   }
 
   const handleRoleFilter = (value: string) => {
-    setRoleFilter(value)
-    setPage(1)
+    updateUrl({ roleFilter: value, page: 1 })
   }
 
   const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(field as 'fullName' | 'email' | 'createdAt')
-      setSortOrder('desc')
-    }
-    setPage(1)
+    updateUrl({ sortBy: field, page: 1 })
   }
 
   const handlePageSizeChange = (newLimit: number) => {
-    setLimit(newLimit)
-    setPage(1)
+    updateUrl({ limit: newLimit, page: 1 })
   }
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage)
+    updateUrl({ page: newPage })
   }
 
   const clearAllFilters = () => {
     setSearchTerm('')
-    setRoleFilter('all')
-    setIsActive(undefined)
-    setSortBy('createdAt')
-    setSortOrder('desc')
-    setPage(1)
-    setLimit(10)
+    router.push(pathname, { scroll: false })
   }
 
   const kpiStats = [
@@ -338,8 +353,8 @@ export function UserMain() {
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Bộ lọc
-                {(isActive !== undefined || roleFilter !== 'all') && (
-                  <Badge className="ml-2 bg-rose-600">{[isActive !== undefined, roleFilter !== 'all'].filter(Boolean).length}</Badge>
+                {(urlIsActive !== undefined || urlRoleFilter !== 'all') && (
+                  <Badge className="ml-2 bg-rose-600">{[urlIsActive !== undefined, urlRoleFilter !== 'all'].filter(Boolean).length}</Badge>
                 )}
               </Button>
               <Button
@@ -357,7 +372,7 @@ export function UserMain() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-8 border-t border-gray-50 animate-in fade-in slide-in-from-top-4 duration-300">
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Vai trò</Label>
-                <Select value={roleFilter} onValueChange={handleRoleFilter}>
+                <Select value={urlRoleFilter} onValueChange={handleRoleFilter}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -371,7 +386,7 @@ export function UserMain() {
 
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Trạng thái</Label>
-                <Select value={isActive === undefined ? 'all' : isActive ? 'active' : 'inactive'} onValueChange={handleStatusFilter}>
+                <Select value={urlIsActive === undefined ? 'all' : urlIsActive ? 'active' : 'inactive'} onValueChange={handleStatusFilter}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -385,7 +400,7 @@ export function UserMain() {
 
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Sắp xếp</Label>
-                <Select value={sortBy} onValueChange={(value) => handleSort(value)}>
+                <Select value={urlSortBy} onValueChange={(value) => handleSort(value)}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -399,7 +414,7 @@ export function UserMain() {
 
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Thứ tự</Label>
-                <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
+                <Select value={urlSortOrder} onValueChange={(value) => updateUrl({ sortOrder: value, page: 1 })}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -415,7 +430,7 @@ export function UserMain() {
           <div className="flex items-center justify-between pt-8 border-t border-gray-50">
             <div className="flex items-center gap-4">
               <span className="text-sm font-black text-gray-400 uppercase tracking-tighter">Hiển thị</span>
-              <Select value={limit.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              <Select value={urlLimit.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
                 <SelectTrigger className="w-20 h-9 rounded-lg bg-gray-50 border-gray-200 font-bold">
                   <SelectValue />
                 </SelectTrigger>
@@ -443,8 +458,8 @@ export function UserMain() {
             isLoading={isLoading}
             serverSidePagination={true}
             pagination={{
-              page: page || 1,
-              limit: limit || 10,
+              page: urlPage,
+              limit: urlLimit,
               total: total || 0,
               pages: pages || 0
             }}

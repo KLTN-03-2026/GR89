@@ -2,16 +2,17 @@
 import { DataTable } from '@/components/common'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { columnsGrammarTopic } from '../GrammarTopicTable/GrammarTopicColumn'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { GrammarTopic } from '@/features/grammar/types'
 import { getGrammarTopicsPaginated, deleteManyGrammarTopics, updateManyGrammarTopicsStatus } from '../../services/api'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Filter, X, RotateCcw, ChevronDown, Loader2, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Filter, ChevronDown, Loader2, Trash2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import FiltersPanel from './FiltersPanel'
+import { useCallback } from 'react'
 
 interface Props {
   refresh: boolean
@@ -35,16 +36,27 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function GrammarTopicContent({ refresh, callback }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Khởi tạo và xác thực chặt chẽ các giá trị bộ lọc từ URL Params để đảm bảo tính nhất quán dữ liệu
+  const rawSortBy = searchParams.get('sortBy')
+  const rawSortOrder = searchParams.get('sortOrder')
+  const rawIsActive = searchParams.get('isActive')
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = [5, 10, 20, 50].includes(Number(searchParams.get('limit'))) ? Number(searchParams.get('limit')) : 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
+  const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') : 'orderIndex'
+  const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
+
   const [isLoading, setIsLoading] = useState(false)
   const [topics, setTopics] = useState<GrammarTopic[]>([])
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
-  const [search, setSearch] = useState('')
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
-  const [sortBy, setSortBy] = useState<'orderIndex' | 'title' | 'createdAt' | 'updatedAt'>('orderIndex')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
   const [activeFiltersCount, setActiveFiltersCount] = useState(0)
   const [selectedRows, setSelectedRows] = useState<GrammarTopic[]>([])
@@ -55,105 +67,72 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
 
   const debouncedSearch = useDebounce(search, 500)
 
-  const fetchTopics = useCallback(
-    async (
-      nextPage: number,
-      nextSearch: string,
-      nextLimit: number,
-      nextIsActive: boolean | undefined,
-      nextSortBy: 'orderIndex' | 'title' | 'createdAt' | 'updatedAt',
-      nextSortOrder: 'asc' | 'desc'
-    ) => {
-      setIsLoading(true)
-      try {
-        const res = await getGrammarTopicsPaginated({
-          page: nextPage,
-          limit: nextLimit,
-          search: nextSearch,
-          sortBy: nextSortBy,
-          sortOrder: nextSortOrder,
-          isActive: nextIsActive
-        })
-        setTopics(res.data)
-        setPage(res.pagination.page)
-        setLimit(res.pagination.limit)
-        setTotal(res.pagination.total)
-        setPages(res.pagination.pages)
-      } catch {
-        setTopics([])
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    []
-  )
-
+  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward) mà không làm mất text đang gõ
   useEffect(() => {
-    fetchTopics(1, debouncedSearch, limit, isActive, sortBy, sortOrder)
-  }, [debouncedSearch, fetchTopics, isActive, limit, sortBy, sortOrder])
-
-  useEffect(() => {
-    if (debouncedSearch === search) {
-      fetchTopics(1, search, limit, isActive, sortBy, sortOrder)
+    if (urlSearch !== debouncedSearch) {
+      setSearch(urlSearch)
     }
-  }, [limit, isActive, sortBy, sortOrder, fetchTopics, search, debouncedSearch])
+  }, [urlSearch, debouncedSearch])
+
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  // Sync debounced search to URL
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
+  const fetchTopics = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const res = await getGrammarTopicsPaginated({
+        page: urlPage,
+        limit: urlLimit,
+        search: urlSearch,
+        sortBy: urlSortBy,
+        sortOrder: urlSortOrder,
+        isActive: urlIsActive
+      })
+      setTopics(res.data)
+      setTotal(res.pagination.total)
+      setPages(res.pagination.pages)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
 
   useEffect(() => {
-    if (!refresh) return
-    fetchTopics(1, search, limit, isActive, sortBy, sortOrder)
-  }, [fetchTopics, isActive, limit, search, sortBy, sortOrder, refresh])
-
-  useEffect(() => {
-    fetchTopics(1, "", 10, undefined, 'orderIndex', 'asc')
-  }, [fetchTopics])
+    fetchTopics()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchTopics, refresh])
 
   useEffect(() => {
     let count = 0
-    if (search) count++
-    if (isActive !== undefined) count++
-    if (sortBy !== 'orderIndex') count++
-    if (sortOrder !== 'asc') count++
+    if (urlSearch) count++
+    if (urlIsActive !== undefined) count++
+    if (urlSortBy !== 'orderIndex') count++
+    if (urlSortOrder !== 'asc') count++
     setActiveFiltersCount(count)
-  }, [search, isActive, sortBy, sortOrder])
+  }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) return
-    setPage(newPage)
-    fetchTopics(newPage, search, limit, isActive, sortBy, sortOrder)
+    updateUrl({ page: newPage })
   }
 
   const handleSearch = (value: string) => {
     setSearch(value)
-  }
-
-  const handleStatusFilter = (value: string) => {
-    const newIsActive = value === 'all' ? undefined : value === 'active'
-    setIsActive(newIsActive)
-    setPage(1)
-    fetchTopics(1, search, limit, newIsActive, sortBy, sortOrder)
-  }
-
-  const handleSort = (field: 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') => {
-    const newSortOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc'
-    setSortBy(field)
-    setSortOrder(newSortOrder)
-    setPage(1)
-    fetchTopics(1, search, limit, isActive, field, newSortOrder)
-  }
-
-  const handlePageSizeChange = (newLimit: number) => {
-    setLimit(newLimit)
-    setPage(1)
-    fetchTopics(1, search, newLimit, isActive, sortBy, sortOrder)
-  }
-
-  const clearAllFilters = () => {
-    setSearch('')
-    setIsActive(undefined)
-    setSortBy('orderIndex')
-    setSortOrder('asc')
-    setPage(1)
-    fetchTopics(1, '', limit, undefined, 'orderIndex', 'asc')
   }
 
   const handleDeleteMany = async (ids: string[]) => {
@@ -176,8 +155,7 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
         toast.success(`Đã xóa ${res.data?.deletedCount || 0} chủ đề ngữ pháp`)
         setSelectedRows([])
         setOpenDeleteDialog(false)
-        callback()
-        fetchTopics(page, search, limit, isActive, sortBy, sortOrder)
+        fetchTopics()
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -221,8 +199,7 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
         toast.success(`Đã ${newIsActive ? 'xuất bản' : 'ẩn'} ${res.data?.updatedCount || 0} chủ đề ngữ pháp`)
         setSelectedRows([])
         setOpenPublishDialog(false)
-        callback()
-        fetchTopics(page, search, limit, isActive, sortBy, sortOrder)
+        fetchTopics()
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -294,87 +271,20 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
 
       <CardContent>
         {showFilters && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Tìm kiếm</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Tìm theo tên, mô tả..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Trạng thái</label>
-                <Select
-                  value={isActive === undefined ? 'all' : isActive ? 'active' : 'inactive'}
-                  onValueChange={handleStatusFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="active">Đang hoạt động</SelectItem>
-                    <SelectItem value="inactive">Không hoạt động</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Sắp xếp theo</label>
-                <Select value={sortBy} onValueChange={(value: 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') => handleSort(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="orderIndex">Thứ tự</SelectItem>
-                    <SelectItem value="title">Tên chủ đề</SelectItem>
-                    <SelectItem value="createdAt">Ngày tạo</SelectItem>
-                    <SelectItem value="updatedAt">Ngày cập nhật</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Số lượng/trang</label>
-                <Select value={limit.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5/trang</SelectItem>
-                    <SelectItem value="10">10/trang</SelectItem>
-                    <SelectItem value="20">20/trang</SelectItem>
-                    <SelectItem value="50">50/trang</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={clearAllFilters} className="gap-2">
-                  <RotateCcw className="h-4 w-4" />
-                  Xóa bộ lọc
-                </Button>
-                {activeFiltersCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowFilters(false)} className="gap-2">
-                    <X className="h-4 w-4" />
-                    Đóng
-                  </Button>
-                )}
-              </div>
-              <div className="text-sm text-gray-500">
-                Hiển thị {topics.length} trong {total} kết quả
-              </div>
-            </div>
-          </div>
+          <FiltersPanel
+            urlIsActive={urlIsActive}
+            urlSortBy={urlSortBy}
+            urlSortOrder={urlSortOrder}
+            urlLimit={urlLimit}
+            updateUrl={updateUrl}
+            search={search}
+            setSearch={setSearch}
+            handleSearch={handleSearch}
+            activeFiltersCount={activeFiltersCount}
+            setShowFilters={setShowFilters}
+            topicsLength={topics.length}
+            total={total}
+          />
         )}
 
         <DataTable
@@ -383,7 +293,7 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
           isLoading={isLoading}
           columnNameSearch="Tên chủ đề"
           serverSidePagination
-          pagination={{ page, limit, total, pages }}
+          pagination={{ page: urlPage, limit: urlLimit, total, pages }}
           onPageChange={handlePageChange}
           onSearch={handleSearch}
           onSelectedRowsChange={(rows) => setSelectedRows(rows as GrammarTopic[])}
