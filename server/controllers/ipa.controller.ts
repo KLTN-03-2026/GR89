@@ -53,6 +53,7 @@ export class IpaController {
       createdBy,
       isActive
     } = req.query
+
     const result = await IpaService.getAllIPAPaginated({
       page: Number(page),
       limit: Number(limit),
@@ -226,11 +227,12 @@ export class IpaController {
   // (ADMIN) Cập nhật IPA
   static updateIpa = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
-    const { sound, soundType, image, video, description, examples } = req.body
-    if (!sound || !soundType || !image || !description || !examples) {
+    const { sound, soundType, image, video, description } = req.body
+    console.log(req.body)
+    if (!sound || !soundType || !image || !description) {
       return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400))
     }
-    const updatedIpa = await IpaService.updateIpa(id, { sound, soundType, image, video, description, examples, updatedBy: req.user?._id as string } as unknown as IIpa)
+    const updatedIpa = await IpaService.updateIpa(id, { sound, soundType, image, video, description, updatedBy: req.user?._id as string } as unknown as IIpa)
     res.status(200).json({
       success: true,
       message: 'Cập nhật IPA thành công',

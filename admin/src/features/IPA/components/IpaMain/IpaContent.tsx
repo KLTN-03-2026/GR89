@@ -9,9 +9,12 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Search, Filter, X, RotateCcw, ChevronDown, Loader2, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Search, Filter, X, RotateCcw, ChevronDown } from 'lucide-react'
 import { toast } from 'react-toastify'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import DialogConfirmDeleteMutiple from '../dialogs/DialogConfirmDeleteMutiple'
+import DialogConfirmPublishMutiple from '../dialogs/DialogConfirmPublishMutiple'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+
 
 interface props {
   refresh: boolean
@@ -36,17 +39,29 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function IpaContent({ refresh, callback }: props) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Khởi tạo và xác thực chặt chẽ các giá trị bộ lọc từ URL Params để đảm bảo tính nhất quán dữ liệu
+  const rawSoundType = searchParams.get('soundType')
+  const rawSortBy = searchParams.get('sortBy')
+  const rawSortOrder = searchParams.get('sortOrder')
+  const rawIsActive = searchParams.get('isActive')
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = [5, 10, 20, 50].includes(Number(searchParams.get('limit'))) ? Number(searchParams.get('limit')) : 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlSoundType = ['vowel', 'consonant', 'diphthong'].includes(rawSoundType || '') ? (rawSoundType as 'vowel' | 'consonant' | 'diphthong') : undefined
+  const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
+  const urlSortBy = ['sound', 'soundType', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'sound' | 'soundType' | 'createdAt' | 'updatedAt') : 'sound'
+  const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
+
   const [isLoading, setIsLoading] = useState(false)
   const [ipa, setIpa] = useState<Ipa[]>([])
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
-  const [search, setSearch] = useState("")
-  const [soundType, setSoundType] = useState<'vowel' | 'consonant' | 'diphthong' | undefined>(undefined)
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
-  const [sortBy, setSortBy] = useState<'sound' | 'soundType' | 'createdAt' | 'updatedAt'>('sound')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
   const [activeFiltersCount, setActiveFiltersCount] = useState(0)
   const [selectedRows, setSelectedRows] = useState<Ipa[]>([])
@@ -56,111 +71,101 @@ export default function IpaContent({ refresh, callback }: props) {
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
   const [loadingAction, setLoadingAction] = useState(false)
 
-  // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
 
-  const fetchIpa = useCallback(async (nextPage: number, nextSearch: string, nextLimit: number, nextSoundType: 'vowel' | 'consonant' | 'diphthong' | undefined, nextIsActive: boolean | undefined, nextSortBy: 'sound' | 'soundType' | 'createdAt' | 'updatedAt', nextSortOrder: 'asc' | 'desc') => {
+  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward) mà không làm mất text đang gõ
+  useEffect(() => {
+    if (urlSearch !== debouncedSearch) {
+      setSearch(urlSearch)
+    }
+  }, [urlSearch, debouncedSearch])
+
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  // Sync debounced search to URL
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
+  const fetchIpa = useCallback(async () => {
     setIsLoading(true)
-    await getAllIPA({
-      page: nextPage,
-      limit: nextLimit,
-      search: nextSearch,
-      sortBy: nextSortBy,
-      sortOrder: nextSortOrder,
-      soundType: nextSoundType,
-      isActive: nextIsActive
-    }).then(res => {
+    try {
+      const res = await getAllIPA({
+        page: urlPage,
+        limit: urlLimit,
+        search: urlSearch,
+        sortBy: urlSortBy,
+        sortOrder: urlSortOrder,
+        soundType: urlSoundType,
+        isActive: urlIsActive
+      })
       setIpa(res.data || [])
-      setPage(res.pagination?.page || 1)
-      setLimit(res.pagination?.limit || 10)
       setTotal(res.pagination?.total || 0)
       setPages(res.pagination?.pages || 0)
-    }).finally(() => {
+    } finally {
       setIsLoading(false)
-    })
-  }, [])
-
-  // Effect for debounced search - only trigger when debounced search changes
-  useEffect(() => {
-    fetchIpa(1, debouncedSearch, limit, soundType, isActive, sortBy, sortOrder)
-  }, [debouncedSearch, fetchIpa, isActive, limit, sortBy, sortOrder, soundType])
-
-  useEffect(() => {
-    if (debouncedSearch === search) {
-      fetchIpa(1, search, limit, soundType, isActive, sortBy, sortOrder)
     }
-  }, [limit, soundType, isActive, sortBy, sortOrder, fetchIpa, search, debouncedSearch])
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlSoundType, urlIsActive])
 
   useEffect(() => {
-    if (!refresh) return
-    fetchIpa(1, search, limit, soundType, isActive, sortBy, sortOrder)
+    fetchIpa()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refresh])
-
-  useEffect(() => {
-    fetchIpa(1, "", 10, undefined, undefined, 'sound', 'asc')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchIpa, refresh])
 
   useEffect(() => {
     let count = 0
-    if (search) count++
-    if (soundType !== undefined) count++
-    if (isActive !== undefined) count++
-    if (sortBy !== 'sound') count++
-    if (sortOrder !== 'asc') count++
+    if (urlSearch) count++
+    if (urlSoundType !== undefined) count++
+    if (urlIsActive !== undefined) count++
+    if (urlSortBy !== 'sound') count++
+    if (urlSortOrder !== 'asc') count++
     setActiveFiltersCount(count)
-  }, [search, soundType, isActive, sortBy, sortOrder])
+  }, [urlSearch, urlSoundType, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || (pages && newPage > pages)) {
-      return
-    }
-    setPage(newPage)
-    fetchIpa(newPage, search, limit, soundType, isActive, sortBy, sortOrder)
+    if (newPage < 1 || (pages && newPage > pages)) return
+    updateUrl({ page: newPage })
   }
 
   const handleSearch = (value: string) => {
     setSearch(value)
-    // Don't call fetchIpa here - let debounced effect handle it
   }
 
   const handleSoundTypeFilter = (value: string) => {
-    const newSoundType = value === 'all' ? undefined : value as 'vowel' | 'consonant' | 'diphthong'
-    setSoundType(newSoundType)
-    setPage(1) // Reset to first page
-    fetchIpa(1, search, limit, newSoundType, isActive, sortBy, sortOrder)
+    updateUrl({ soundType: value === 'all' ? undefined : value, page: 1 })
   }
 
   const handleStatusFilter = (value: string) => {
-    const newIsActive = value === 'all' ? undefined : value === 'active'
-    setIsActive(newIsActive)
-    setPage(1) // Reset to first page
-    fetchIpa(1, search, limit, soundType, newIsActive, sortBy, sortOrder)
+    updateUrl({ isActive: value === 'all' ? undefined : value === 'active', page: 1 })
   }
 
   const handleSort = (field: 'sound' | 'soundType' | 'createdAt' | 'updatedAt') => {
-    const newSortOrder = sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc'
-    setSortBy(field)
-    setSortOrder(newSortOrder)
-    setPage(1) // Reset to first page
-    fetchIpa(1, search, limit, soundType, isActive, field, newSortOrder)
+    updateUrl({ sortBy: field, page: 1 })
+  }
+
+  const handleSortOrder = (order: 'asc' | 'desc') => {
+    updateUrl({ sortOrder: order, page: 1 })
   }
 
   const handlePageSizeChange = (newLimit: number) => {
-    setLimit(newLimit)
-    setPage(1) // Reset to first page
-    fetchIpa(1, search, newLimit, soundType, isActive, sortBy, sortOrder)
+    updateUrl({ limit: newLimit, page: 1 })
   }
 
   const clearAllFilters = () => {
     setSearch("")
-    setSoundType(undefined)
-    setIsActive(undefined)
-    setSortBy('sound')
-    setSortOrder('asc')
-    setPage(1)
-    fetchIpa(1, "", limit, undefined, undefined, 'sound', 'asc')
+    router.push(pathname, { scroll: false })
   }
 
   const handleDeleteMultiple = (ids: string[]) => {
@@ -185,7 +190,7 @@ export default function IpaContent({ refresh, callback }: props) {
         setSelectedRows([])
         setOpenDeleteDialog(false)
         callback()
-        fetchIpa(page, search, limit, soundType, isActive, sortBy, sortOrder)
+        fetchIpa()
       }
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Xóa IPA không thành công'
@@ -229,7 +234,7 @@ export default function IpaContent({ refresh, callback }: props) {
         setSelectedRows([])
         setOpenPublishDialog(false)
         callback()
-        fetchIpa(page, search, limit, soundType, isActive, sortBy, sortOrder)
+        fetchIpa()
       }
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || `${publishAction === 'publish' ? 'Xuất bản' : 'Ẩn'} thất bại`
@@ -270,7 +275,7 @@ export default function IpaContent({ refresh, callback }: props) {
           {/* Advanced Filters Panel */}
           {showFilters && (
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 {/* Search Input */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Tìm kiếm</label>
@@ -288,7 +293,7 @@ export default function IpaContent({ refresh, callback }: props) {
                 {/* Sound Type Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Loại âm</label>
-                  <Select value={soundType === undefined ? 'all' : soundType} onValueChange={handleSoundTypeFilter}>
+                  <Select value={urlSoundType === undefined ? 'all' : urlSoundType} onValueChange={handleSoundTypeFilter}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -304,7 +309,7 @@ export default function IpaContent({ refresh, callback }: props) {
                 {/* Status Filter */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Trạng thái</label>
-                  <Select value={isActive === undefined ? 'all' : isActive ? 'active' : 'inactive'} onValueChange={handleStatusFilter}>
+                  <Select value={urlIsActive === undefined ? 'all' : urlIsActive ? 'active' : 'inactive'} onValueChange={handleStatusFilter}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -319,7 +324,7 @@ export default function IpaContent({ refresh, callback }: props) {
                 {/* Sort By */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Sắp xếp theo</label>
-                  <Select value={sortBy} onValueChange={(value: 'sound' | 'soundType' | 'createdAt' | 'updatedAt') => handleSort(value)}>
+                  <Select value={urlSortBy} onValueChange={(value: 'sound' | 'soundType' | 'createdAt' | 'updatedAt') => handleSort(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -332,10 +337,24 @@ export default function IpaContent({ refresh, callback }: props) {
                   </Select>
                 </div>
 
+                {/* Sort Order */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Thứ tự</label>
+                  <Select value={urlSortOrder} onValueChange={(value: 'asc' | 'desc') => handleSortOrder(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Tăng dần</SelectItem>
+                      <SelectItem value="desc">Giảm dần</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Page Size */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Số lượng/trang</label>
-                  <Select value={limit.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+                  <Select value={urlLimit.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -388,8 +407,8 @@ export default function IpaContent({ refresh, callback }: props) {
             columnNameSearch="Âm"
             serverSidePagination
             pagination={{
-              page: page,
-              limit: limit,
+              page: urlPage,
+              limit: urlLimit,
               total: total,
               pages: pages
             }}
@@ -404,96 +423,25 @@ export default function IpaContent({ refresh, callback }: props) {
       </Card>
 
       {/* Dialog xác nhận xóa nhiều */}
-      <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận xóa nhiều IPA</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn xóa <strong>{selectedRows.length}</strong> IPA đã chọn không?
-              Hành động này sẽ xóa cả các ví dụ liên quan và không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setOpenDeleteDialog(false)
-                setSelectedRows([])
-              }}
-              disabled={isDeleting}
-            >
-              Hủy
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDeleteMultiple}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Đang xóa...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Xóa
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DialogConfirmDeleteMutiple
+        open={openDeleteDialog}
+        setOpen={setOpenDeleteDialog}
+        selectedRows={selectedRows.map(row => String(row._id))}
+        setSelectedRows={(selectedRows: string[]) => setSelectedRows(selectedRows.map(id => ipa.find(row => String(row._id) === id) as Ipa))}
+        isDeleting={isDeleting}
+        confirmDeleteMultiple={confirmDeleteMultiple}
+      />
 
       {/* Dialog xác nhận xuất bản/ẩn nhiều */}
-      <Dialog open={openPublishDialog} onOpenChange={setOpenPublishDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{publishAction === 'publish' ? 'Xuất bản' : 'Ẩn'} nhiều IPA</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn {publishAction === 'publish' ? 'xuất bản' : 'ẩn'} <strong>{selectedRows.length}</strong> IPA đã chọn không?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setOpenPublishDialog(false)
-                setSelectedRows([])
-              }}
-              disabled={loadingAction}
-            >
-              Hủy
-            </Button>
-            <Button
-              variant="default"
-              onClick={handlePublishManyConfirm}
-              disabled={loadingAction}
-            >
-              {loadingAction ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  {publishAction === 'publish' ? (
-                    <>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Xuất bản
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="h-4 w-4 mr-2" />
-                      Ẩn
-                    </>
-                  )}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DialogConfirmPublishMutiple
+        open={openPublishDialog}
+        setOpen={setOpenPublishDialog}
+        selectedRows={selectedRows.map(row => String(row._id))}
+        setSelectedRows={(selectedRows: string[]) => setSelectedRows(selectedRows.map(id => ipa.find(row => String(row._id) === id) as Ipa))}
+        isPublishing={publishAction === 'publish'}
+        confirmPublishMultiple={handlePublishManyConfirm}
+        loadingAction={loadingAction}
+      />
     </>
   )
 }

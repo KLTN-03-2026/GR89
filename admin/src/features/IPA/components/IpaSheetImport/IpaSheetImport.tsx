@@ -40,7 +40,7 @@ export function IpaSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadExcel={parseExcelToIpaJson}
       onImport={async (payload: SheetImportOnImportPayload) => {
         const res = await importIpaJson(payload.jsonRoot, payload.skipErrors)
-        
+
         type ImportResponse = {
           success: boolean
           message?: string

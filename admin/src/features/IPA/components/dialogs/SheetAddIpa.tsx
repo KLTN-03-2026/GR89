@@ -11,22 +11,18 @@ import {
   SheetDescription,
   SheetClose
 } from '@/components/ui/sheet'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Plus, 
-  Languages, 
-  Info, 
-  Type, 
-  Video, 
-  CheckCircle2, 
-  Save, 
-  X,
+import {
+  Plus,
+  Languages,
+  Info,
+  Video,
+  Save,
   Loader2,
   Sparkles,
   Play,
@@ -35,6 +31,7 @@ import {
 import { createIpa, IIpaCreateData } from '@/features/IPA/services/api'
 import { DialogVideoToMedia } from '@/components/common/dialog/DialogVideoToMedia'
 import { toast } from 'react-toastify'
+import { IpaSoundInput } from './IpaSoundInput'
 
 type MediaRef = { _id: string; url: string }
 
@@ -42,14 +39,20 @@ interface SheetAddIpaProps {
   callback: () => void
 }
 
+const sounds = [
+  'i:', 'ɪ', 'ʊ', 'u:', 'e', 'ə', 'ɜ:', 'ɔ:', 'æ', 'ʌ', 'ɑ:', 'ɒ',
+  'ɪə', 'eɪ', 'ʊə', 'ɔɪ', 'əʊ', 'eə', 'aɪ', 'aʊ',
+  'p', 'b', 't', 'd', 'tʃ', 'dʒ', 'k', 'g', 'f', 'v', 'θ', 'ð', 's', 'z', 'ʃ', 'ʒ', 'm', 'n', 'ŋ', 'h', 'l', 'r', 'w', 'j'
+]
+
 export function SheetAddIpa({ callback }: SheetAddIpaProps) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [mouthShapeVideoUrl, setMouthShapeVideoUrl] = useState<string | null>(null)
   const [lectureVideoUrl, setLectureVideoUrl] = useState<string | null>(null)
   const [data, setData] = useState({
-    sound: "",
-    soundType: "" as 'vowel' | 'consonant' | 'diphthong' | '',
+    sound: "" as (typeof sounds[number]),
+    soundType: "vowel" as 'vowel' | 'consonant' | 'diphthong' | '',
     image: "",
     video: "",
     description: ""
@@ -61,26 +64,40 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
       return
     }
 
-    setIsLoading(true)
-    try {
-      await createIpa(data as IIpaCreateData)
-      toast.success('Tạo IPA thành công')
-      callback()
-      setOpen(false)
-      setData({
-        sound: "",
-        soundType: "",
-        image: "",
-        video: "",
-        description: "",
-      })
-      setMouthShapeVideoUrl(null)
-      setLectureVideoUrl(null)
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
-    } finally {
-      setIsLoading(false)
+    if (!sounds.includes(data.sound)) {
+      toast.error('Âm IPA không hợp lệ')
+      return
     }
+
+    if (!data.soundType) {
+      toast.error('Loại âm không hợp lệ')
+      return
+    }
+
+    if (!data.video) {
+      toast.error('Video không hợp lệ')
+      return
+    }
+
+    setIsLoading(true)
+    await createIpa(data as IIpaCreateData)
+      .then(() => {
+        toast.success('Tạo IPA thành công')
+        callback()
+        setOpen(false)
+        setData({
+          sound: "",
+          soundType: "",
+          image: "",
+          video: "",
+          description: "",
+        })
+        setMouthShapeVideoUrl(null)
+        setLectureVideoUrl(null)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }
 
   const handleMouthShapeVideoSelect = (video: MediaRef) => {
@@ -132,18 +149,13 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
                 <Info className="w-4 h-4" />
                 Thông Tin Cơ Bản
               </div>
-              
+
               <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
-                  <Label htmlFor="sound" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                    Âm IPA <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input
-                    id="sound"
-                    placeholder="Ví dụ: /æ/, /ʃ/..."
+                  <IpaSoundInput
                     value={data.sound}
-                    onChange={(e) => setData(prev => ({ ...prev, sound: e.target.value }))}
-                    className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-indigo-500 font-black px-4 shadow-sm text-lg font-serif"
+                    onChange={(value) => setData(prev => ({ ...prev, sound: value }))}
+                    type={data.soundType as 'vowel' | 'consonant' | 'diphthong'}
                   />
                 </div>
 
@@ -186,7 +198,7 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
             {/* Section: Media */}
             <section className="space-y-6">
               <div className="flex items-center gap-2.5 text-blue-600 font-black uppercase text-[11px] tracking-[0.2em]">
-                <Video className="h-4 h-4" />
+                <Video className="h-4" />
                 Video Hướng Dẫn
               </div>
 
@@ -196,7 +208,7 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Khẩu Hình Miệng <span className="text-rose-500">*</span>
                   </Label>
-                  
+
                   {data.image && mouthShapeVideoUrl ? (
                     <div className="relative group aspect-video rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-black">
                       <video src={mouthShapeVideoUrl} className="w-full h-full object-contain" muted />
@@ -204,9 +216,9 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
                         <DialogVideoToMedia onSelect={handleMouthShapeVideoSelect}>
                           <Button size="sm" variant="secondary" className="rounded-full font-bold h-8 text-[10px] uppercase">Thay đổi</Button>
                         </DialogVideoToMedia>
-                        <Button 
-                          size="sm" 
-                          variant="destructive" 
+                        <Button
+                          size="sm"
+                          variant="destructive"
                           className="rounded-full font-bold h-8 text-[10px] uppercase"
                           onClick={() => { setData(prev => ({ ...prev, image: "" })); setMouthShapeVideoUrl(null) }}
                         >Gỡ bỏ</Button>
@@ -229,7 +241,7 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Bài Giảng (Video) <span className="text-rose-500">*</span>
                   </Label>
-                  
+
                   {data.video && lectureVideoUrl ? (
                     <div className="relative group aspect-video rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-black">
                       <video src={lectureVideoUrl} className="w-full h-full object-contain" muted />
@@ -237,9 +249,9 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
                         <DialogVideoToMedia onSelect={handleLectureVideoSelect}>
                           <Button size="sm" variant="secondary" className="rounded-full font-bold h-8 text-[10px] uppercase">Thay đổi</Button>
                         </DialogVideoToMedia>
-                        <Button 
-                          size="sm" 
-                          variant="destructive" 
+                        <Button
+                          size="sm"
+                          variant="destructive"
                           className="rounded-full font-bold h-8 text-[10px] uppercase"
                           onClick={() => { setData(prev => ({ ...prev, video: "" })); setLectureVideoUrl(null) }}
                         >Gỡ bỏ</Button>
@@ -279,17 +291,17 @@ export function SheetAddIpa({ callback }: SheetAddIpaProps) {
         <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
           <div className="flex items-center justify-end gap-4 w-full">
             <SheetClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-12 px-8 rounded-2xl border-gray-200 font-bold text-gray-600 hover:bg-white transition-all active:scale-95"
                 disabled={isLoading}
               >
                 Hủy Bỏ
               </Button>
             </SheetClose>
-            <Button 
+            <Button
               onClick={handleCreate}
-              disabled={isLoading} 
+              disabled={isLoading}
               className="h-12 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-200 font-black transition-all active:scale-95"
             >
               {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5 mr-2" />}
