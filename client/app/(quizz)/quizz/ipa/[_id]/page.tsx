@@ -38,11 +38,8 @@ export default async function page({ params }: { params: Promise<{ _id: string }
       </div>
 
       {/* Main */}
-      <div className="mx-auto max-w-6xl px-4 pb-10">
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 sm:p-6">
-          <QuizzIPA ipa={ipa} />
-        </div>
-      </div>
+      <QuizzIPA ipa={ipa} />
+
     </div>
   )
 }

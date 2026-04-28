@@ -105,25 +105,29 @@ const fetchDictionaryAudio = async (word: string): Promise<string | null> => {
 };
 
 // Đọc văn bản bằng Web Speech API với các tùy chọn tốc độ, cao độ và âm lượng.
-const speakWithTTS = (text: string, options: PlayAudioOptions = {}) => {
-  if (typeof window === "undefined") return
-  if (!("speechSynthesis" in window)) return
+const speakWithTTS = (text: string, options: PlayAudioOptions = {}): Promise<void> => {
+  return new Promise(resolve => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return resolve()
 
-  const synth = window.speechSynthesis
-  const lang = options.lang || "en-US"
-  const normalized = normalizeTextForSpeech(text, lang)
+    const synth = window.speechSynthesis
+    const lang = options.lang || "en-US"
+    const normalized = normalizeTextForSpeech(text, lang)
 
-  if (options.interrupt !== false) synth.cancel()
+    if (options.interrupt !== false) synth.cancel()
 
-  const voice = pickVoice(lang, { voiceName: options.voiceName, random: options.randomVoice })
-  const utterance = new SpeechSynthesisUtterance(normalized)
-  utterance.lang = lang
-  utterance.rate = options.rate ?? 0.9
-  utterance.pitch = options.pitch ?? 1
-  utterance.volume = options.volume ?? 1
-  if (voice) utterance.voice = voice
+    const voice = pickVoice(lang, { voiceName: options.voiceName, random: options.randomVoice })
+    const utterance = new SpeechSynthesisUtterance(normalized)
+    utterance.lang = lang
+    utterance.rate = options.rate ?? 0.9
+    utterance.pitch = options.pitch ?? 1
+    utterance.volume = options.volume ?? 1
+    if (voice) utterance.voice = voice
 
-  synth.speak(utterance)
+    utterance.onend = () => resolve()
+    utterance.onerror = () => resolve()
+
+    synth.speak(utterance)
+  })
 }
 
 // Dừng ngay mọi âm thanh TTS đang phát trên trình duyệt.
@@ -134,7 +138,7 @@ export const stopAudio = () => {
 }
 
 // Phát âm văn bản: ưu tiên audio từ điển, nếu không có thì fallback sang TTS.
-export const playAudio = async (text: string, options: PlayAudioOptions = {}) => {
+export const playAudio = async (text: string, options: PlayAudioOptions = {}): Promise<void> => {
   if (typeof window === "undefined") return
 
   const lang = options.lang || "en-US"
@@ -143,18 +147,24 @@ export const playAudio = async (text: string, options: PlayAudioOptions = {}) =>
     const audioUrl = await fetchDictionaryAudio(text);
     if (audioUrl) {
       try {
-        const audio = new Audio(audioUrl);
-        audio.volume = options.volume ?? 1;
-        await audio.play();
-        return;
+        return new Promise<void>((resolve) => {
+          const audio = new Audio(audioUrl);
+          audio.volume = options.volume ?? 1;
+          audio.onended = () => resolve();
+          audio.onerror = () => {
+            speakWithTTS(text, options).then(resolve);
+          };
+          audio.play().catch(() => {
+            speakWithTTS(text, options).then(resolve);
+          });
+        });
       } catch {
-        speakWithTTS(text, options);
-        return;
+        return speakWithTTS(text, options);
       }
     }
   }
 
-  speakWithTTS(text, options);
+  return speakWithTTS(text, options);
 }
 
 // Chuyển số giây sang định dạng thời gian mm:ss hoặc hh:mm:ss.
