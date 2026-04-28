@@ -3,7 +3,7 @@
 import { IReading } from "@/features/reading/types"
 import { LessonHeader } from "./LessonHeader"
 import { PassageSection } from "./PassageSection"
-import QuizPanel from "../exam/QuizPanel"
+import QuizPanel from "./QuizPanel"
 import { IQuizResultData } from "@/features/quizz/types"
 import { useEffect, useState } from "react"
 import { toast } from "react-toastify"
