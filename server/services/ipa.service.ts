@@ -489,6 +489,21 @@ export class IpaService {
     return ipa;
   }
 
+  // (USER) Lấy thông tin chi tiết IPA theo âm
+  static async getIpaSound(sound: string): Promise<IIpa> {
+    const ipa = await Ipa.findOne({ sound: sound })
+      .populate('image', 'url')
+      .populate('video', 'url')
+      .lean()
+
+    if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
+    return {
+      ...ipa,
+      image: (ipa.image as any)?.url || null,
+      video: (ipa.video as any)?.url || null
+    } as unknown as IIpa
+  }
+
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
   // (ADMIN) Lấy thông tin chi tiết IPA theo ID

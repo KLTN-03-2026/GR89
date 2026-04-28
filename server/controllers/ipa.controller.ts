@@ -187,6 +187,20 @@ export class IpaController {
     })
   })
 
+  // (USER) Lấy thông tin chi tiết IPA theo ID
+  static getIpaSound = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { sound } = req.params
+    if (!sound) {
+      return next(new ErrorHandler('Vui lòng cung cấp thông tin IPA', 400))
+    }
+    const ipa = await IpaService.getIpaSound(sound)
+    res.status(200).json({
+      success: true,
+      message: 'Lấy thông tin chi tiết IPA thành công',
+      data: ipa
+    })
+  })
+
   // (ADMIN) Lấy thống kê tổng quan về IPA
   static getOverviewStats = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const stats = await IpaService.getOverviewStats()

@@ -5,19 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import {
-  Volume2,
   RotateCcw,
   BookOpen,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import { toast } from 'react-toastify'
 import IpaScoring from './IpaScoring'
 import { saveHighestIpaScore } from '@/features/ipa/services/ipaApi'
 import { IIpa, IIpaScoringResult } from '@/features/ipa/types'
 import { useStudySession } from '@/libs/hooks/useStudySession'
 import IpaLessonScore from './IpaLessonScore'
 import ResultIpaQuiz from './ResultIpaQuiz'
+import { PlayAudioButton } from '@/components/ui/play-audio-button'
 
 interface QuizQuestion {
   word: string
@@ -52,24 +51,6 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
   useEffect(() => {
     startSession()
   }, [startSession])
-
-  const playAudio = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'en-US'
-      utterance.rate = 0.8
-      utterance.pitch = 1
-      utterance.volume = 1
-
-      utterance.onerror = () => {
-        toast.error('Không thể phát audio')
-      }
-
-      speechSynthesis.speak(utterance)
-    } else {
-      toast.error('Trình duyệt không hỗ trợ phát âm')
-    }
-  }
 
   const handleNextQuestion = () => {
     if (currentQuestionIndex < totalQuestions - 1) {
@@ -172,7 +153,7 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
 
   return (
     <>
-      <Card className="border-0 shadow-none max-w-3xl mx-auto p-10">
+      <Card className="max-w-6xl max-w-3xl mx-auto p-10">
         <div className="space-y-2 mb-5">
           <div className="flex items-center justify-between text-sm text-slate-600">
             <span>Câu {currentQuestionIndex + 1} / {totalQuestions}</span>
@@ -190,14 +171,10 @@ export function QuizzIPA({ ipa }: QuizzIPAProps) {
             </div>
             <p className="text-slate-600 text-base">{currentQuestion.vietnamese}</p>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => playAudio(currentQuestion.word)}
-                className="h-12 w-12 border-slate-300 hover:border-slate-400"
-              >
-                <Volume2 className="w-5 h-5" />
-              </Button>
+              <PlayAudioButton
+                text={currentQuestion.word}
+                className="h-12 w-12 bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 shadow-sm hover:shadow-md hover:scale-105 active:scale-95 border border-indigo-100/50"
+              />
             </div>
           </div>
         </CardHeader>

@@ -10,9 +10,9 @@ interface ListCardIpaProps {
 }
 
 const MONOPHTHONG_ROWS = [
-  ['i:', 'ɪ', 'ʊ', 'u:'],
-  ['e', 'ə', 'ɜ:', 'ɔ:'],
-  ['æ', 'ʌ', 'ɑ:', 'ɒ'],
+  ['iː', 'ɪ', 'ʊ', 'uː'],
+  ['e', 'ə', 'ɜː', 'ɔː'],
+  ['æ', 'ʌ', 'ɑː', 'ɒ'],
 ];
 
 const DIPHTHONG_ROWS = [
