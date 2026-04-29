@@ -7,6 +7,7 @@ import { cn } from '@/libs/utils'
 
 interface FlowProgressProps {
   stage: StudyStage
+  setStage: (state: StudyStage) => void
   theoryIndex: number
   practiceIndex: number
   totalTheory: number
@@ -14,13 +15,14 @@ interface FlowProgressProps {
 }
 
 const stageItems = [
-  { key: 'theory' as const, label: 'Lý thuyết', icon: BookOpen, color: 'emerald' },
-  { key: 'practice' as const, label: 'Luyện tập', icon: Sparkles, color: 'purple' },
-  { key: 'quiz' as const, label: 'Kiểm tra', icon: GraduationCap, color: 'amber' },
+  { key: 'theory' as StudyStage, label: 'Lý thuyết', icon: BookOpen, color: 'emerald' },
+  { key: 'practice' as StudyStage, label: 'Luyện tập', icon: Sparkles, color: 'purple' },
+  { key: 'quiz' as StudyStage, label: 'Kiểm tra', icon: GraduationCap, color: 'amber' },
 ]
 
 export function FlowProgress({
   stage,
+  setStage,
   theoryIndex,
   practiceIndex,
   totalPractice,
@@ -82,7 +84,11 @@ export function FlowProgress({
           const Icon = item.icon
 
           return (
-            <div className="flex-1 min-w-[120px] relative group" key={item.key}>
+            <div
+              className="flex-1 min-w-[120px] relative group"
+              onClick={() => setStage(item.key)}
+              key={item.key}
+            >
               <div
                 className={cn(
                   'flex items-center gap-3 p-3 rounded-2xl border-2 transition-all duration-300',
