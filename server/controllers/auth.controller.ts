@@ -230,10 +230,8 @@ export class AuthController {
     if (password.length > 30)
       return next(new ErrorHandler('Mật khẩu không được vượt quá 30 ký tự', 400))
 
-    const allowedTlds = ['com', 'net', 'org', 'vn', 'edu', 'gov', 'io', 'co']
-    const emailRegex = new RegExp('^[^\s@]+@[^\s@]+\.(?<tld>[a-zA-Z]{2,})$')
-    const match = email.match(emailRegex)
-    if (!match || !allowedTlds.includes(match.groups?.tld?.toLowerCase() || '')) {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9]{2,}$/
+    if (!emailRegex.test(email)) {
       return next(new ErrorHandler('Email không hợp lệ', 400))
     }
 
