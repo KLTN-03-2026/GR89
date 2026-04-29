@@ -229,8 +229,17 @@ export class PaymentService {
       return { paymentUrl: paymentLink.checkoutUrl, paymentId: String(newPayment._id) };
     }
     else {
+      // Cập nhật trạng thái thanh toán
       newPayment.status = 'paid'
       await newPayment.save();
+
+      // Thêm lượt sử dụng coupon nếu có
+      const coupon = await CouponService.getCouponById(newPayment.couponId?.toString() || "");
+      if (coupon) {
+        coupon.usedCount = coupon.usedCount + 1;
+        await coupon.save();
+      }
+
       await this.syncVipStatus(userId, planId)
       return { paymentUrl: `${process.env.CLIENT_BASE_URL}/payment/success`, paymentId: String(newPayment._id) };
     }
