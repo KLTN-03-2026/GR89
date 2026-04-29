@@ -202,7 +202,7 @@ export function CouponsMain() {
     return [
       {
         title: "Mã giảm giá",
-        value: total,
+        value: coupons.length.toString(),
         change: { value: "Tổng cộng", isPositive: true },
         icon: TrendingUp,
         tone: "rose" as const,

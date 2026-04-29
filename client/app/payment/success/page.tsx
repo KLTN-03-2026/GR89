@@ -19,7 +19,7 @@ export default function PaymentResultPage() {
 
   useEffect(() => {
     refreshProfile()
-  }, [refreshProfile])
+  }, [])
 
   const code = searchParams.get('code')
   const status = searchParams.get('status')
