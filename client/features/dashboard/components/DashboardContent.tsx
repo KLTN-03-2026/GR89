@@ -11,20 +11,21 @@ import type { EntertainmentStatsEntry } from '@/features/entertainment'
 import { User } from "@/types/user"
 import { QuickActions } from "./QuickActions"
 import { RecentActivities } from "./RecentActivities"
-import type { RecentActivity } from "../types"
+import type { RecentActivity, IDailySuggestion } from "../types"
 
 interface DashboardContentProps {
   user: User
   lessonStats: LessonStatsResponse | null
   entertainmentStats: EntertainmentStatsEntry[]
   recentActivities: RecentActivity[]
+  dailySuggestion: IDailySuggestion | null
 }
 
-export function DashboardContent({ user, lessonStats, entertainmentStats, recentActivities }: DashboardContentProps) {
+export function DashboardContent({ user, lessonStats, entertainmentStats, recentActivities, dailySuggestion }: DashboardContentProps) {
   const streak = user?.currentStreak || 0
   const longestStreak = user?.longestStreak || 0
 
-  const descriptions: { text: string, textHighlight?: string | '' }[] = [
+  const descriptions: { text: string, textHighlight?: string }[] = [
     {
       text: (streak ?? 0) === 0
         ? 'Chào mừng! Hôm nay hãy bắt đầu với'
@@ -45,7 +46,6 @@ export function DashboardContent({ user, lessonStats, entertainmentStats, recent
     ? {
       icon: "🌱",
       title: "Bắt đầu chuỗi ngày",
-      value: 0,
       valueText: '0',
       progress: 30,
       progressDescription: "Học một bài hôm nay để khởi động chuỗi!",
@@ -54,7 +54,6 @@ export function DashboardContent({ user, lessonStats, entertainmentStats, recent
     : {
       icon: "🔥",
       title: "Chuỗi ngày hiện tại",
-      value: Number(streak ?? 0),
       valueText: String(streak ?? 0),
       progress: 30,
       progressDescription: "Tiếp tục cố gắng nhé!",
@@ -143,7 +142,7 @@ export function DashboardContent({ user, lessonStats, entertainmentStats, recent
 
       {/* Hành động nhanh & Hoạt động gần đây */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 w-full mt-4">
-        <QuickActions />
+        <QuickActions dailySuggestion={dailySuggestion} />
         <RecentActivities activities={recentActivities} />
       </div>
     </>

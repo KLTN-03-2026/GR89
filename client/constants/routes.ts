@@ -163,6 +163,8 @@ export interface IQuickAction {
   Icon: LucideIcon;
   color: string;
   href: string;
+  progress?: number;
+  isCompleted?: boolean;
 }
 const QUICK_ACTIONS: IQuickAction[] = [
   {
@@ -171,6 +173,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: PlayCircle,
     color: "from-green-500 to-emerald-500",
     href: ROUTES_PATH.ROADMAP,
+    isCompleted: false,
   },
   {
     title: "Luyện kỹ năng",
@@ -178,6 +181,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: Target,
     color: "from-blue-500 to-cyan-500",
     href: ROUTES_PATH.LISTENING,
+    isCompleted: false,
   },
   {
     title: "Học từ vựng",
@@ -185,6 +189,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: BarChart3,
     color: "from-purple-500 to-pink-500",
     href: ROUTES_PATH.VOCABULARY,
+    isCompleted: false,
   },
   {
     title: "Giải trí",
@@ -192,6 +197,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: Users,
     color: "from-orange-500 to-red-500",
     href: ROUTES_PATH.MOVIE,
+    isCompleted: false,
   },
 ]
 

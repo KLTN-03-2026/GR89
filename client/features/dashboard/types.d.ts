@@ -37,3 +37,22 @@ export interface RecentActivity {
   createdAt: string
   status: 'passed' | 'failed' | 'in_progress'
 }
+
+export interface IDailySuggestionItem {
+  title: string
+  description: string
+  href: string
+  icon?: string
+  color?: string
+  progress?: number
+  isCompleted?: boolean
+}
+
+export interface IDailySuggestion {
+  _id: string
+  user: string
+  dateString: string
+  suggestions: IDailySuggestionItem[]
+  createdAt: string
+  updatedAt: string
+}

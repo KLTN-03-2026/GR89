@@ -13,7 +13,6 @@ export function ResultPage({ _id, type, results }: ResultPageProps) {
   const router = useRouter()
 
   const onRetry = () => {
-    console.log("on")
     switch (type) {
       case "vocabulary":
         router.push(`/quizz/${_id}?type=vocabulary`)

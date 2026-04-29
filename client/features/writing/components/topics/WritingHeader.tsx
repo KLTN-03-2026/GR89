@@ -11,7 +11,6 @@ interface WritingHeaderProps {
 }
 
 export function WritingHeader({ overview }: WritingHeaderProps) {
-  console.log(overview)
   const descriptions: IDescription[] = [
     { text: 'Luyện kỹ năng viết tiếng Anh với các chủ đề đa dạng. Từ đoạn văn đến bài luận, nâng cao khả năng diễn đạt.' }
   ]

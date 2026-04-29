@@ -1,7 +1,7 @@
 import { DashboardContent, getDashboardData } from '@/features/dashboard'
 
 export default async function DashboardPage() {
-  const { user, lessonStats, entertainmentStats, recentActivities } = await getDashboardData()
+  const { user, lessonStats, entertainmentStats, recentActivities, dailySuggestion } = await getDashboardData()
   
   return (
     <DashboardContent
@@ -9,6 +9,7 @@ export default async function DashboardPage() {
       lessonStats={lessonStats}
       entertainmentStats={entertainmentStats}
       recentActivities={recentActivities}
+      dailySuggestion={dailySuggestion}
     />
   )
 }

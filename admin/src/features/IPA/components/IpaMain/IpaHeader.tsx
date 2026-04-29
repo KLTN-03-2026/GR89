@@ -31,7 +31,6 @@ export default function IpaHeader({ callback }: props) {
       await getIpaOverviewStats()
         .then(res => {
           const data = res.data;
-          console.log(data)
           setStats([
             {
               title: "Tổng số âm IPA",

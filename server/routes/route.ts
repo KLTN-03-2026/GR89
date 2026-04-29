@@ -19,6 +19,7 @@ import { couponRoutes } from './coupon.routes'
 import { chatbotRoutes } from './chatbot.routes'
 import { roadmapRoutes } from './roadmap.routes'
 import { reportRoutes } from './report.routes'
+import { dailySuggestionRoutes } from './dailySuggestion.routes'
 
 const router = express.Router()
 
@@ -43,6 +44,7 @@ router.use('/coupon', couponRoutes)
 router.use('/chatbot', chatbotRoutes)
 router.use('/roadmap', roadmapRoutes)
 router.use('/report', reportRoutes)
+router.use('/daily-suggestion', dailySuggestionRoutes)
 
 // ✅ ROOT ENDPOINT
 router.get('/', (req, res) => {

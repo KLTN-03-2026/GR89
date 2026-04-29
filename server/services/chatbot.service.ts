@@ -621,4 +621,95 @@ Recommendation rule (very important):
 
     return newPrompt.trim()
   }
+
+  static async buildSuggestionPrompt(userId: string): Promise<string> {
+    // Lấy danh sách tất cả bài học
+    const topicsList = await this.getTopicsList()
+    const totals = {
+      vocabulary: topicsList.vocabulary.length,
+      grammar: topicsList.grammar.length,
+      reading: topicsList.reading.length,
+      listening: topicsList.listening.length,
+      speaking: topicsList.speaking.length,
+      writing: topicsList.writing.length,
+      ipa: topicsList.ipa.length
+    }
+
+    // Lấy thông tin user, tiến trình, và lịch sử học tập
+    const [userData, progressData, recentStudyHistory] = await Promise.all([
+      this.getUserData(userId),
+      this.getProgressData(userId, totals),
+      this.getRecentStudyHistory(userId, 20)
+    ])
+
+    const baseURL = process.env.CLIENT_BASE_URL || ''
+
+    const lessonTitleByCategoryAndId = {
+      vocabulary: new Map(topicsList.vocabulary.map(item => [item._id, item.name])),
+      grammar: new Map(topicsList.grammar.map(item => [item._id, item.title])),
+      reading: new Map(topicsList.reading.map(item => [item._id, item.title])),
+      listening: new Map(topicsList.listening.map(item => [item._id, item.title])),
+      speaking: new Map(topicsList.speaking.map(item => [item._id, item.title])),
+      writing: new Map(topicsList.writing.map(item => [item._id, item.title])),
+      ipa: new Map(topicsList.ipa.map(item => [item._id, item.sound]))
+    } as const
+
+    const recentStudyHistoryWithTitle = recentStudyHistory.map(item => ({
+      ...item,
+      lessonTitle: lessonTitleByCategoryAndId[item.category]?.get(item.lessonId)
+    }))
+
+    const context: Record<string, any> = {
+      user: {
+        firstName: userData?.fullName ? userData.fullName.trim().split(/\s+/)[0] : 'User',
+        level: userData?.currentLevel,
+        isVip: userData?.isVip,
+        totalPoints: userData?.totalPoints,
+      },
+      allLessons: topicsList,
+      progressBySkill: progressData,
+      recentStudyHistory: recentStudyHistoryWithTitle,
+      appLinksPatterns: {
+        ipaLesson: `${baseURL}/study/ipa/learn/[id]`,
+        grammarLesson: `${baseURL}/study/grammar/[id]`,
+        vocabularyLesson: `${baseURL}/study/vocabulary/[id]`,
+        readingLesson: `${baseURL}/skills/reading/lesson/[id]`,
+        listeningLesson: `${baseURL}/skills/listening/lesson/[id]`,
+        speakingLesson: `${baseURL}/skills/speaking/lesson/[id]`,
+        writingLesson: `${baseURL}/skills/writing/lesson/[id]`,
+      }
+    }
+
+    const prompt = `
+You are an AI learning assistant for "English Master". Your ONLY job is to suggest the next 5-8 daily study goals for the user based on their context.
+
+# INSTRUCTIONS:
+1. Analyze the user's \`recentStudyHistory\` to see what they learned recently.
+2. Analyze the user's \`progressBySkill\` to identify weak skills or incomplete lessons.
+3. Look at \`allLessons\` to pick the EXACT NEXT lessons the user should take.
+4. Provide a balanced mix:
+   - 1-2 lessons to review/improve weak points or recently failed tasks.
+   - 2-4 new lessons from topics they haven't completed yet (follow the \`orderIndex\` logic).
+   - 1-2 fun/complementary skills (listening, speaking, or entertainment).
+
+# REQUIRED JSON FORMAT:
+You MUST respond with a valid JSON array of objects. Do not include a "suggestions" root key. Return ONLY the array itself.
+Do NOT use markdown blocks (\`\`\`json) or any other text.
+
+[
+  {
+    "title": "Tên mục tiêu ngắn gọn (VD: Cải thiện kỹ năng Nói, Học từ vựng chủ đề X...)",
+    "description": "Mô tả ngắn gọn (VD: Luyện tập lại bài Tính từ cơ bản)",
+    "href": "Đường dẫn thực tế (Dựa vào appLinksPatterns và ID bài học tương ứng, VD: /skills/speaking/lesson/60d...)",
+    "icon": "Tên icon Lucide-React hợp lệ (Chọn 1 trong: PlayCircle, Target, BarChart3, Users, Mic, BookOpen, Headphones, PenTool, Radio, Film)",
+    "color": "Class màu (Chọn 1 trong: from-green-500 to-emerald-500, from-blue-500 to-cyan-500, from-purple-500 to-pink-500, from-orange-500 to-red-500, from-amber-500 to-orange-500, from-indigo-500 to-blue-600)",
+    "isCompleted": false
+  }
+]
+
+## CONTEXT (internal)
+${JSON.stringify(context, null, 2)}
+`
+    return prompt.trim()
+  }
 }

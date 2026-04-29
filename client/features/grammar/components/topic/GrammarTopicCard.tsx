@@ -10,7 +10,6 @@ interface Props {
 }
 
 export default function GrammarTopicCard({ topic }: Props) {
-  console.log(topic)
   const level = topic?.level as string | undefined
   return (
     <Popover>

@@ -242,7 +242,7 @@ export class IpaController {
   static updateIpa = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const { sound, soundType, image, video, description } = req.body
-    console.log(req.body)
+
     if (!sound || !soundType || !image || !description) {
       return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400))
     }
