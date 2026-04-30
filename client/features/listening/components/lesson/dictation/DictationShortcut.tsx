@@ -9,7 +9,7 @@ export default function DictationShortcut() {
 
   return (
     <Dialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen}>
-      <DialogTrigger>
+      <DialogTrigger asChild>
         <Button variant="outline" size="sm" onClick={() => setIsShortcutsOpen(true)}>
           <Keyboard className="w-4 h-4 mr-2" />
           Phím tắt
@@ -18,7 +18,7 @@ export default function DictationShortcut() {
       <DialogContent className="rounded-2xl">
         <DialogHeader>
           <DialogTitle>Phím tắt</DialogTitle>
-          <DialogDescription>Enter / Space: Xác nhận từ. Ctrl: Phát/tạm dừng. ← →: Tua 5 giây.</DialogDescription>
+          <DialogDescription>Ctrl: Phát/tạm dừng. Ctrl/Alt + ← / →: Tua 5 giây.</DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button onClick={() => setIsShortcutsOpen(false)}>Đóng</Button>

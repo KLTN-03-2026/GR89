@@ -17,18 +17,18 @@ export function AppSidebar() {
       <SidebarHeader>
         <div className={`flex items-center px-4 py-2 transition-all duration-200 ${collapsed ? "justify-center" : "gap-3"}`}>
           <Image
-            title="icon"
+            title="logo"
             src='/images/logo.png'
             alt="logo"
-            width={40}
-            height={40}
-            className="min-w-[32px] min-h-[32px] w-8 h-8 object-contain"
+            width={70}
+            height={70}
+            className="min-w-[32px] min-h-[32px] w-12 h-12 object-contain"
           />
 
           {!collapsed && (
             <div>
               <h1 className="font-bold text-lg bg-gradient-to-r from-[#FF6B35] to-[#4A90E2] bg-clip-text text-transparent">
-                EnglishMaster
+                ActiveLearning
               </h1>
               <p className="text-xs text-muted-foreground">Learn English Smart</p>
             </div>

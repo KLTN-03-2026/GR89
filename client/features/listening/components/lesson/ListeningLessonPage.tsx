@@ -27,9 +27,9 @@ export function ListeningLessonPage({ listening }: props) {
   )
 
   const [formDataDictationResult, setFormDataDictationResult] = useState<{
-    index: number
-    text: string
-    isCorrect: boolean
+    value: string
+    added?: boolean
+    removed?: boolean
   }[]>([])
 
   useEffect(() => {
@@ -84,10 +84,23 @@ export function ListeningLessonPage({ listening }: props) {
   }
 
   const correctQuiz = formDataQuizResult.filter(r => r.isCorrect).length
-  const correctDictation = formDataDictationResult.filter(r => r.isCorrect).length
+
+  const correctDictation = formDataDictationResult.reduce((acc, part) => {
+    if (!part?.added && !part?.removed) {
+      return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
+    }
+    return acc;
+  }, 0);
+
+  const totalDictation = formDataDictationResult.reduce((acc, part) => {
+    if (!part?.added) {
+      return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
+    }
+    return acc;
+  }, 0);
 
   const quizPercent = formDataQuizResult.length ? correctQuiz / formDataQuizResult.length : 0
-  const dictationPercent = formDataDictationResult.length ? correctDictation / formDataDictationResult.length : 0
+  const dictationPercent = totalDictation ? correctDictation / totalDictation : 0
 
   const progressQuiz = quizPercent * 30
   const progressDictionary = dictationPercent * 70
@@ -96,11 +109,11 @@ export function ListeningLessonPage({ listening }: props) {
 
   const result: IListeningProgress = {
     progress: progress,
-    point: formDataDictationResult.filter(r => r.isCorrect).length,
-    totalQuestions: formDataDictationResult.length,
-    quizPoint: formDataQuizResult.filter(r => r.isCorrect).length,
+    point: correctDictation,
+    totalQuestions: totalDictation,
+    quizPoint: correctQuiz,
     quizTotal: formDataQuizResult.length,
-    quizProgress: formDataQuizResult.filter(r => r.isCorrect).length / formDataQuizResult.length * 100,
+    quizProgress: formDataQuizResult.length ? correctQuiz / formDataQuizResult.length * 100 : 0,
     time: 0,
     date: new Date(),
     result: formDataDictationResult,

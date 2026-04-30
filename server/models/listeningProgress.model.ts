@@ -5,9 +5,9 @@ export interface IListeningProgress extends Document {
   studyTime: number
   quizzesResults: IQuizResult[]
   directionResults: {
-    index: number
-    text: string
-    isCorrect: boolean
+    value: string
+    added?: boolean
+    removed?: boolean
   }[]
 }
 

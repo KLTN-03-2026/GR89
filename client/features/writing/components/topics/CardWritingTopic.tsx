@@ -80,7 +80,7 @@ export default function CardWritingTopic({ topic }: CardWritingTopicProps) {
       </PopoverTrigger>
 
       <EnhancedPopover
-        href={`/skills/writing/lesson/${topic._id}`}
+        href={`/skills/writing/${topic._id}`}
         skill="writing"
         resultId={topic._id}
         isCompleted={topic.isCompleted}

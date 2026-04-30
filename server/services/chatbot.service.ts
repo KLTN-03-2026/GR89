@@ -605,13 +605,13 @@ Recommendation rule (very important):
             vocabularyList: `${baseURL}/study/vocabulary`,
             vocabularyLesson: `${baseURL}/study/vocabulary/[id]`,
             readingList: `${baseURL}/skills/reading`,
-            readingLesson: `${baseURL}/skills/reading/lesson/[id]`,
+            readingLesson: `${baseURL}/skills/reading/[id]`,
             listeningList: `${baseURL}/skills/listening`,
-            listeningLesson: `${baseURL}/skills/listening/lesson/[id]`,
+            listeningLesson: `${baseURL}/skills/listening/[id]`,
             speakingList: `${baseURL}/skills/speaking`,
-            speakingLesson: `${baseURL}/skills/speaking/lesson/[id]`,
+            speakingLesson: `${baseURL}/skills/speaking/[id]`,
             writingList: `${baseURL}/skills/writing`,
-            writingLesson: `${baseURL}/skills/writing/lesson/[id]`,
+            writingLesson: `${baseURL}/skills/writing/[id]`,
           },
         }
         : undefined,
@@ -673,10 +673,10 @@ Recommendation rule (very important):
         ipaLesson: `${baseURL}/study/ipa/learn/[id]`,
         grammarLesson: `${baseURL}/study/grammar/[id]`,
         vocabularyLesson: `${baseURL}/study/vocabulary/[id]`,
-        readingLesson: `${baseURL}/skills/reading/lesson/[id]`,
-        listeningLesson: `${baseURL}/skills/listening/lesson/[id]`,
-        speakingLesson: `${baseURL}/skills/speaking/lesson/[id]`,
-        writingLesson: `${baseURL}/skills/writing/lesson/[id]`,
+        readingLesson: `${baseURL}/skills/reading/[id]`,
+        listeningLesson: `${baseURL}/skills/listening/[id]`,
+        speakingLesson: `${baseURL}/skills/speaking/[id]`,
+        writingLesson: `${baseURL}/skills/writing/[id]`,
       }
     }
 
@@ -700,7 +700,7 @@ Do NOT use markdown blocks (\`\`\`json) or any other text.
   {
     "title": "Tên mục tiêu ngắn gọn (VD: Cải thiện kỹ năng Nói, Học từ vựng chủ đề X...)",
     "description": "Mô tả ngắn gọn (VD: Luyện tập lại bài Tính từ cơ bản)",
-    "href": "Đường dẫn thực tế (Dựa vào appLinksPatterns và ID bài học tương ứng, VD: /skills/speaking/lesson/60d...)",
+    "href": "Đường dẫn thực tế (Dựa vào appLinksPatterns và ID bài học tương ứng, VD: /skills/speaking/60d...)",
     "icon": "Tên icon Lucide-React hợp lệ (Chọn 1 trong: PlayCircle, Target, BarChart3, Users, Mic, BookOpen, Headphones, PenTool, Radio, Film)",
     "color": "Class màu (Chọn 1 trong: from-green-500 to-emerald-500, from-blue-500 to-cyan-500, from-purple-500 to-pink-500, from-orange-500 to-red-500, from-amber-500 to-orange-500, from-indigo-500 to-blue-600)",
     "isCompleted": false

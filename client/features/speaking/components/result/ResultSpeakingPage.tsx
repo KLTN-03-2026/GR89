@@ -140,7 +140,7 @@ export function ResultSpeakingPage({ result }: ResultSpeakingPageProps) {
             ) : null}
           </div>
           <div className="mt-5 flex w-full gap-2">
-            <Link href={`/skills/speaking/lesson/${result.speakingLesson._id}`} className="flex-1">
+            <Link href={`/skills/speaking/${result.speakingLesson._id}`} className="flex-1">
               <button
                 type="button"
                 className="w-full px-3 py-2 rounded-lg bg-orange-600 text-white text-sm font-medium"
