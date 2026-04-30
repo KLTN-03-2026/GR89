@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Eye, FileText, Film, Flame, Headphones, LayoutDashboardIcon, LucideIcon, Map, Mic, Music, PenTool, PlayCircle, Radio, Sparkles, Target, Trophy, Users, Volume2, Zap } from "lucide-react";
+import { Baby, BarChart3, BookOpen, Briefcase, Eye, FileText, Film, Flame, GraduationCap, Headphones, Layers, LayoutDashboardIcon, LucideIcon, Map, Mic, Music, PenTool, PlayCircle, Radio, Rocket, Sparkles, Target, Trophy, Users, Volume2, Zap } from "lucide-react";
 
 export interface ISidebarRoute {
   title: string;
@@ -30,6 +30,9 @@ const ROUTES_PATH = {
   MOVIE: '/entertainment/movies',
   MUSIC: '/entertainment/musics',
   PODCAST: '/entertainment/podcasts',
+  CATELOGY_KIDS: '/catelogy/kids',
+  CATELOGY_TEENAGER: '/catelogy/teenager',
+  CATELOGY_ADULT: '/catelogy/adult',
   PROFILE: '/profile',
   SETTINGS: '/settings',
 }
@@ -47,7 +50,10 @@ const ROUTES_NAME = {
   '/skills/writing': "Luyện viết",
   '/entertainment/movies': "Phim & Video",
   '/entertainment/music': "Âm nhạc",
-  '/entertainment/postcard': "Postcard",
+  '/entertainment/podcasts': "Podcast",
+  '/catelogies/kids': "Danh mục trẻ em",
+  '/catelogies/teenager': "Danh mục thiếu niên",
+  '/catelogies/adult': "Danh mục người lớn",
   '/profile': "Hồ sơ",
   '/settings': "Cài đặt",
 }
@@ -153,6 +159,30 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
         icon: Radio,
         gradient: "from-teal-500 to-cyan-500",
       },
+    ],
+  },
+  {
+    title: "catelogies",
+    icon: Layers,
+    items: [
+      {
+        title: "Danh mục trẻ em",
+        url: ROUTES_PATH.CATELOGY_KIDS,
+        icon: Baby,
+        gradient: "from-amber-400 to-orange-500",
+      },
+      {
+        title: "Danh mục thiếu niên",
+        url: ROUTES_PATH.CATELOGY_TEENAGER,
+        icon: GraduationCap,
+        gradient: "from-sky-400 to-indigo-600",
+      },
+      {
+        title: "Danh mục người lớn",
+        url: ROUTES_PATH.CATELOGY_ADULT,
+        icon: Briefcase,
+        gradient: "from-red-400 to-red-600",
+      }
     ],
   }
 ]
