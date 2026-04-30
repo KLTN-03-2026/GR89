@@ -36,7 +36,7 @@ export function FinalResultsView({
 
   const handleRetry = () => {
     if (!onRetry) {
-      router.replace(`/skills/speaking/lesson/${speakingId}`)
+      router.replace(`/skills//${speakingId}`)
     } else {
       onRetry()
     }

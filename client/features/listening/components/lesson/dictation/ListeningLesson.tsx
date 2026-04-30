@@ -6,14 +6,14 @@ import { IListening } from '@/features/listening/types'
 interface ListeningLessonProps {
   listening: IListening
   formDataDictationResult: {
-    index: number
-    text: string
-    isCorrect: boolean
+    value: string
+    added?: boolean
+    removed?: boolean
   }[]
   setFormDataDictationResult: (formDataDictationResult: {
-    index: number
-    text: string
-    isCorrect: boolean
+    value: string
+    added?: boolean
+    removed?: boolean
   }[]) => void
   handleSubmit: () => void
   onRetry?: () => void

@@ -8,9 +8,9 @@ export function Branding() {
       <div className="hidden lg:flex flex-col justify-center space-y-8 p-8 max-w-2xl">
         <div className="space-y-6">
           <div className="flex items-center space-x-3">
-            <Image src="/images/logo.png" alt="logo" width={50} height={50} />
+            <Image src="/images/logo.png" alt="logo" width={70} height={70} />
 
-            <h1 className="text-3xl font-bold text-primary">EnglishMaster</h1>
+            <h1 className="text-3xl font-bold text-primary">ActiveLearning</h1>
           </div>
 
           <h2 className="text-4xl font-bold text-primary leading-tight">

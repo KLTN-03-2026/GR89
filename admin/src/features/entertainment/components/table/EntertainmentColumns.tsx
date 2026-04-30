@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { Entertainment } from '../../types'
 import Image from 'next/image'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useState } from 'react'
 import { Play } from 'lucide-react'
 import ActionsCell from './ActionsCell'
@@ -55,6 +55,7 @@ function VideoThumb({ url, title }: { url: string; title: string }) {
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[800px] w-[90vw] p-0">
+          <DialogTitle className='hidden'>{title}</DialogTitle>
           <div className="w-full aspect-video">
             {isYouTube ? (
               <iframe

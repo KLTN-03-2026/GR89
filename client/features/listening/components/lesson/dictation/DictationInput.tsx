@@ -4,23 +4,22 @@ import DictationShortcut from './DictationShortcut'
 interface Props {
   inputText: string
   setInputText: (inputText: string) => void
-  handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void
   isCompleted: boolean
 }
 
 export default function DictationInput({ inputText, setInputText, handleKeyDown, isCompleted }: Props) {
   return (
-    <>
+    <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-gray-700">
-          Gõ từng từ <span className="text-gray-400">(Enter/Space xác nhận)</span>
+          Gõ toàn bộ bài nghe <span className="text-gray-400">(Sau đó bấm Chấm điểm)</span>
         </p>
 
         <DictationShortcut />
       </div>
-      <input
-        type="text"
-        placeholder="Gõ những gì bạn nghe được..."
+      <textarea
+        placeholder="Gõ toàn bộ những gì bạn nghe được vào đây..."
         value={inputText}
         onChange={e => setInputText(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -28,8 +27,9 @@ export default function DictationInput({ inputText, setInputText, handleKeyDown,
         autoComplete="off"
         spellCheck={false}
         disabled={isCompleted}
-        className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-base font-medium"
+        rows={6}
+        className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 focus:border-indigo-500 outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all text-base font-medium resize-none leading-relaxed bg-gray-50/50 focus:bg-white"
       />
-    </>
+    </div>
   )
 }

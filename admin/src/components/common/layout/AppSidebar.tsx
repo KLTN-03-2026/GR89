@@ -81,9 +81,9 @@ export function AppSidebar() {
             title="icon"
             src='/images/logo.png'
             alt="logo"
-            width={40}
-            height={40}
-            className="min-w-[32px] min-h-[32px] w-8 h-8 object-contain"
+            width={60}
+            height={60}
+            className="min-w-[32px] min-h-[32px] w-10 h-10 object-contain"
           />
 
           <div>

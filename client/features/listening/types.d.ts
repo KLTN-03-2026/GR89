@@ -16,6 +16,12 @@ export interface IListening {
   isResult: boolean
 }
 
+export interface IDiffPart {
+  value: string
+  added?: boolean
+  removed?: boolean
+}
+
 export interface IListeningProgress {
   progress: number
   point: number
@@ -25,10 +31,6 @@ export interface IListeningProgress {
   quizProgress?: number
   time: number
   date: Date
-  result: {
-    index: number
-    text: string
-    isCorrect: boolean
-  }[]
+  result: IDiffPart[]
   listeningId: IListening
 }

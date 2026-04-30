@@ -21,9 +21,9 @@ interface IListeningResult {
   quizProgress?: number
   time: number
   result: {
-    index: number
-    text: string
-    isCorrect: boolean
+    value: string
+    added?: boolean
+    removed?: boolean
   }[]
   listeningId: IListening
 }
@@ -589,7 +589,7 @@ export class ListeningService {
   static async doListeningQuiz(
     userId: string,
     listeningId: string,
-    dictationResults: { index: number, text: string, isCorrect: boolean }[],
+    dictationResults: { value: string, added?: boolean, removed?: boolean }[],
     quizResults: IQuizResult[],
     studyTimeSeconds: number = 0,
   ) {
@@ -609,10 +609,23 @@ export class ListeningService {
 
     // Progress 30% Quiz và 70% Dictionary
     const correctQuiz = quizResults.filter(r => r.isCorrect).length
-    const correctDictation = dictationResults.filter(r => r.isCorrect).length
+
+    const correctDictation = dictationResults.reduce((acc, part) => {
+      if (!part?.added && !part?.removed) {
+        return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
+      }
+      return acc;
+    }, 0);
+
+    const totalDictation = dictationResults.reduce((acc, part) => {
+      if (!part?.added) {
+        return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
+      }
+      return acc;
+    }, 0);
 
     const quizPercent = quizResults.length ? correctQuiz / quizResults.length : 0
-    const dictationPercent = dictationResults.length ? correctDictation / dictationResults.length : 0
+    const dictationPercent = totalDictation ? correctDictation / totalDictation : 0
 
     const progressQuiz = quizPercent * 30
     const progressDictionary = dictationPercent * 70
@@ -652,13 +665,27 @@ export class ListeningService {
     const listeningResult = await ListeningProgress.findById(listengResultId).populate({ path: 'quizzesResults', model: 'QuizResult' })
     if (listeningResult === null) throw new ErrorHandler('Bài nghe chưa được học', 404)
 
+    const correctDictation = listeningResult.directionResults.reduce((acc, part: any) => {
+      if (!part?.added && !part?.removed) {
+        return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
+      }
+      return acc;
+    }, 0);
+
+    const totalDictation = listeningResult.directionResults.reduce((acc, part: any) => {
+      if (!part?.added) {
+        return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
+      }
+      return acc;
+    }, 0);
+
     return {
       progress: getListeningHistory[0].progress,
-      point: listeningResult.directionResults.filter(r => r.isCorrect).length,
-      totalQuestions: listeningResult.directionResults.length,
-      quizPoint: listeningResult.quizzesResults.filter(r => r.isCorrect).length,
+      point: correctDictation,
+      totalQuestions: totalDictation,
+      quizPoint: listeningResult.quizzesResults.filter((r: any) => r.isCorrect).length,
       quizTotal: listeningResult.quizzesResults.length,
-      quizProgress: listeningResult.quizzesResults.filter(r => r.isCorrect).length / listeningResult.quizzesResults.length * 100,
+      quizProgress: listeningResult.quizzesResults.filter((r: any) => r.isCorrect).length / listeningResult.quizzesResults.length * 100,
       time: getListeningHistory[0].duration,
       result: listeningResult.directionResults,
       listeningId: listening.toObject()

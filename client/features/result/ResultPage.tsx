@@ -21,7 +21,7 @@ export function ResultPage({ _id, type, results }: ResultPageProps) {
         router.push(`/quizz/${_id}?type=grammar`)
         break
       case "reading":
-        router.push(`/skills/reading/lesson/${_id}`)
+        router.push(`/skills/reading/${_id}`)
         break
     }
   }

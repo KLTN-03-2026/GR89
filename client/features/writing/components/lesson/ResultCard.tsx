@@ -28,7 +28,7 @@ export default function ResultCard({ result, onRetry }: props) {
 
   const handleRetry = () => {
     if (!onRetry) {
-      router.replace(`/skills/writing/lesson/${_id}`)
+      router.replace(`/skills/writing/${_id}`)
     }
     else {
       onRetry()

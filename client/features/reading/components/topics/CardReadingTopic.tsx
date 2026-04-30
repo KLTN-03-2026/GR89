@@ -65,7 +65,7 @@ export default function CardReadingTopic({ topic }: CardReadingTopicProps) {
       </PopoverTrigger>
 
       <EnhancedPopover
-        href={`/skills/reading/lesson/${topic._id}`}
+        href={`/skills/reading/${topic._id}`}
         skill="reading"
         resultId={topic._id}
         isCompleted={topic.isResult}
