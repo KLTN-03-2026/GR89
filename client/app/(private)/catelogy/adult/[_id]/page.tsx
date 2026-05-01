@@ -5,8 +5,9 @@ import { useMemo, useState } from "react";
 import { MOCK_CLASSES } from "@/features/catelogies/mockData";
 import { DocumentItem } from "@/features/catelogies/components/DocumentItem";
 import { DocumentDetailDialog } from "@/features/catelogies/components/DocumentDetailDialog";
+import { SolutionDetailDialog } from "@/features/catelogies/components/SolutionDetailDialog";
 import { IDocument } from "@/features/catelogies/types";
-import { BookOpen, Calendar, Clock, GraduationCap, Upload, FileText, CheckCircle2 } from "lucide-react";
+import { BookOpen, Calendar, Clock, GraduationCap, Upload, FileText, CheckCircle2, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,9 @@ export default function ClassDetailPage() {
   const params = useParams();
   const classId = params._id as string;
   const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null);
+  const [selectedSolution, setSelectedSolution] = useState<IDocument | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSolutionOpen, setIsSolutionOpen] = useState(false);
 
   const classItem = useMemo(() => {
     return MOCK_CLASSES.find(c => c.id === classId);
@@ -29,6 +32,11 @@ export default function ClassDetailPage() {
   const handleViewDocument = (doc: IDocument) => {
     setSelectedDoc(doc);
     setIsDialogOpen(true);
+  };
+
+  const handleViewSolution = (doc: IDocument) => {
+    setSelectedSolution(doc);
+    setIsSolutionOpen(true);
   };
 
   return (
@@ -140,10 +148,17 @@ export default function ClassDetailPage() {
                       <Button variant="outline" size="sm" onClick={() => handleViewDocument(hw)}>
                         Xem chi tiết đề bài
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-blue-600">
-                        <FileText className="w-4 h-4 mr-2" />
-                        Tài liệu đi kèm
-                      </Button>
+                      {hw.solution && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 font-bold"
+                          onClick={() => handleViewSolution(hw)}
+                        >
+                          <Lightbulb className="w-4 h-4 mr-2" />
+                          Xem bài giải từ cô giáo
+                        </Button>
+                      )}
                     </div>
                   </div>
 
@@ -170,6 +185,12 @@ export default function ClassDetailPage() {
         document={selectedDoc}
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
+      />
+
+      <SolutionDetailDialog
+        document={selectedSolution}
+        isOpen={isSolutionOpen}
+        onClose={() => setIsSolutionOpen(false)}
       />
     </div>
   );

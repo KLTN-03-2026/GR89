@@ -15,6 +15,12 @@ export interface IDocument {
   type: DocumentType;
   deadline?: string; // For homework
   isSubmitted?: boolean;
+  solution?: {
+    content: string; // Rich text
+    fileUrl?: string;
+    fileSize?: string;
+    publishedAt: string;
+  };
 }
 
 export interface IClass {

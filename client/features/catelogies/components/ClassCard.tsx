@@ -10,23 +10,18 @@ import { useRouter } from "next/navigation";
 
 interface ClassCardProps {
   classItem: IClass;
+  onClick: (classItem: IClass) => void;
 }
 
-export function ClassCard({ classItem }: ClassCardProps) {
-  const router = useRouter();
-
-  const handleNavigate = () => {
-    router.push(`/catelogy/${classItem.category}/${classItem.id}`);
-  };
-
+export function ClassCard({ classItem, onClick }: ClassCardProps) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ duration: 0.2 }}
     >
-      <Card
-        className="overflow-hidden border border-gray-100 shadow-md hover:shadow-xl transition-all cursor-pointer group bg-white"
-        onClick={handleNavigate}
+      <Card 
+        className="overflow-hidden border border-gray-100 shadow-md hover:shadow-xl transition-all cursor-pointer group bg-white" 
+        onClick={() => onClick(classItem)}
       >
         <CardHeader className="p-6 pb-4 space-y-3">
           <div className="flex justify-between items-start">

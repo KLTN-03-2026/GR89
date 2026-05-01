@@ -54,7 +54,21 @@ const MOCK_DOCUMENTS = [
     author: "Teacher John",
     type: 'homework' as const,
     deadline: "2024-04-30 23:59",
-    isSubmitted: false
+    isSubmitted: true,
+    solution: {
+      content: `
+        <h3>Đáp án chi tiết Writing Task 1</h3>
+        <p>Chào các em, đây là bài giải mẫu và các cấu trúc hay cho đề bài miêu tả gia đình:</p>
+        <ul>
+          <li><strong>Cấu trúc 1:</strong> There are [number] people in my nuclear/extended family.</li>
+          <li><strong>Cấu trúc 2:</strong> I take after my father in terms of appearance/personality.</li>
+        </ul>
+        <p>Các em tải file đính kèm để xem bài viết mẫu hoàn chỉnh nhé.</p>
+      `,
+      fileUrl: "/solutions/writing-task-1-sample.pdf",
+      fileSize: "1.5 MB",
+      publishedAt: "2024-04-23 09:00"
+    }
   }
 ];
 

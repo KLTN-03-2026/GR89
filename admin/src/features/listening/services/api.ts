@@ -209,7 +209,7 @@ export async function exportListeningExcel(): Promise<Blob> {
 }
 
 export async function importListeningJson(
-  listenings: Record<string, unknown>[],
+  listenings: Listening[],
   skipErrors: boolean = false
 ): Promise<ApiResponse<{
   created?: number

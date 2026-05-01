@@ -7,6 +7,7 @@ import { parseExcelToGrammarJson, validateGrammarImportJson } from './validateGr
 import * as XLSX from 'xlsx'
 import { toast } from 'react-toastify'
 import { SheetImportOnImportPayload } from '@/components/common/sheetImport/types'
+import { GrammarTopic } from '../../types'
 
 export function GrammarSheetImport({ callback }: { callback?: () => void }) {
   return (
@@ -42,7 +43,7 @@ export function GrammarSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadJson={validateGrammarImportJson}
       validateAfterReadExcel={parseExcelToGrammarJson}
       onImport={async (payload: SheetImportOnImportPayload) => {
-        const res = await importGrammarJson(payload.jsonRoot, payload.skipErrors)
+        const res = await importGrammarJson(payload.jsonRoot as GrammarTopic[], payload.skipErrors)
 
         type ImportResponse = {
           success: boolean

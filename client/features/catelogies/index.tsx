@@ -5,29 +5,35 @@ import { CategoryType, IClass, IDocument } from "./types";
 import { MOCK_CLASSES } from "./mockData";
 import { CategoryHeader } from "./components/CategoryHeader";
 import { ClassCard } from "./components/ClassCard";
-import { ClassDetailSheet } from "./components/ClassDetailSheet";
 import { DocumentDetailDialog } from "./components/DocumentDetailDialog";
+import { ClassPasswordDialog } from "./components/ClassPasswordDialog";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 interface CategoryContainerProps {
   type: CategoryType;
 }
 
 export function CategoryContainer({ type }: CategoryContainerProps) {
+  const router = useRouter();
   const [selectedClass, setSelectedClass] = useState<IClass | null>(null);
   const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
 
   const classes = useMemo(() => {
     return MOCK_CLASSES.filter(c => c.category === type);
   }, [type]);
 
-  const handleClassClick = (id: string) => {
-    const classItem = classes.find(c => c.id === id);
-    if (classItem) {
-      setSelectedClass(classItem);
-      setIsSheetOpen(true);
+  const handleClassClick = (classItem: IClass) => {
+    setSelectedClass(classItem);
+    setIsPasswordOpen(true);
+  };
+
+  const handlePasswordSuccess = (id: string) => {
+    setIsPasswordOpen(false);
+    if (selectedClass) {
+      router.push(`/catelogy/${selectedClass.category}/${id}`);
     }
   };
 
@@ -76,6 +82,7 @@ export function CategoryContainer({ type }: CategoryContainerProps) {
             <motion.div key={classItem.id} variants={item}>
               <ClassCard
                 classItem={classItem}
+                onClick={handleClassClick}
               />
             </motion.div>
           ))}
@@ -92,11 +99,11 @@ export function CategoryContainer({ type }: CategoryContainerProps) {
         )}
       </div>
 
-      <ClassDetailSheet
+      <ClassPasswordDialog
         classItem={selectedClass}
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
-        onViewDocument={handleViewDocument}
+        isOpen={isPasswordOpen}
+        onClose={() => setIsPasswordOpen(false)}
+        onSuccess={handlePasswordSuccess}
       />
 
       <DocumentDetailDialog

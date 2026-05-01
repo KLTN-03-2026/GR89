@@ -25,6 +25,7 @@ import {
   Crown,
   Tag,
   Map,
+  GraduationCap,
 } from "lucide-react";
 
 export interface ISidebarRoute {
@@ -93,6 +94,11 @@ const ROUTES_PATH = {
   LEADERBOARD_SETTINGS: '/leaderboard/settings',
   LEADERBOARD_ANALYTICS: '/leaderboard/analytics',
 
+  // Center Management
+  CLASSES: '/center-management/classes',
+  DOCUMENTS: '/center-management/documents',
+  HOMEWORK: '/center-management/homework',
+
   // System & Settings
   GENERAL_SETTINGS: '/system/settings',
   SECURITY: '/system/security',
@@ -159,6 +165,11 @@ const ROUTES_NAME = {
   '/leaderboard/tasks': "Quản lý Nhiệm vụ",
   '/leaderboard/settings': "Cài đặt Hệ thống",
   '/leaderboard/analytics': "Thống kê & Báo cáo",
+
+  // Center Management
+  '/center-management/classes': "Quản lý lớp",
+  '/center-management/documents': "Quản lý văn bản",
+  '/center-management/homework': "Quản lý bài tập",
 
   // System & Settings
   '/system/settings': "Cài đặt chung",
@@ -369,48 +380,28 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
       },
     ],
   },
-  // {
-  //   title: 'AI & Công nghệ',
-  //   icon: Zap,
-  //   subItems: [
-  //     {
-  //       title: "Tạo văn bản",
-  //       href: ROUTES_PATH.TEXT_GENERATION,
-  //       icon: Type,
-  //     },
-  //     {
-  //       title: "Tạo hình ảnh",
-  //       href: ROUTES_PATH.IMAGE_GENERATION,
-  //       icon: Image,
-  //     },
-  //     {
-  //       title: "Tạo âm thanh",
-  //       href: ROUTES_PATH.AUDIO_GENERATION,
-  //       icon: Speaker,
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: 'Bảng xếp hạng & Nhiệm vụ',
-  //   icon: Trophy,
-  //   subItems: [
-  //     {
-  //       title: "Quản lý Rank",
-  //       href: ROUTES_PATH.LEADERBOARD_RANKS,
-  //       icon: Crown,
-  //     },
-  //     {
-  //       title: "Quản lý Nhiệm vụ",
-  //       href: ROUTES_PATH.LEADERBOARD_TASKS,
-  //       icon: Target,
-  //     },
-  //     {
-  //       title: "Cài đặt Hệ thống",
-  //       href: ROUTES_PATH.LEADERBOARD_SETTINGS,
-  //       icon: Settings,
-  //     },
-  //   ],
-  // },
+  // Center Management
+  {
+    title: 'Trung tâm Đào tạo',
+    icon: GraduationCap,
+    subItems: [
+      {
+        title: "Quản lý Lớp học",
+        href: ROUTES_PATH.CLASSES,
+        icon: Users,
+      },
+      {
+        title: "Kho Tài liệu",
+        href: ROUTES_PATH.DOCUMENTS,
+        icon: BookOpen,
+      },
+      {
+        title: "Chấm bài tập",
+        href: ROUTES_PATH.HOMEWORK,
+        icon: FileText,
+      },
+    ],
+  },
   {
     title: 'Hệ thống & Cài đặt',
     icon: Settings,

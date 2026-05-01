@@ -8,6 +8,7 @@ import type { SheetImportOnImportPayload, SheetImportResult } from '@/components
 import { importListeningJson } from '../../services/api'
 import { buildExcelTemplateWorkbook, buildJsonTemplateData } from './templates'
 import { parseExcelToListeningJson, validateListeningImportJson } from './validateListeningImport'
+import { Listening } from '../../types'
 
 export function ListeningSheetImport({ callback }: { callback?: () => void }) {
   return (
@@ -44,7 +45,7 @@ export function ListeningSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadExcel={parseExcelToListeningJson}
       defaultSkipErrors={true}
       onImport={async (payload: SheetImportOnImportPayload): Promise<SheetImportResult> => {
-        const res = await importListeningJson(payload.jsonRoot, payload.skipErrors)
+        const res = await importListeningJson(payload.jsonRoot as Listening[], payload.skipErrors)
 
         type ImportListeningJsonResponse = {
           success: boolean

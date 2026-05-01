@@ -1,7 +1,7 @@
 'use client'
 
 import { SheetImport } from '@/components/common/sheetImport'
-import { exportIpaExcel, importIpaJson } from '../../services/api'
+import { exportIpaExcel, IIpaCreateData, importIpaJson } from '../../services/api'
 import { buildExcelTemplateWorkbook, buildJsonTemplateData } from './templates'
 import { parseExcelToIpaJson, validateIpaImportJson } from './validateIpaImport'
 import * as XLSX from 'xlsx'
@@ -39,7 +39,7 @@ export function IpaSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadJson={validateIpaImportJson}
       validateAfterReadExcel={parseExcelToIpaJson}
       onImport={async (payload: SheetImportOnImportPayload) => {
-        const res = await importIpaJson(payload.jsonRoot, payload.skipErrors)
+        const res = await importIpaJson(payload.jsonRoot as IIpaCreateData[], payload.skipErrors)
 
         type ImportResponse = {
           success: boolean
