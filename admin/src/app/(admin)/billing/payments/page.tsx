@@ -1,5 +1,6 @@
 import { PaymentsMain } from "@/features/billing"
 import { getPaymentsServer } from "@/features/billing/services/serverApi"
+import { Payment } from "@/lib/apis/api";
 
 interface PageProps {
   searchParams: Promise<{
@@ -14,10 +15,10 @@ interface PageProps {
 }
 
 export default async function PaymentsPage({ searchParams }: PageProps) {
-  const { 
-    page = "1", 
-    limit = "10", 
-    search = "", 
+  const {
+    page = "1",
+    limit = "10",
+    search = "",
     status,
     provider,
     sortBy = "createdAt",
@@ -34,15 +35,14 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     sortOrder: sortOrder as 'asc' | 'desc'
   });
 
-  const formattedData = (response?.data || []).map((p: any) => ({
+  const formattedData = (response?.data || []).map((p: Payment) => ({
     ...p,
-    id: p._id,
     user: typeof p.userId === 'object' ? p.userId.fullName : String(p.userId)
   }));
 
   return (
-    <PaymentsMain 
-      initialData={formattedData} 
+    <PaymentsMain
+      initialData={formattedData}
       pagination={response?.pagination || {
         page: 1,
         limit: 10,
