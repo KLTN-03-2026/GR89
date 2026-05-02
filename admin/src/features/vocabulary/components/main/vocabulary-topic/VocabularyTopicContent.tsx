@@ -2,9 +2,9 @@
 import { DataTable } from "@/components/common";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { columnsVocabularyTopic } from "../../table/vocabulary-topic/VocabularyTopicColumn";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { VocabularyTopic } from "@/features/vocabulary/types";
-import { getVocabularyTopicsPaginated, deleteManyVocabularyTopics, updateManyVocabularyTopicsStatus } from "@/features/vocabulary/services/api";
+import { deleteManyVocabularyTopics, updateManyVocabularyTopicsStatus } from "@/features/vocabulary/services/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Filter, ChevronDown, Loader2, Trash2, Eye, EyeOff } from "lucide-react";
@@ -14,8 +14,18 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import FiltersPanel from './FiltersPanel';
 
 interface props {
-  refresh: boolean
   callback: () => void
+  initialData: VocabularyTopic[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
 }
 
 // Custom hook for debouncing
@@ -35,7 +45,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function VocabularyTopicContent({ refresh, callback }: props) {
+export default function VocabularyTopicContent({ callback, initialData, pagination }: props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -51,13 +61,9 @@ export default function VocabularyTopicContent({ refresh, callback }: props) {
   const urlSortBy = ['orderIndex', 'name', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'name' | 'createdAt' | 'updatedAt') : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [topics, setTopics] = useState<VocabularyTopic[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [topics, setTopics] = useState<VocabularyTopic[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
-  const [activeFiltersCount, setActiveFiltersCount] = useState(0)
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isDeleting, setIsDeleting] = useState(false)
@@ -66,14 +72,25 @@ export default function VocabularyTopicContent({ refresh, callback }: props) {
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
   const [loadingAction, setLoadingAction] = useState(false)
 
+  // Derived state
+  const total = pagination.total
+  const pages = pagination.pages
+  const activeFiltersCount = [
+    urlSearch,
+    urlIsActive !== undefined,
+    urlSortBy !== 'orderIndex',
+    urlSortOrder !== 'asc'
+  ].filter(Boolean).length
+
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
 
-  useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
-      setSearch(urlSearch)
-    }
-  }, [urlSearch, debouncedSearch])
+  // Cập nhật state khi prop initialData thay đổi (do Server Component fetch lại)
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setTopics(initialData)
+    setPrevInitialData(initialData)
+  }
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -92,47 +109,6 @@ export default function VocabularyTopicContent({ refresh, callback }: props) {
       updateUrl({ search: debouncedSearch, page: 1 })
     }
   }, [debouncedSearch, urlSearch, updateUrl])
-
-  const fetchTopics = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await getVocabularyTopicsPaginated({
-        page: urlPage,
-        limit: urlLimit,
-        search: urlSearch,
-        sortBy: urlSortBy,
-        sortOrder: urlSortOrder,
-        isActive: urlIsActive
-      })
-
-      setTopics(res.data || [])
-      setTotal(res.pagination?.total || 0)
-      setPages(res.pagination?.pages || 0)
-    } catch (error) {
-      console.error('❌ Error fetching vocabulary topics:', error)
-      setTopics([])
-      setTotal(0)
-      setPages(0)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
-
-  // Effect for refresh - trigger when refresh changes
-  useEffect(() => {
-    fetchTopics()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchTopics, refresh])
-
-  // Count active filters
-  useEffect(() => {
-    let count = 0
-    if (urlSearch) count++
-    if (urlIsActive !== undefined) count++
-    if (urlSortBy !== 'orderIndex') count++
-    if (urlSortOrder !== 'asc') count++
-    setActiveFiltersCount(count)
-  }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) {
@@ -159,7 +135,7 @@ export default function VocabularyTopicContent({ refresh, callback }: props) {
       toast.success(`Đã xóa ${res.data?.deletedCount || 0} chủ đề từ vựng thành công`)
       setOpenDeleteDialog(false)
       setSelectedIds([])
-      fetchTopics()
+      router.refresh()
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Xóa chủ đề từ vựng không thành công'
       toast.error(errorMessage)
@@ -203,7 +179,7 @@ export default function VocabularyTopicContent({ refresh, callback }: props) {
         toast.success(`Đã ${newIsActive ? 'xuất bản' : 'ẩn'} ${res.data?.updatedCount || 0} chủ đề từ vựng`)
         setSelectedRows([])
         setOpenPublishDialog(false)
-        fetchTopics()
+        router.refresh()
       }
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || `${publishAction === 'publish' ? 'Xuất bản' : 'Ẩn'} thất bại`
@@ -302,7 +278,6 @@ export default function VocabularyTopicContent({ refresh, callback }: props) {
           <DataTable
             columns={columnsVocabularyTopic(callback, topics, handleSwapOrder)}
             data={topics}
-            isLoading={isLoading}
             columnNameSearch="Tên chủ đề"
             serverSidePagination
             pagination={{

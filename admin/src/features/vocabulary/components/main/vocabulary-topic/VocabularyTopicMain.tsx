@@ -3,15 +3,33 @@
 import { useState } from 'react'
 import VocabularyHeader from './VocabularyTopicHeader'
 import VocabularyTopicContent from './VocabularyTopicContent'
+import { VocabularyTopic } from '../../../types'
 
-export function VocabularyTopicMain() {
-  const [refresh, setRefresh] = useState(false)
+import { useRouter } from 'next/navigation'
+
+interface VocabularyTopicMainProps {
+  initialData: VocabularyTopic[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
+}
+
+export function VocabularyTopicMain({ initialData, pagination }: VocabularyTopicMainProps) {
+  const router = useRouter()
   return (
     <>
-      <VocabularyHeader callback={() => setRefresh(!refresh)} />
+      <VocabularyHeader callback={() => router.refresh()} />
       <VocabularyTopicContent
-        refresh={refresh}
-        callback={() => setRefresh(!refresh)}
+        callback={() => router.refresh()}
+        initialData={initialData}
+        pagination={pagination}
       />
     </>
   )
