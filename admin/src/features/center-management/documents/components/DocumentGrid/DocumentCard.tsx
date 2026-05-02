@@ -1,20 +1,26 @@
 'use client'
 
 import React from 'react'
-import { FileText, MoreVertical, Clock, User, Download, Eye, Trash2, Pencil } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { IGlobalDocument } from '@/features/center-management/types'
+import { IGlobalDocument } from '../../type'
+
+import { format } from 'date-fns'
+import { vi } from 'date-fns/locale'
+
+import { toast } from 'react-toastify'
+import { downloadGlobalDocumentDocx } from '../../services/api'
+
+// Sub-components
+import { CardBadge } from './sub-components/CardBadge'
+import { CardActions } from './sub-components/CardActions'
+import { CardPreview } from './sub-components/CardPreview'
+import { CardInfo } from './sub-components/CardInfo'
 
 interface DocumentCardProps {
   document: IGlobalDocument
   onDelete?: (id: string) => void
+  onEdit?: (id: string) => void
   onView?: (id: string) => void
   onSelect?: (document: IGlobalDocument) => void
   selectable?: boolean
@@ -24,90 +30,75 @@ interface DocumentCardProps {
 export function DocumentCard({
   document,
   onDelete,
-  onView,
+  onEdit,
   onSelect,
   selectable,
   isSelected
 }: DocumentCardProps) {
   const router = useRouter()
+  const [isExporting, setIsExporting] = React.useState(false)
+
+  const handleExportDocx = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsExporting(true)
+    try {
+      await downloadGlobalDocumentDocx(document._id, document.name)
+      toast.success('Đã tải xuống file .docx')
+    } catch (error) {
+      toast.error('Lỗi khi tải xuống file')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const handleClick = () => {
     if (selectable) {
       onSelect?.(document)
     } else {
-      router.push(`/center-management/documents/${document.id}`)
+      router.push(`/center-management/documents/${document._id}`)
     }
   }
 
+  const formattedDate = document.updatedAt
+    ? format(new Date(document.updatedAt), 'dd/MM/yyyy', { locale: vi })
+    : 'N/A'
+
+  const categoryName = typeof document.category === 'object' ? document.category?.name : undefined
+
   return (
-    <div className={`group relative bg-white rounded-3xl border ${isSelected ? 'border-zinc-900 ring-2 ring-zinc-900/10' : 'border-zinc-100'} p-5 hover:shadow-xl hover:shadow-zinc-100 transition-all cursor-pointer overflow-hidden`}>
+    <div className={`group relative bg-white rounded-lg border-2 ${isSelected ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-gray-100'} p-4 hover:shadow-[0_20px_50px_rgba(59,130,246,0.15)] hover:-translate-y-1 transition-all duration-500 cursor-pointer`}>
+      {/* Background Decorative Gradient */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-full -mr-16 -mt-16 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
       {/* Extension Badge */}
-      <div className="absolute top-4 left-4 z-10">
-        <div className="px-2 py-1 bg-white/90 backdrop-blur-sm rounded-lg border border-zinc-100 shadow-sm text-[10px] font-black text-zinc-900 uppercase">
-          English
-        </div>
-      </div>
+      <CardBadge categoryName={categoryName} />
 
       {/* Actions */}
       {!selectable && (
-        <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="secondary" size="icon" className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border-none shadow-sm hover:bg-white">
-                <MoreVertical className="w-4 h-4 text-zinc-600" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-2xl p-1.5 w-40 border-zinc-100 shadow-xl">
-              <DropdownMenuItem className="rounded-xl cursor-pointer font-bold text-zinc-600 focus:bg-zinc-50 focus:text-zinc-900" onClick={() => router.push(`/center-management/documents/${document.id}`)}>
-                <Eye className="w-4 h-4 mr-2" /> Xem chi tiết
-              </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-xl cursor-pointer font-bold text-zinc-600 focus:bg-zinc-50 focus:text-zinc-900">
-                <Pencil className="w-4 h-4 mr-2" /> Chỉnh sửa
-              </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-xl cursor-pointer font-bold text-zinc-600 focus:bg-zinc-50 focus:text-zinc-900">
-                <Download className="w-4 h-4 mr-2" /> Tải về
-              </DropdownMenuItem>
-              <DropdownMenuItem className="rounded-xl text-rose-600 cursor-pointer font-bold focus:bg-rose-50 focus:text-rose-700" onClick={() => onDelete?.(document.id)}>
-                <Trash2 className="w-4 h-4 mr-2" /> Xóa tài liệu
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <CardActions
+          document={document}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onExport={handleExportDocx}
+          isExporting={isExporting}
+        />
       )}
 
       {/* Visual representation */}
-      <div className="aspect-[4/3] rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 group-hover:bg-zinc-100 transition-colors">
-        <div className="relative">
-          <FileText className="w-16 h-16 text-zinc-300 group-hover:text-zinc-400 transition-colors" />
-        </div>
-      </div>
+      <CardPreview />
 
       {/* Info */}
-      <div className="space-y-2">
-        <h3
-          className="font-extrabold text-zinc-900 line-clamp-1 group-hover:text-zinc-600 transition-colors cursor-pointer"
-          onClick={handleClick}
-        >
-          {document.name}
-        </h3>
-
-        <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-          <div className="flex items-center gap-1.5">
-            <User className="w-3 h-3" />
-            {document.owner}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3 h-3" />
-            {document.updatedAt}
-          </div>
-        </div>
-      </div>
+      <CardInfo
+        document={document}
+        formattedDate={formattedDate}
+        onClickTitle={handleClick}
+      />
 
       {/* Selection Overlay */}
       {selectable && isSelected && (
-        <div className="absolute inset-0 bg-zinc-900/10 pointer-events-none flex items-center justify-center">
-          <div className="w-8 h-8 bg-zinc-900 rounded-full flex items-center justify-center text-white shadow-lg">
-            <Eye className="w-4 h-4" />
+        <div className="absolute inset-0 bg-blue-600/10 pointer-events-none flex items-center justify-center backdrop-blur-[2px] z-20 animate-in fade-in duration-300">
+          <div className="w-14 h-14 bg-blue-600 rounded-[1.2rem] flex items-center justify-center text-white shadow-2xl scale-110 rotate-12 animate-in zoom-in-50 duration-500">
+            <Check className="w-8 h-8 stroke-[3]" />
           </div>
         </div>
       )}

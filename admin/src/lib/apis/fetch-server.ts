@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
-export async function fetchServer<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
+export async function fetchServer<T = unknown>(path: string, options: RequestInit = {}): Promise<{ data: T, pagination: any }> {
   const cookieStore = await cookies()
 
   const cookieString = cookieStore.toString()
@@ -27,5 +27,5 @@ export async function fetchServer<T = unknown>(path: string, options: RequestIni
     throw error
   }
 
-  return data.data as T
+  return data
 }

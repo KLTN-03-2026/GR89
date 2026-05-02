@@ -18,6 +18,7 @@ router.delete("/categories/:id", authenticateTokenAdmin, requireRole(["admin", "
 router.get("/", authenticateTokenAdmin, requireRole(["admin", "content"]), GlobalDocumentController.getAllDocuments);
 router.post("/", authenticateTokenAdmin, requireRole(["admin", "content"]), GlobalDocumentController.createDocument);
 router.post("/delete-many", authenticateTokenAdmin, requireRole(["admin", "content"]), GlobalDocumentController.deleteManyDocuments);
+router.get("/:id/download", authenticateTokenAdmin, requireRole(["admin", "content"]), GlobalDocumentController.downloadDocx);
 router.get("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), GlobalDocumentController.getDocumentById);
 router.put("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), GlobalDocumentController.updateDocument);
 router.delete("/:id", authenticateTokenAdmin, requireRole(["admin", "content"]), GlobalDocumentController.deleteDocument);

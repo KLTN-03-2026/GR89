@@ -1399,7 +1399,7 @@
 
 "@tiptap/extension-font-size@^3.0.0-next.3":
   version "3.0.0-next.3"
-  resolved "https://registry.yarnpkg.com/@tiptap/extension-font-size/-/extension-font-size-3.0.0-next.3.tgz#2cc00e5fa39d52e13674366ddf4f0129dc505952"
+  resolved "https://registry.npmjs.org/@tiptap/extension-font-size/-/extension-font-size-3.0.0-next.3.tgz"
   integrity sha512-JmmrCboLvDH4HG1nOAMkiwmeFluliXaeEh5+RDxOofuzxsHjSYVJpNP846eLtMnjkUAxjvh7tBz7GTjATm3OuQ==
 
 "@tiptap/extension-gapcursor@^3.22.5":
@@ -1616,6 +1616,13 @@
   resolved "https://registry.npmjs.org/@types/estree/-/estree-1.0.8.tgz"
   integrity sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==
 
+"@types/html-to-docx@^1.8.1":
+  version "1.8.1"
+  resolved "https://registry.npmjs.org/@types/html-to-docx/-/html-to-docx-1.8.1.tgz"
+  integrity sha512-gFe8KiIWmSnyij5VmnR0C/6yM0LlXRw2GG+ztEfoEnDAZvNTrhdACjrhMdTwa/WXeBzN8gia9Wz3FJKpPsW/Ig==
+  dependencies:
+    "@types/node" "*"
+
 "@types/json-schema@^7.0.15":
   version "7.0.15"
   resolved "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.15.tgz"
@@ -1626,7 +1633,7 @@
   resolved "https://registry.npmjs.org/@types/json5/-/json5-0.0.29.tgz"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/node@^20":
+"@types/node@*", "@types/node@^20":
   version "20.19.39"
   resolved "https://registry.npmjs.org/@types/node/-/node-20.19.39.tgz"
   integrity sha512-orrrD74MBUyK8jOAD/r0+lfa1I2MO6I+vAkmAWzMYbCcgrN4lCrmK52gRFQq/JRxfYPfonkr4b0jcY7Olqdqbw==

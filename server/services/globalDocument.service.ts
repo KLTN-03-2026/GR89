@@ -59,7 +59,7 @@ export class GlobalDocumentService {
       limit,
       sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 },
       populate: [
-        { path: "owner", select: "name email avatar" },
+        { path: "owner" },
         { path: "category", select: "name" }
       ],
       customLabels: {

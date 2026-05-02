@@ -1,3 +1,5 @@
+import { User } from "../user/types";
+
 export interface IStudent {
   id: string;
   name: string;
@@ -29,22 +31,6 @@ export interface ICenterClass {
   isActive: boolean;
   students: IStudent[];
   documents: IClassDocument[];
-}
-
-export interface IGlobalDocument {
-  _id: string;
-  id: string;
-  name: string;
-  category: string;
-  content: string; // Rich text content
-  updatedAt: string;
-  createdAt: string;
-  owner: {
-    _id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-  } | string;
 }
 
 export interface IHomeworkSubmission {

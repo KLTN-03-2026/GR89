@@ -1,4 +1,4 @@
-import { ICenterClass, IGlobalDocument, IHomeworkSubmission } from "./types";
+import { ICenterClass, IHomeworkSubmission } from "./types";
 
 export const MOCK_CENTER_CLASSES: ICenterClass[] = [
   {
@@ -50,11 +50,6 @@ export const MOCK_CENTER_CLASSES: ICenterClass[] = [
   }
 ];
 
-export const MOCK_GLOBAL_DOCUMENTS: IGlobalDocument[] = [
-  { id: "doc1", name: "Giáo trình IELTS Reading cơ bản", content: "<h2>Nội dung giáo trình...</h2>", updatedAt: "2024-05-10", owner: "Mr. Kevin" },
-  { id: "doc2", name: "Tổng hợp từ vựng Topic Environment", content: "<h3>Từ vựng chủ đề môi trường...</h3>", updatedAt: "2024-05-11", owner: "Ms. Linda" },
-  { id: "doc3", name: "Hướng dẫn viết Writing Task 2", content: "<h1>Quy tắc viết bài...</h1>", updatedAt: "2024-05-12", owner: "Admin" },
-];
 
 export const MOCK_HOMEWORK_SUBMISSIONS: IHomeworkSubmission[] = [
   {
