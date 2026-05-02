@@ -37,9 +37,19 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function CouponsMain() {
+interface CouponsMainProps {
+  initialData: Coupon[]
+  pagination: {
+    total: number
+    pages: number
+    page: number
+    limit: number
+  }
+}
+
+export function CouponsMain({ initialData, pagination: initialPagination }: CouponsMainProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [coupons, setCoupons] = useState<Coupon[]>([])
+  const [coupons, setCoupons] = useState<Coupon[]>(initialData)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -52,8 +62,8 @@ export function CouponsMain() {
   const urlSortBy = searchParams.get('sortBy') || 'createdAt'
   const urlSortOrder = (searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc'
 
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [total, setTotal] = useState(initialPagination.total)
+  const [pages, setPages] = useState(initialPagination.pages)
   const [search, setSearch] = useState(urlSearch)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Coupon | null>(null)
@@ -65,12 +75,6 @@ export function CouponsMain() {
   const [loadingAction, setLoadingAction] = useState(false)
 
   const debouncedSearch = useDebounce(search, 500)
-
-  useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
-      setSearch(urlSearch)
-    }
-  }, [urlSearch, debouncedSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -92,18 +96,18 @@ export function CouponsMain() {
 
   const fetchCoupons = useCallback(async (params: CouponQueryParams) => {
     setIsLoading(true)
-    await getCouponsPaginated(params)
-      .then(res => {
-        setCoupons(res.data)
-        setTotal(res.pagination.total)
-        setPages(res.pagination.pages)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
+    try {
+      const res = await getCouponsPaginated(params)
+      setCoupons(res.data)
+      setTotal(res.pagination.total)
+      setPages(res.pagination.pages)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
+    // Luôn fetch khi URL thay đổi để đồng bộ dữ liệu
     fetchCoupons({
       page: urlPage,
       limit: urlLimit,

@@ -26,9 +26,26 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function PaymentsMain() {
+interface PaymentsMainProps {
+  initialData: PaymentRow[]
+  pagination: {
+    total: number
+    pages: number
+    page: number
+    limit: number
+  }
+  initialPaidCount: number
+  initialTotalRevenue: number
+}
+
+export function PaymentsMain({
+  initialData,
+  pagination: initialPagination,
+  initialPaidCount,
+  initialTotalRevenue
+}: PaymentsMainProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [payments, setPayments] = useState<PaymentRow[]>([])
+  const [payments, setPayments] = useState<PaymentRow[]>(initialData)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -41,19 +58,13 @@ export function PaymentsMain() {
   const urlSortBy = searchParams.get('sortBy') || "createdAt"
   const urlSortOrder = (searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc'
 
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
-  const [paidCount, setPaidCount] = useState(0)
-  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [total, setTotal] = useState(initialPagination.total)
+  const [pages, setPages] = useState(initialPagination.pages)
+  const [paidCount, setPaidCount] = useState(initialPaidCount)
+  const [totalRevenue, setTotalRevenue] = useState(initialTotalRevenue)
   const [search, setSearch] = useState(urlSearch)
 
   const debouncedSearch = useDebounce(search, 500)
-
-  useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
-      setSearch(urlSearch)
-    }
-  }, [urlSearch, debouncedSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -75,31 +86,32 @@ export function PaymentsMain() {
 
   const fetchPayments = useCallback(async (params: PaymentQueryParams) => {
     setIsLoading(true)
-    await getPaymentsPaginated(params)
-      .then(res => {
-        setPayments(res.data.map(p => ({
-          ...p,
-          id: p._id,
-          user: typeof p.userId === 'object' ? p.userId.fullName : String(p.userId)
-        })))
-        setTotal(res.pagination.total)
-        setPages(res.pagination.pages)
-        setPaidCount(res.paidCount)
-        setTotalRevenue(res.totalRevenue)
-      }).finally(() => {
-        setIsLoading(false)
-      })
+    try {
+      const res = await getPaymentsPaginated(params)
+      setPayments(res.data.map(p => ({
+        ...p,
+        id: p._id,
+        user: typeof p.userId === 'object' ? p.userId.fullName : String(p.userId)
+      })))
+      setTotal(res.pagination.total)
+      setPages(res.pagination.pages)
+      setPaidCount(res.paidCount)
+      setTotalRevenue(res.totalRevenue)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
+    // Luôn fetch khi URL thay đổi để đồng bộ dữ liệu
     fetchPayments({
       page: urlPage,
       limit: urlLimit,
       search: urlSearch,
       sortBy: urlSortBy,
       sortOrder: urlSortOrder,
-      status: urlStatus !== "all" ? urlStatus as "pending" | "paid" | "failed" | "refunded" | "cancelled" : undefined,
-      provider: urlProvider !== "all" ? urlProvider as "vnpay" | "momo" | "stripe" | "paypal" : undefined,
+      status: urlStatus !== "all" ? urlStatus as any : undefined,
+      provider: urlProvider !== "all" ? urlProvider as any : undefined,
     })
   }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlStatus, urlProvider, fetchPayments])
 

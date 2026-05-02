@@ -41,9 +41,19 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function PlansMain() {
+interface PlansMainProps {
+  initialData: PlanRow[]
+  pagination: {
+    total: number
+    pages: number
+    page: number
+    limit: number
+  }
+}
+
+export function PlansMain({ initialData, pagination: initialPagination }: PlansMainProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [plans, setPlans] = useState<PlanRow[]>([])
+  const [plans, setPlans] = useState<PlanRow[]>(initialData)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -57,8 +67,8 @@ export function PlansMain() {
   const urlSortBy = searchParams.get('sortBy') || "sortOrder"
   const urlSortOrder = (searchParams.get('sortOrder') === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc'
 
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [total, setTotal] = useState(initialPagination.total)
+  const [pages, setPages] = useState(initialPagination.pages)
   const [search, setSearch] = useState(urlSearch)
   const [selectedRows, setSelectedRows] = useState<PlanRow[]>([])
   const [openPublishDialog, setOpenPublishDialog] = useState(false)
@@ -68,12 +78,6 @@ export function PlansMain() {
 
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
-
-  useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
-      setSearch(urlSearch)
-    }
-  }, [urlSearch, debouncedSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -110,6 +114,7 @@ export function PlansMain() {
   }, [])
 
   useEffect(() => {
+    // Luôn fetch khi URL thay đổi để đồng bộ dữ liệu
     fetchPlans({
       page: urlPage,
       limit: urlLimit,
