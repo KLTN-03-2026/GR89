@@ -1,14 +1,18 @@
 import { GrammarLessonMain } from '@/features/grammar'
-import type { GrammarLessonDraft } from '@/features/grammar/types'
-import { fetchServer } from '@/lib/apis/fetch-server'
+import { getGrammarLessonByIdServer } from '@/features/grammar/services/serverApi'
+import { notFound } from 'next/navigation'
 
-export default async function GrammarLessonPage({ params }: { params: { _id: string } }) {
+export default async function GrammarLessonPage({ params }: { params: Promise<{ _id: string }> }) {
   const { _id } = await params
-  const lessons = await fetchServer<GrammarLessonDraft>(`/grammar/${_id}/admin`)
+  const topic = await getGrammarLessonByIdServer(_id)
+
+  if (!topic) {
+    notFound()
+  }
 
   return (
     <div>
-      <GrammarLessonMain topic={lessons} />
+      <GrammarLessonMain topic={topic} />
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { columnsGrammarTopic } from '../GrammarTopicTable/GrammarTopicColumn'
 import { useEffect, useState } from 'react'
 import { GrammarTopic } from '@/features/grammar/types'
-import { getGrammarTopicsPaginated, deleteManyGrammarTopics, updateManyGrammarTopicsStatus } from '../../services/api'
+import { deleteManyGrammarTopics, updateManyGrammarTopicsStatus } from '../../services/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Filter, ChevronDown, Loader2, Trash2, Eye, EyeOff } from 'lucide-react'
@@ -15,8 +15,18 @@ import FiltersPanel from './FiltersPanel'
 import { useCallback } from 'react'
 
 interface Props {
-  refresh: boolean
   callback: () => void
+  initialData: GrammarTopic[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
 }
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -35,7 +45,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue
 }
 
-export default function GrammarTopicContent({ refresh, callback }: Props) {
+export default function GrammarTopicContent({ callback, initialData, pagination }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -52,27 +62,33 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
   const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [topics, setTopics] = useState<GrammarTopic[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [topics, setTopics] = useState<GrammarTopic[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
-  const [activeFiltersCount, setActiveFiltersCount] = useState(0)
   const [selectedRows, setSelectedRows] = useState<GrammarTopic[]>([])
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [openPublishDialog, setOpenPublishDialog] = useState(false)
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
   const [loadingAction, setLoadingAction] = useState(false)
 
+  // Derived state
+  const total = pagination.total
+  const pages = pagination.pages
+  const activeFiltersCount = [
+    urlSearch,
+    urlIsActive !== undefined,
+    urlSortBy !== 'orderIndex',
+    urlSortOrder !== 'asc'
+  ].filter(Boolean).length
+
   const debouncedSearch = useDebounce(search, 500)
 
-  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward) mà không làm mất text đang gõ
-  useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
-      setSearch(urlSearch)
-    }
-  }, [urlSearch, debouncedSearch])
+  // Cập nhật state khi prop initialData thay đổi (do Server Component fetch lại)
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setTopics(initialData)
+    setPrevInitialData(initialData)
+  }
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -92,39 +108,6 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
       updateUrl({ search: debouncedSearch, page: 1 })
     }
   }, [debouncedSearch, urlSearch, updateUrl])
-
-  const fetchTopics = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await getGrammarTopicsPaginated({
-        page: urlPage,
-        limit: urlLimit,
-        search: urlSearch,
-        sortBy: urlSortBy,
-        sortOrder: urlSortOrder,
-        isActive: urlIsActive
-      })
-      setTopics(res.data)
-      setTotal(res.pagination.total)
-      setPages(res.pagination.pages)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
-
-  useEffect(() => {
-    fetchTopics()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchTopics, refresh])
-
-  useEffect(() => {
-    let count = 0
-    if (urlSearch) count++
-    if (urlIsActive !== undefined) count++
-    if (urlSortBy !== 'orderIndex') count++
-    if (urlSortOrder !== 'asc') count++
-    setActiveFiltersCount(count)
-  }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) return
@@ -155,7 +138,7 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
         toast.success(`Đã xóa ${res.data?.deletedCount || 0} chủ đề ngữ pháp`)
         setSelectedRows([])
         setOpenDeleteDialog(false)
-        fetchTopics()
+        router.refresh()
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -199,7 +182,7 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
         toast.success(`Đã ${newIsActive ? 'xuất bản' : 'ẩn'} ${res.data?.updatedCount || 0} chủ đề ngữ pháp`)
         setSelectedRows([])
         setOpenPublishDialog(false)
-        fetchTopics()
+        router.refresh()
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -290,7 +273,6 @@ export default function GrammarTopicContent({ refresh, callback }: Props) {
         <DataTable
           columns={columnsGrammarTopic(callback, topics, handleSwapOrder)}
           data={topics}
-          isLoading={isLoading}
           columnNameSearch="Tên chủ đề"
           serverSidePagination
           pagination={{ page: urlPage, limit: urlLimit, total, pages }}
