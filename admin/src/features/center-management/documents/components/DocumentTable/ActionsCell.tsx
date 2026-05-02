@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { IGlobalDocument } from '@/features/center-management/types'
+import { IGlobalDocument } from '../../type'
 
 interface Props {
   document: IGlobalDocument
@@ -89,7 +89,7 @@ export default function ActionsCell({ document, callback }: Props) {
             Thao tác
           </DropdownMenuLabel>
           <DropdownMenuItem
-            onClick={() => router.push(`/center-management/documents/${document.id}`)}
+            onClick={() => router.push(`/center-management/documents/${document._id}`)}
             className="rounded-lg font-bold text-zinc-600 focus:text-zinc-900 focus:bg-zinc-50 cursor-pointer"
           >
             <Eye className="mr-2 h-4 w-4" />

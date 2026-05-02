@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RichEditor } from '@/components/common/editor/RichEditor'
-
 import { Loader2, FileText, FolderPlus, Save, Type, Layout, ChevronDown, Check } from 'lucide-react'
 import {
   DropdownMenu,
@@ -24,16 +23,23 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'react-toastify'
-import { createDocumentCategory, createGlobalDocument, CreateGlobalDocumentRequest, getGlobalDocumentCategories } from '../../services/api'
+import {
+  createDocumentCategory,
+  getGlobalDocumentCategories,
+  getGlobalDocumentById,
+  updateGlobalDocument,
+  CreateGlobalDocumentRequest
+} from '../../services/api'
 import { IDocumentCategory, IGlobalDocument } from '../../type'
 
-interface SheetAddDocumentProps {
+interface SheetUpdateDocumentProps {
+  documentId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
   callback?: () => void
 }
 
-export function SheetAddDocument({ open, onOpenChange, callback }: SheetAddDocumentProps) {
+export function SheetUpdateDocument({ documentId, open, onOpenChange, callback }: SheetUpdateDocumentProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [formData, setFormData] = useState<Partial<CreateGlobalDocumentRequest>>({
@@ -44,43 +50,52 @@ export function SheetAddDocument({ open, onOpenChange, callback }: SheetAddDocum
 
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   const [newCategory, setNewCategory] = useState('')
-
   const [categories, setCategories] = useState<IDocumentCategory[]>([])
 
+  // Load categories and document data
   useEffect(() => {
-    if (open) {
-      const fetchCategories = async () => {
+    if (open && documentId) {
+      const fetchData = async () => {
         setIsLoading(true)
         try {
-          const res = await getGlobalDocumentCategories()
-          setCategories(res.data || [])
+          const [catRes, docRes] = await Promise.all([
+            getGlobalDocumentCategories(),
+            getGlobalDocumentById(documentId)
+          ])
+          setCategories(catRes.data || [])
+          if (docRes.data) {
+            setFormData({
+              name: docRes.data.name,
+              category: typeof docRes.data.category === 'object' ? docRes.data.category._id : docRes.data.category,
+              content: docRes.data.content
+            })
+          }
         } catch (error) {
-          toast.error('Không thể tải danh mục')
+          toast.error('Không thể tải dữ liệu')
         } finally {
           setIsLoading(false)
         }
       }
-      fetchCategories()
+      fetchData()
     }
-  }, [open])
+  }, [open, documentId])
 
   const handleSave = async () => {
+    if (!documentId) return
     if (!formData.name || !formData.category) {
       toast.error('Vui lòng điền đầy đủ tên và danh mục')
       return
     }
     setIsSaving(true)
-    try {
-      await createGlobalDocument(formData as CreateGlobalDocumentRequest)
-      toast.success('Tài liệu đã được tạo')
-      callback?.()
-      onOpenChange(false)
-      setFormData({ name: '', category: '', content: '' })
-    } catch (error) {
-      toast.error('Lỗi khi tạo tài liệu')
-    } finally {
-      setIsSaving(false)
-    }
+    await updateGlobalDocument(documentId, formData)
+      .then(() => {
+        toast.success('Cập nhật tài liệu thành công')
+        callback?.()
+        onOpenChange(false)
+      })
+      .finally(() => {
+        setIsSaving(false)
+      })
   }
 
   const handleAddCategory = async () => {
@@ -114,9 +129,9 @@ export function SheetAddDocument({ open, onOpenChange, callback }: SheetAddDocum
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <SheetTitle className="text-2xl font-black text-gray-900">Soạn thảo tài liệu mới</SheetTitle>
+              <SheetTitle className="text-2xl font-black text-gray-900">Cập nhật tài liệu</SheetTitle>
               <SheetDescription className="font-bold text-blue-500 uppercase tracking-widest text-[10px]">
-                Tạo và lưu trữ tài liệu vào kho hệ thống
+                Chỉnh sửa thông tin tài liệu trong hệ thống
               </SheetDescription>
             </div>
           </div>
@@ -127,7 +142,7 @@ export function SheetAddDocument({ open, onOpenChange, callback }: SheetAddDocum
             <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-                <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest">Đang xử lý...</p>
+                <p className="text-[11px] font-black text-blue-600 uppercase tracking-widest">Đang tải dữ liệu...</p>
               </div>
             </div>
           )}
@@ -237,7 +252,7 @@ export function SheetAddDocument({ open, onOpenChange, callback }: SheetAddDocum
 
         <SheetFooter className="p-8 bg-gray-50 border-t border-gray-100 shrink-0">
           <div className="flex items-center justify-between w-full">
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Tài liệu sẽ được lưu vào kho dùng chung.</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Các thay đổi sẽ được cập nhật ngay lập tức.</p>
             <div className="flex gap-3">
               <Button
                 variant="outline"
@@ -253,7 +268,7 @@ export function SheetAddDocument({ open, onOpenChange, callback }: SheetAddDocum
                 disabled={isSaving}
               >
                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                Lưu tài liệu
+                Cập nhật
               </Button>
             </div>
           </div>
@@ -262,5 +277,3 @@ export function SheetAddDocument({ open, onOpenChange, callback }: SheetAddDocum
     </Sheet>
   )
 }
-
-

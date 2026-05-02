@@ -33,6 +33,7 @@
     "express": "^5.1.0",
     "form-data": "^4.0.4",
     "google-auth-library": "^10.6.2",
+    "html-to-docx": "^1.8.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "microsoft-cognitiveservices-speech-sdk": "^1.46.0",

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { GlobalDocumentService } from "../services/globalDocument.service";
 import ErrorHandler from "../utils/ErrorHandler";
+const htmlToDocx = require("html-to-docx");
 
 export class GlobalDocumentController {
   // Tạo tài liệu mới
@@ -119,5 +120,31 @@ export class GlobalDocumentController {
       success: true,
       message: `Đã xóa ${ids.length} tài liệu`,
     });
+  });
+
+  // Xuất file docx
+  static downloadDocx = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const document = await GlobalDocumentService.getDocumentById(id);
+
+    if (!document) {
+      return next(new ErrorHandler("Không tìm thấy tài liệu", 404));
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="vi">
+        <head><meta charset="UTF-8"></head>
+        <body>${document.content}</body>
+      </html>
+    `;
+
+    const docxBuffer = await htmlToDocx(htmlContent, null, {
+      margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+    });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    res.setHeader("Content-Disposition", `attachment; filename=${encodeURIComponent(document.name)}.docx`);
+    res.send(docxBuffer);
   });
 }
