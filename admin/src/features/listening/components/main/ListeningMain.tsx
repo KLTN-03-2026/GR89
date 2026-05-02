@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState, useCallback } from "react"
 import { columnsListening } from "../table/ListeningColumn"
 import { Listening } from "@/features/listening/types"
-import { deleteMultipleListening, getListeningListPaginated, updateMultipleListeningStatus } from "@/features/listening/services/api"
+import { deleteMultipleListening, updateMultipleListeningStatus } from "@/features/listening/services/api"
 import { toast } from "react-toastify"
 import ListeningHeader from "./ListeningHeader"
 import { Button } from "@/components/ui/button"
@@ -31,7 +31,21 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function ListeningMain() {
+interface ListeningMainProps {
+  initialData: Listening[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
+}
+
+export function ListeningMain({ initialData, pagination }: ListeningMainProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -48,13 +62,9 @@ export function ListeningMain() {
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
   const [isLoading, setIsLoading] = useState(false)
-  const [items, setItems] = useState<Listening[]>([])
-  const [refresh, setRefresh] = useState(false)
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [items, setItems] = useState<Listening[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
-  const [activeFiltersCount, setActiveFiltersCount] = useState(0)
   const [selectedRows, setSelectedRows] = useState<Listening[]>([])
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -62,14 +72,32 @@ export function ListeningMain() {
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
   const [loadingAction, setLoadingAction] = useState(false)
 
+  // Derived state
+  const total = pagination.total
+  const pages = pagination.pages
+  const activeFiltersCount = [
+    urlSearch,
+    urlIsActive !== undefined,
+    urlSortBy !== 'orderIndex',
+    urlSortOrder !== 'asc'
+  ].filter(Boolean).length
+
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
 
+  // Cập nhật state khi prop initialData thay đổi (do Server Component fetch lại)
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setItems(initialData)
+    setPrevInitialData(initialData)
+  }
+
+  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward)
   useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
+    if (urlSearch !== search) {
       setSearch(urlSearch)
     }
-  }, [urlSearch, debouncedSearch])
+  }, [urlSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -83,50 +111,12 @@ export function ListeningMain() {
     router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }, [searchParams, pathname, router])
 
+  // Sync debounced search to URL
   useEffect(() => {
     if (debouncedSearch !== urlSearch) {
       updateUrl({ search: debouncedSearch, page: 1 })
     }
   }, [debouncedSearch, urlSearch, updateUrl])
-
-  const fetchData = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await getListeningListPaginated({
-        page: urlPage,
-        limit: urlLimit,
-        search: urlSearch,
-        sortBy: urlSortBy,
-        sortOrder: urlSortOrder,
-        isActive: urlIsActive
-      })
-
-      setItems(res.data || [])
-      setTotal(res.pagination?.total || 0)
-      setPages(res.pagination?.pages || 0)
-    } catch (error) {
-      console.error('❌ Error fetching Listening:', error)
-      setItems([])
-      setTotal(0)
-      setPages(0)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
-
-  useEffect(() => {
-    fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchData, refresh])
-
-  useEffect(() => {
-    let count = 0
-    if (urlSearch) count++
-    if (urlIsActive !== undefined) count++
-    if (urlSortBy !== 'orderIndex') count++
-    if (urlSortOrder !== 'asc') count++
-    setActiveFiltersCount(count)
-  }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) {
@@ -159,8 +149,7 @@ export function ListeningMain() {
       toast.success(`Đã xóa ${ids.length} bài nghe thành công`)
       setSelectedRows([])
       setOpenDeleteDialog(false)
-      setRefresh(!refresh)
-      fetchData()
+      router.refresh()
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Xóa bài nghe thất bại'
       toast.error(errorMessage)
@@ -202,8 +191,7 @@ export function ListeningMain() {
         toast.success(`Đã ${newIsActive ? 'xuất bản' : 'ẩn'} ${res.data?.updatedCount || 0} bài nghe`)
         setSelectedRows([])
         setOpenPublishDialog(false)
-        setRefresh(!refresh)
-        fetchData()
+        router.refresh()
       }
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || `${publishAction === 'publish' ? 'Xuất bản' : 'Ẩn'} thất bại`
@@ -250,7 +238,7 @@ export function ListeningMain() {
 
   return (
     <>
-      <ListeningHeader callback={() => setRefresh(!refresh)} />
+      <ListeningHeader callback={() => router.refresh()} />
 
       <Card>
         <CardHeader>
@@ -298,10 +286,10 @@ export function ListeningMain() {
 
           {/* Data Table */}
           <DataTable
-            columns={columnsListening(() => setRefresh(!refresh), items, handleSwapOrder)}
+            columns={columnsListening(() => router.refresh(), items, handleSwapOrder)}
             data={items}
             isLoading={isLoading}
-            columnNameSearch="Tiêu đề"
+            columnNameSearch="Tiêu đề bài nghe"
             handleDeleteMultiple={handleDeleteMultipleListening}
             handlePublishMultiple={handlePublishMany}
             handleUnpublishMultiple={handleUnpublishMany}

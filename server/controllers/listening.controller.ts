@@ -112,12 +112,12 @@ export class ListeningController {
       pagination: {
         page: result.page,
         limit: result.limit,
-        total: result.totalDocs,
-        pages: result.totalPages,
-        hasNext: result.hasNextPage,
-        hasPrev: result.hasPrevPage,
-        next: result.nextPage,
-        prev: result.prevPage
+        total: result.total || result.totalDocs || 0,
+        pages: result.pages || result.totalPages || 0,
+        hasNext: result.hasNext || result.hasNextPage || false,
+        hasPrev: result.hasPrev || result.hasPrevPage || false,
+        next: result.next || result.nextPage || null,
+        prev: result.prev || result.prevPage || null
       }
     })
   })

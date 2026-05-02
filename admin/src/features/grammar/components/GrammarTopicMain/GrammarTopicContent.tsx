@@ -109,6 +109,13 @@ export default function GrammarTopicContent({ callback, initialData, pagination 
     }
   }, [debouncedSearch, urlSearch, updateUrl])
 
+  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward)
+  useEffect(() => {
+    if (urlSearch !== search) {
+      setSearch(urlSearch)
+    }
+  }, [urlSearch])
+
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) return
     updateUrl({ page: newPage })
