@@ -85,7 +85,6 @@ export default function VocabularyTopicContent({ callback, initialData, paginati
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
 
-  // Cập nhật state khi prop initialData thay đổi (do Server Component fetch lại)
   const [prevInitialData, setPrevInitialData] = useState(initialData)
   if (initialData !== prevInitialData) {
     setTopics(initialData)
@@ -109,6 +108,13 @@ export default function VocabularyTopicContent({ callback, initialData, paginati
       updateUrl({ search: debouncedSearch, page: 1 })
     }
   }, [debouncedSearch, urlSearch, updateUrl])
+
+  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward)
+  useEffect(() => {
+    if (urlSearch !== search) {
+      setSearch(urlSearch)
+    }
+  }, [urlSearch])
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) {
