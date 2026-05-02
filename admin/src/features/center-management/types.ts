@@ -32,11 +32,19 @@ export interface ICenterClass {
 }
 
 export interface IGlobalDocument {
+  _id: string;
   id: string;
   name: string;
+  category: string;
   content: string; // Rich text content
   updatedAt: string;
-  owner: string;
+  createdAt: string;
+  owner: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  } | string;
 }
 
 export interface IHomeworkSubmission {
