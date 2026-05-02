@@ -19,6 +19,15 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 interface props {
   refresh: boolean
   callback: () => void
+  initialData: Ipa[]
+  initialPagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+  }
 }
 
 // Custom hook for debouncing
@@ -38,7 +47,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function IpaContent({ refresh, callback }: props) {
+export default function IpaContent({ refresh, callback, initialData, initialPagination }: props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -58,9 +67,9 @@ export default function IpaContent({ refresh, callback }: props) {
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
   const [isLoading, setIsLoading] = useState(false)
-  const [ipa, setIpa] = useState<Ipa[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [ipa, setIpa] = useState<Ipa[]>(initialData)
+  const [total, setTotal] = useState(initialPagination.total)
+  const [pages, setPages] = useState(initialPagination.pages)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
   const [activeFiltersCount, setActiveFiltersCount] = useState(0)
@@ -72,13 +81,6 @@ export default function IpaContent({ refresh, callback }: props) {
   const [loadingAction, setLoadingAction] = useState(false)
 
   const debouncedSearch = useDebounce(search, 500)
-
-  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward) mà không làm mất text đang gõ
-  useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
-      setSearch(urlSearch)
-    }
-  }, [urlSearch, debouncedSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -122,7 +124,7 @@ export default function IpaContent({ refresh, callback }: props) {
   useEffect(() => {
     fetchIpa()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchIpa, refresh])
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlSoundType, urlIsActive, refresh])
 
   useEffect(() => {
     let count = 0

@@ -1,6 +1,6 @@
 import 'server-only'
 import { fetchServer } from '@/lib/apis/fetch-server'
-import { CouponQueryParams, PaymentQueryParams, PlanQueryParams } from '@/lib/apis/api'
+import { CouponQueryParams, Payment, PaymentPaginationMeta, PaymentQueryParams, PlanQueryParams } from '@/lib/apis/api'
 
 /*=============================================================================
  * DANH SÁCH API SERVER-SIDE CHO BILLING
@@ -21,7 +21,15 @@ export async function getCouponsServer(params?: CouponQueryParams) {
 }
 
 // 2. Payments (Thanh toán)
-export async function getPaymentsServer(params?: PaymentQueryParams) {
+interface PaginatedPaymentResponse {
+  success: boolean
+  message: string
+  data: Payment[]
+  pagination: PaymentPaginationMeta
+  paidCount: number
+  totalRevenue: number
+}
+export async function getPaymentsServer(params?: PaymentQueryParams): Promise<PaginatedPaymentResponse> {
   const queryParams = new URLSearchParams()
   if (params?.page) queryParams.append('page', String(params.page))
   if (params?.limit) queryParams.append('limit', String(params.limit))
@@ -32,11 +40,19 @@ export async function getPaymentsServer(params?: PaymentQueryParams) {
   if (params?.provider) queryParams.append('provider', params.provider)
 
   const url = `/payment?${queryParams.toString()}`
-  return await fetchServer<any>(url)
+  const response = await fetchServer<PaginatedPaymentResponse>(url) as unknown as PaginatedPaymentResponse
+
+  return {
+    ...response,
+    data: response.data || [],
+    pagination: response.pagination || {},
+    paidCount: response.paidCount || 0,
+    totalRevenue: response.totalRevenue || 0
+  }
 }
 
 // 3. Plans (Gói dịch vụ)
-export async function getPlansServer(params?: PlanQueryParams) {
+export async function getPlansServer(params?: PlanQueryParams): Promise<any> {
   const queryParams = new URLSearchParams()
   if (params?.page) queryParams.append('page', String(params.page))
   if (params?.limit) queryParams.append('limit', String(params.limit))
