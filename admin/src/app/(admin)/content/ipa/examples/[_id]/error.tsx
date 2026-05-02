@@ -10,10 +10,10 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <CommonError 
-      error={error} 
-      reset={reset} 
-      message="Không thể tải dữ liệu L lúc này. Vui lòng thử lại sau." 
+    <CommonError
+      error={error}
+      reset={reset}
+      message="Không thể tải dữ liệu IPA Examples lúc này. Vui lòng thử lại sau."
     />
   )
 }

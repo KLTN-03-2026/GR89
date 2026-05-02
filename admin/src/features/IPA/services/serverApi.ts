@@ -46,3 +46,9 @@ export async function getIpaServer(params?: IPAQueryParams): Promise<{
     }
   }
 }
+
+export async function getIpaByIdServer(id: string): Promise<Ipa | null> {
+  const url = `/ipa/${id}`
+  const response = await fetchServer<any>(url)
+  return response.data || null
+}

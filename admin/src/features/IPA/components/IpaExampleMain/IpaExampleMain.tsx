@@ -2,8 +2,8 @@
 import { DataTable } from '@/components/common'
 import { Card, CardContent } from '@/components/ui/card'
 import { columnsIpaExample } from '../IpaExampleTable/IpaExampleColumn'
-import { useState, useEffect } from 'react'
-import { deleteMultipleExamplesIpa, getIpaById } from '@/features/IPA/services/api'
+import { useState } from 'react'
+import { deleteMultipleExamplesIpa } from '@/features/IPA/services/api'
 import { Ipa, Example } from '@/features/IPA/types'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -21,46 +21,26 @@ import {
 import { toast } from 'react-toastify'
 import { DialogAddIpaExample } from '../dialogs'
 
+import { useRouter } from 'next/navigation'
+
 interface Props {
-  ipaId: string
+  _id: string
+  initialData: Ipa
 }
 
-export function IpaExampleMain({ ipaId }: Props) {
+export function IpaExampleMain({ _id, initialData }: Props) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [ipa, setIpa] = useState<Ipa | null>(null)
-  const [refresh, setRefresh] = useState(false)
+  const [ipa, setIpa] = useState<Ipa>(initialData)
   const [selectedExamples, setSelectedExamples] = useState<Example[]>([])
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => {
-    const fetchIpa = async () => {
-      setIsLoading(true)
-      await getIpaById(ipaId)
-        .then(res => {
-          const ipaData = res.data as Ipa
-
-          const formattedExamples = (ipaData.examples || []).map((example: Example, index: number) => ({
-            ...example,
-            _id: example._id || `temp-${index}`,
-            word: example.word || '',
-            phonetic: example.phonetic || '',
-            vietnamese: example.vietnamese || ''
-          }))
-
-          setIpa({
-            ...ipaData,
-            examples: formattedExamples
-          })
-        })
-        .finally(() => setIsLoading(false))
-    }
-
-    fetchIpa()
-  }, [ipaId, refresh])
-
-  const handleRefresh = () => {
-    setRefresh(prev => !prev)
+  // Syncing state with props
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setIpa(initialData)
+    setPrevInitialData(initialData)
   }
 
   const handleDeleteSelected = async () => {
@@ -75,9 +55,9 @@ export function IpaExampleMain({ ipaId }: Props) {
 
     setIsDeleting(true)
     try {
-      await deleteMultipleExamplesIpa(ipaId, ids)
+      await deleteMultipleExamplesIpa(_id, ids)
       toast.success(`Đã xóa ${ids.length} ví dụ`)
-      handleRefresh()
+      router.refresh()
       setSelectedExamples([])
     } catch (error: unknown) {
       const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -106,44 +86,43 @@ export function IpaExampleMain({ ipaId }: Props) {
 
   return (
     <div>
-      <div className='flex justify-between items-center'>
-        <div className='flex items-center gap-4'>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-4">
           <Link href="/content/ipa">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Quay lại
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <header>
-            <h1 className='text-2xl font-bold'>Ví dụ về âm {ipa.sound}:</h1>
-            <span className='text-sm text-gray-500'>Quản lý danh sách từ vựng</span>
-          </header>
+          <div>
+            <h1 className="text-2xl font-bold">Ví dụ cho âm /{ipa.sound}/</h1>
+            <p className="text-muted-foreground">Quản lý các từ ví dụ minh họa cho âm tiết</p>
+          </div>
         </div>
-
-        <DialogAddIpaExample ipaId={ipaId} callback={handleRefresh} />
+        <div className="flex gap-2">
+          {selectedExamples.length > 0 && (
+            <Button
+              variant="destructive"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              Xóa {selectedExamples.length} mục đã chọn
+            </Button>
+          )}
+          <DialogAddIpaExample
+            ipaId={_id}
+            callback={() => router.refresh()}
+          />
+        </div>
       </div>
 
-      <Card>
-        <CardContent>
-          {(!ipa.examples || ipa.examples.length === 0) && !isLoading ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>Chưa có ví dụ nào cho âm này.</p>
-              <p className="text-sm mt-2">Nhấn &quot;Thêm ví dụ&quot; để bắt đầu.</p>
-            </div>
-          ) : (
-            <DataTable
-              columns={columnsIpaExample(ipaId, handleRefresh)}
-              data={ipa.examples || []}
-              isLoading={isLoading}
-              columnNameSearch="word"
-              maxHeight="600px"
-              handleDeleteMultiple={(ids) => {
-                if (!ids || ids.length === 0) return
-                setIsDeleteDialogOpen(true)
-              }}
-              onSelectedRowsChange={setSelectedExamples}
-            />
-          )}
+      <Card className="rounded-[2rem] border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden mt-6">
+        <CardContent className="p-0">
+          <DataTable
+            columns={columnsIpaExample(_id, () => router.refresh())}
+            data={ipa.examples || []}
+            isLoading={isLoading}
+            columnNameSearch="word"
+            onSelectedRowsChange={(rows) => setSelectedExamples(rows as Example[])}
+          />
         </CardContent>
       </Card>
 
