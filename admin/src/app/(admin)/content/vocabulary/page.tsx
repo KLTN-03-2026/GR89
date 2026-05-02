@@ -32,7 +32,7 @@ export default async function page({ searchParams }: PageProps) {
   })
 
   return (
-    <VocabularyTopicMain 
+    <VocabularyTopicMain
       initialData={response.data}
       pagination={response.pagination}
     />
