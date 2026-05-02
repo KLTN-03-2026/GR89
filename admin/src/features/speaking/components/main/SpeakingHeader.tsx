@@ -20,62 +20,52 @@ interface IStatsOverviewProps {
   icon: LucideIcon;
 }
 
-export default function SpeakingHeader({ callback }: props) {
+export default function SpeakingHeader({ callback, initialStats }: { callback: () => void, initialStats: any }) {
   const [stats, setStats] = useState<IStatsOverviewProps[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchSpeakingStats = async () => {
-      setLoading(true);
-      await getSpeakingOverviewStats()
-        .then(res => {
-          const data = res.data;
-          setStats([
-            {
-              title: "Tổng Bài Nói",
-              value: data?.totalLessons?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 3) + 1} so với tháng trước`,
-                isPositive: true
-              },
-              icon: Mic
-            },
-            {
-              title: "Tổng Người Học",
-              value: data?.totalUsers?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 25) + 8} trong tháng này`,
-                isPositive: true
-              },
-              icon: Users
-            },
-            {
-              title: "Tỷ Lệ Hoàn Thành",
-              value: `${data && data?.completionRate}%`,
-              change: {
-                value: `${data && data?.monthlyChange >= 0 ? '+' : ''}${data?.monthlyChange}% so với tháng trước`,
-                isPositive: data && data?.monthlyChange >= 0 || false
-              },
-              icon: Eye
-            },
-            {
-              title: "Điểm Trung Bình",
-              value: `${data && data?.avgSpeakingScore}%`,
-              change: {
-                value: `+${Math.floor(Math.random() * 8) + 3}%`,
-                isPositive: true
-              },
-              icon: TrendingUp
-            }
-          ]);
-        })
-        .finally(() => {
-          setLoading(false);
-        })
-    };
-
-    fetchSpeakingStats();
-  }, []);
+    if (initialStats) {
+      setStats([
+        {
+          title: "Tổng Bài Nói",
+          value: initialStats.totalLessons?.toString() || '0',
+          change: {
+            value: `+${Math.floor(Math.random() * 3) + 1} so với tháng trước`,
+            isPositive: true
+          },
+          icon: Mic
+        },
+        {
+          title: "Tổng Người Học",
+          value: initialStats.totalUsers?.toString() || '0',
+          change: {
+            value: `+${Math.floor(Math.random() * 25) + 8} trong tháng này`,
+            isPositive: true
+          },
+          icon: Users
+        },
+        {
+          title: "Tỷ Lệ Hoàn Thành",
+          value: `${initialStats.completionRate}%`,
+          change: {
+            value: `${initialStats.monthlyChange >= 0 ? '+' : ''}${initialStats.monthlyChange}% so với tháng trước`,
+            isPositive: initialStats.monthlyChange >= 0
+          },
+          icon: Eye
+        },
+        {
+          title: "Điểm Trung Bình",
+          value: `${initialStats.avgSpeakingScore}%`,
+          change: {
+            value: `+${Math.floor(Math.random() * 8) + 3}%`,
+            isPositive: true
+          },
+          icon: TrendingUp
+        }
+      ]);
+    }
+  }, [initialStats]);
 
   return (
     <header>

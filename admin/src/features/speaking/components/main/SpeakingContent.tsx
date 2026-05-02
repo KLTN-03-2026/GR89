@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { columnsSpeaking } from "../table/SpeakingColumn";
 import { useEffect, useState, useCallback } from "react";
 import { Speaking } from "@/features/speaking/types";
-import { deleteMultipleSpeaking, getSpeakingListPaginated, updateMultipleSpeakingStatus } from "@/features/speaking/services/api";
+import { deleteMultipleSpeaking, updateMultipleSpeakingStatus } from "@/features/speaking/services/api";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +14,18 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import FiltersPanel from './FiltersPanel';
 
 interface props {
-  refresh: boolean
   callback: () => void
+  initialData: Speaking[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
 }
 
 // Custom hook for debouncing
@@ -35,7 +45,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export default function SpeakingContent({ refresh, callback }: props) {
+export default function SpeakingContent({ callback, initialData, pagination }: props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -52,12 +62,9 @@ export default function SpeakingContent({ refresh, callback }: props) {
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
   const [isLoading, setIsLoading] = useState(false)
-  const [speakings, setSpeakings] = useState<Speaking[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [speakings, setSpeakings] = useState<Speaking[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
-  const [activeFiltersCount, setActiveFiltersCount] = useState(0)
   const [selectedRows, setSelectedRows] = useState<Speaking[]>([])
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -65,14 +72,32 @@ export default function SpeakingContent({ refresh, callback }: props) {
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
   const [loadingAction, setLoadingAction] = useState(false)
 
+  // Derived state
+  const total = pagination.total
+  const pages = pagination.pages
+  const activeFiltersCount = [
+    urlSearch,
+    urlIsActive !== undefined,
+    urlSortBy !== 'orderIndex',
+    urlSortOrder !== 'asc'
+  ].filter(Boolean).length
+
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
 
+  // Cập nhật state khi prop initialData thay đổi (do Server Component fetch lại)
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setSpeakings(initialData)
+    setPrevInitialData(initialData)
+  }
+
+  // Đồng bộ ngược từ URL vào input khi người dùng điều hướng (Back/Forward)
   useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
+    if (urlSearch !== search) {
       setSearch(urlSearch)
     }
-  }, [urlSearch, debouncedSearch])
+  }, [urlSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -91,46 +116,6 @@ export default function SpeakingContent({ refresh, callback }: props) {
       updateUrl({ search: debouncedSearch, page: 1 })
     }
   }, [debouncedSearch, urlSearch, updateUrl])
-
-  const fetchSpeakings = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await getSpeakingListPaginated({
-        page: urlPage,
-        limit: urlLimit,
-        search: urlSearch,
-        sortBy: urlSortBy,
-        sortOrder: urlSortOrder,
-        isActive: urlIsActive
-      })
-
-      setSpeakings(res.data || [])
-      setTotal(res.pagination?.total || 0)
-      setPages(res.pagination?.pages || 0)
-    } catch (error) {
-      console.error('❌ Error fetching speakings:', error)
-      setSpeakings([])
-      setTotal(0)
-      setPages(0)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
-
-  useEffect(() => {
-    fetchSpeakings()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchSpeakings, refresh])
-
-  // Count active filters
-  useEffect(() => {
-    let count = 0
-    if (urlSearch) count++
-    if (urlIsActive !== undefined) count++
-    if (urlSortBy !== 'orderIndex') count++
-    if (urlSortOrder !== 'asc') count++
-    setActiveFiltersCount(count)
-  }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) {
@@ -163,7 +148,7 @@ export default function SpeakingContent({ refresh, callback }: props) {
       toast.success(`Đã xóa ${ids.length} bài nói thành công`)
       setSelectedRows([])
       setOpenDeleteDialog(false)
-      fetchSpeakings()
+      router.refresh()
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Xóa bài nói thất bại'
       toast.error(errorMessage)
@@ -205,7 +190,7 @@ export default function SpeakingContent({ refresh, callback }: props) {
         toast.success(`Đã ${newIsActive ? 'xuất bản' : 'ẩn'} ${res.data?.updatedCount || 0} bài nói`)
         setSelectedRows([])
         setOpenPublishDialog(false)
-        fetchSpeakings()
+        router.refresh()
       }
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || `${publishAction === 'publish' ? 'Xuất bản' : 'Ẩn'} thất bại`
