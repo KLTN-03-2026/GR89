@@ -3,9 +3,7 @@ export interface User {
   fullName: string;
   email: string;
   isActive: boolean;
-  avatar?: {
-    url: string
-  }
+  avatar?: string
   role: 'user' | 'admin' | 'content';
   currentStreak: number;
   longestStreak: number;

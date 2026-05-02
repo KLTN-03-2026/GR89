@@ -25,6 +25,8 @@ export interface ICenterClass {
   startDate: string;
   schedule: string;
   status: 'opening' | 'ongoing' | 'finished';
+  password?: string;
+  isActive: boolean;
   students: IStudent[];
   documents: IClassDocument[];
 }

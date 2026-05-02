@@ -69,15 +69,6 @@ export const columnsGrammarTopic = (
       )
     },
     {
-      id: 'lesson',
-      header: 'Lesson',
-      cell: ({ row }) => (
-        <a href={`/content/grammar/lesson/${row.original._id}`} className="text-blue-600 hover:text-blue-800 underline">
-          Quản lý Lesson
-        </a>
-      )
-    },
-    {
       accessorKey: 'Người tạo',
       header: () => <div className="text-center">Người tạo</div>,
       cell: ({ row }) => {

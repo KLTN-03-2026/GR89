@@ -103,49 +103,49 @@ export function SheetAddVocabulary({ topicId, callback }: { topicId: string, cal
         </Button>
       </SheetTrigger>
       <SheetContent className="h-full sm:max-w-2xl flex flex-col p-0 border-l overflow-hidden">
-        <SheetHeader className="p-6">
+        <SheetHeader className="p-8 pb-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-zinc-100 rounded-lg text-zinc-900">
+            <div className="p-3 bg-zinc-50 rounded-2xl text-zinc-900 shadow-inner">
               <Type className="w-6 h-6" />
             </div>
             <div>
-              <SheetTitle className="text-xl font-bold text-zinc-900">Khai Báo Từ Mới</SheetTitle>
-              <SheetDescription className="text-zinc-500 text-sm mt-1">
+              <SheetTitle className="text-2xl font-black text-zinc-900 tracking-tight">Khai Báo Từ Mới</SheetTitle>
+              <SheetDescription className="text-zinc-500 font-medium mt-1">
                 Thêm một từ vựng mới vào kho tàng ngôn ngữ.
               </SheetDescription>
             </div>
           </div>
         </SheetHeader>
 
-        <Separator />
+        <Separator className="bg-zinc-100" />
 
         <ScrollArea className="flex-1 min-h-0">
           <Form {...form}>
-            <form id="form-create-vocabulary" onSubmit={form.handleSubmit(onSubmit)} className="p-6 space-y-8">
+            <form id="form-create-vocabulary" onSubmit={form.handleSubmit(onSubmit)} className="p-8 space-y-10">
               {/* Section: Word & Phonetic */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 text-zinc-900 font-bold uppercase text-xs">
+              <section className="space-y-6">
+                <div className="flex items-center gap-2.5 text-zinc-900 font-black uppercase text-[11px] tracking-[0.2em]">
                   <Sparkles className="w-4 h-4" />
                   Định Danh & Phát Âm
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 bg-zinc-50 p-6 rounded-lg border border-zinc-200">
+                <div className="grid grid-cols-2 gap-6 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100 shadow-sm">
                   <FormField
                     control={form.control}
                     name="word"
                     render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel className="text-xs font-bold text-zinc-500 uppercase">
-                          Từ Vựng <span className="text-rose-500">*</span>
+                      <FormItem className="space-y-2.5">
+                        <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                          Từ Vựng <span className="text-zinc-400">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="VD: Serendipity"
-                            className="h-11 bg-white border-zinc-200 rounded-lg font-bold"
+                            className="h-12 bg-white border-zinc-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm"
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage className="text-[11px] font-bold" />
+                        <FormMessage className="text-[11px] font-bold ml-1" />
                       </FormItem>
                     )}
                   />
@@ -154,18 +154,18 @@ export function SheetAddVocabulary({ topicId, callback }: { topicId: string, cal
                     control={form.control}
                     name="transcription"
                     render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <FormLabel className="text-xs font-bold text-zinc-500 uppercase">
-                          Phiên Âm <span className="text-rose-500">*</span>
+                      <FormItem className="space-y-2.5">
+                        <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                          Phiên Âm <span className="text-zinc-400">*</span>
                         </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="VD: /ˌserənˈdipədē/"
-                            className="h-11 bg-white border-zinc-200 rounded-lg font-medium"
+                            className="h-12 bg-white border-zinc-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm"
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage className="text-[11px] font-bold" />
+                        <FormMessage className="text-[11px] font-bold ml-1" />
                       </FormItem>
                     )}
                   />
@@ -174,23 +174,23 @@ export function SheetAddVocabulary({ topicId, callback }: { topicId: string, cal
                     control={form.control}
                     name="partOfSpeech"
                     render={({ field }) => (
-                      <FormItem className="space-y-2 col-span-2">
-                        <FormLabel className="text-xs font-bold text-zinc-500 uppercase">
-                          Loại Từ <span className="text-rose-500">*</span>
+                      <FormItem className="space-y-2.5 col-span-2">
+                        <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                          Loại Từ <span className="text-zinc-400">*</span>
                         </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger className="h-11 bg-white border-zinc-200 rounded-lg font-medium">
+                            <SelectTrigger className="h-12 bg-white border-zinc-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm text-left">
                               <SelectValue placeholder="Chọn loại từ" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="rounded-2xl border-zinc-100 shadow-xl">
                             {partOfSpeechs.map((pos) => (
-                              <SelectItem key={pos.value} value={pos.value}>{pos.label}</SelectItem>
+                              <SelectItem key={pos.value} value={pos.value} className="rounded-xl font-bold">{pos.label}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage className="text-[11px] font-bold" />
+                        <FormMessage className="text-[11px] font-bold ml-1" />
                       </FormItem>
                     )}
                   />

@@ -18,8 +18,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Admin English Mastery",
-  description: "learning English for English Mastery",
+  title: "Admin ActiveLearning",
+  description: "learning English for ActiveLearning",
   icons: {
     icon: "/images/logo.png",
   }

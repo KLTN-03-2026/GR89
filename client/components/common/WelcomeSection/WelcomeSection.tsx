@@ -11,9 +11,11 @@ export function WelcomeSection({ welcomeContent, statsOverview, streakCard }: IW
         <WelcomeContent
           {...welcomeContent}
         />
-        <StreakCard
-          {...streakCard}
-        />
+        {streakCard && (
+          <StreakCard
+            {...streakCard}
+          />
+        )}
       </div>
 
       <StatsOverview statsOverview={statsOverview} />

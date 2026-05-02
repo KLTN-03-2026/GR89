@@ -188,12 +188,9 @@ export class UserController {
     const userId = req.user?._id;
     if (!userId) return next(new ErrorHandler("Vui lòng đăng nhập", 401));
 
-    const media = await MediaService.uploadMedia({
-      filePath: req.file.path,
-      userId,
-    });
+    const result = await MediaService.uploadRawImage(req.file.path);
 
-    const me = await UserService.updateAvatar(userId, media._id as string);
+    const me = await UserService.updateAvatar(userId, result.url);
     res.status(200).json({
       success: true,
       message: "Cập nhật ảnh đại diện thành công",

@@ -80,12 +80,12 @@ export default function GrammarTopicHeader({ callback }: Props) {
 
   return (
     <header>
-      <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="flex items-center justify-between mb-6">
         <PageHeader title="Ngữ Pháp" subtitle="Quản lý chủ đề ngữ pháp" />
 
         <div className="flex items-center gap-3">
           <button
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 shadow-sm transition-all"
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
             onClick={async () => {
               const blob = await exportGrammarExcel()
               const url = URL.createObjectURL(blob)
@@ -99,7 +99,9 @@ export default function GrammarTopicHeader({ callback }: Props) {
             <Download className="w-4 h-4" />
             Xuất Excel
           </button>
+
           <GrammarSheetImport callback={callback} />
+
           <SheetAddGrammarTopic callback={callback} />
         </div>
       </div>

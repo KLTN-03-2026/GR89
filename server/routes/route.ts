@@ -50,7 +50,7 @@ router.use('/daily-suggestion', dailySuggestionRoutes)
 router.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Chào mừng đến với English Master API! 🎓',
+    message: 'Chào mừng đến với ActiveLearning API! 🎓',
     documentation: req.protocol + '://' + req.get('host') + '/api',
     health: req.protocol + '://' + req.get('host') + '/health',
   })

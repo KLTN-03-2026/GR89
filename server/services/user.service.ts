@@ -122,13 +122,7 @@ export class UserService {
       },
     };
 
-    return await User.paginate(query, {
-      ...paginateOptions,
-      populate: {
-        path: "avatar",
-        select: "url"
-      }
-    });
+    return await User.paginate(query, paginateOptions);
   }
 
   // (ADMIN) Cập nhật trạng thái cho nhiều người dùng
@@ -165,15 +159,22 @@ export class UserService {
 
   // (USER) Lấy thông tin cá nhân của người dùng hiện tại
   static async getMe(userId: string): Promise<IUser> {
-    const user = await User.findById(userId).select("-password").populate("avatar", "url");
+    const user = await User.findById(userId).select("-password");
 
     if (!user) throw new ErrorHandler("Không tìm thấy người dùng", 404);
+
+    let avatarUrl = user.avatar;
+    // Nếu avatar là ObjectId (ID của Media), ta cần lấy URL từ Media
+    if (avatarUrl && mongoose.isValidObjectId(avatarUrl)) {
+      const media = await MediaService.getMediaById(avatarUrl as string);
+      if (media) avatarUrl = media.url;
+    }
 
     return {
       _id: String(user._id),
       fullName: user.fullName,
       email: user.email,
-      avatar: user?.avatar as any,
+      avatar: avatarUrl as any,
       dateOfBirth: user.dateOfBirth || null,
       phone: user.phone || "",
       country: user.country || "",
@@ -360,35 +361,31 @@ export class UserService {
   }
 
   // (USER) Cập nhật ảnh đại diện
-  static async updateAvatar(userId: string, avatarMediaId: string): Promise<UserInfo> {
-    if (!mongoose.isValidObjectId(avatarMediaId))
-      throw new ErrorHandler("Media avatar không hợp lệ", 400);
-
+  static async updateAvatar(userId: string, avatarUrl: string): Promise<UserInfo> {
     const DEFAULT_AVATAR_ID = '69293c75f29d5312d6568881'
     const currentUser = await User.findById(userId).select("avatar")
-    const previousAvatarId = currentUser?.avatar ? String(currentUser.avatar) : null
+    const previousAvatar = currentUser?.avatar
 
     const updated = await User.findByIdAndUpdate(
       userId,
-      { avatar: new mongoose.Types.ObjectId(avatarMediaId) },
+      { avatar: avatarUrl },
       { new: true }
-    )
-      .select("-password")
-      .populate("avatar", "url");
+    ).select("-password");
 
     if (!updated) throw new ErrorHandler("Không tìm thấy người dùng", 404);
 
+    // Nếu avatar cũ là Media ID, có thể xóa Media đó đi (trừ avatar mặc định)
     if (
-      previousAvatarId &&
-      previousAvatarId !== DEFAULT_AVATAR_ID &&
-      previousAvatarId !== avatarMediaId
+      previousAvatar &&
+      previousAvatar !== DEFAULT_AVATAR_ID &&
+      mongoose.isValidObjectId(previousAvatar)
     ) {
-      await MediaService.deleteOne(previousAvatarId)
+      await MediaService.deleteOne(String(previousAvatar))
     }
 
     return {
       ...updated.toObject(),
-      avatar: (updated?.avatar as any)?.url || '',
+      avatar: updated.avatar,
     } as unknown as UserInfo;
   }
 

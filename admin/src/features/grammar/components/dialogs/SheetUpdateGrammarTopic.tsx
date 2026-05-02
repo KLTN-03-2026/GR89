@@ -16,13 +16,11 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Book, 
-  Type, 
-  Info, 
-  Layers, 
-  Save, 
-  X,
+import {
+  Book,
+  Info,
+  Layers,
+  Save,
   Loader2,
   Sparkles,
   Zap,
@@ -110,7 +108,7 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
                 <Zap className="w-4 h-4" />
                 Thông Tin Cấu Trúc
               </div>
-              
+
               <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label htmlFor="title-update" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
@@ -143,7 +141,7 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
 
                 <div className="space-y-2.5">
                   <Label htmlFor="description-update" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                    <Info className="h-3.5 h-3.5" /> Mô Tả Tóm Tắt
+                    <Info className="h-3.5" /> Mô Tả Tóm Tắt
                   </Label>
                   <Input
                     id="description-update"
@@ -162,7 +160,7 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
                 <History className="w-4 h-4" />
                 Lịch Sử Chỉnh Sửa
               </div>
-              
+
               <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -194,17 +192,17 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
         <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
           <div className="flex items-center justify-end gap-4 w-full">
             <SheetClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-12 px-8 rounded-2xl border-gray-200 font-bold text-gray-600 hover:bg-white transition-all active:scale-95"
                 disabled={isLoading}
               >
                 Hủy Bỏ
               </Button>
             </SheetClose>
-            <Button 
+            <Button
               onClick={handleUpdateGrammarTopic}
-              disabled={isLoading} 
+              disabled={isLoading}
               className="h-12 px-10 rounded-2xl bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-200 font-black transition-all active:scale-95"
             >
               {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5 mr-2" />}

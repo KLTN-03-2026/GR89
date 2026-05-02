@@ -94,15 +94,15 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
             <Book className="w-6 h-6" />
           </div>
           <div>
-            <SheetTitle className="text-2xl font-black text-gray-900 tracking-tight">Cập Nhật Chủ Đề</SheetTitle>
-            <SheetDescription className="text-gray-500 font-medium mt-1">
+            <SheetTitle className="text-2xl font-black text-zinc-900 tracking-tight">Cập Nhật Chủ Đề</SheetTitle>
+            <SheetDescription className="text-zinc-500 font-medium mt-1">
               Chỉnh sửa thông tin cho: <span className="text-zinc-900 font-bold">{topic.name}</span>
             </SheetDescription>
           </div>
         </div>
       </SheetHeader>
 
-      <Separator className="bg-gray-100" />
+      <Separator className="bg-zinc-100" />
 
       <ScrollArea className="flex-1 min-h-0">
         <Form {...form}>
@@ -114,19 +114,19 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                 Thông Tin Cơ Bản
               </div>
 
-              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-1 gap-6 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100 shadow-sm">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem className="space-y-2.5">
-                      <FormLabel className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                        Tên Chủ Đề <span className="text-rose-500">*</span>
+                      <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                        Tên Chủ Đề <span className="text-zinc-400">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="VD: Food & Drinks, Travel, Technology..."
-                          className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm"
+                          className="h-12 bg-white border-zinc-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm"
                           {...field}
                         />
                       </FormControl>
@@ -140,16 +140,16 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                   name="level"
                   render={({ field }) => (
                     <FormItem className="space-y-2.5">
-                      <FormLabel className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5" /> Trình Độ <span className="text-rose-500">*</span>
+                      <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5" /> Trình Độ <span className="text-zinc-400">*</span>
                       </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm">
+                          <SelectTrigger className="h-12 bg-white border-zinc-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm">
                             <SelectValue placeholder="Chọn trình độ" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
+                        <SelectContent className="rounded-2xl border-zinc-100 shadow-xl">
                           {["A1", "A2", "B1", "B2", "C1", "C2"].map((lvl) => (
                             <SelectItem key={lvl} value={lvl} className="rounded-xl font-bold">{lvl}</SelectItem>
                           ))}
@@ -176,8 +176,8 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                   render={() => (
                     <FormItem className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <FormLabel className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                          Ảnh Chủ Đề <span className="text-rose-500">*</span>
+                        <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                          Ảnh Chủ Đề <span className="text-zinc-400">*</span>
                         </FormLabel>
                         {imageUrl && (
                           <Button
@@ -188,7 +188,7 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                               setImageUrl("")
                               form.setValue("image", "")
                             }}
-                            className="h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl font-bold text-xs"
+                            className="h-8 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-xl font-bold text-xs"
                           >
                             <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                             Gỡ ảnh

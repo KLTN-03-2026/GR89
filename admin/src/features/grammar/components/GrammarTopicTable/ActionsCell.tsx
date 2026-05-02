@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, Info, Loader2, MoreHorizontal, Pencil, Trash2, Crown } from 'lucide-react'
+import { Eye, EyeOff, Info, Loader2, MoreHorizontal, Pencil, Trash2, Crown, BookOpen } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteGrammarTopic, updateIsActiveGrammarTopic, toggleGrammarTopicVipStatus } from '../../services/api'
@@ -82,34 +82,21 @@ export default function ActionsCell({ topic, allTopics, callback, onSwap }: Prop
       <SheetUpdateGrammarTopic topic={topic} open={isOpen} setOpen={setIsOpen} callback={callback} />
 
       <Dialog open={openDelete} onOpenChange={setOpenDelete}>
-        <DialogContent className="rounded-[2rem] border-none shadow-2xl">
-          <DialogHeader className="pt-8 px-8">
-            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 mb-4 shadow-inner">
-              <Trash2 className="w-6 h-6" />
-            </div>
-            <DialogTitle className="text-xl font-black text-gray-900">Xác nhận xóa</DialogTitle>
-            <DialogDescription className="text-gray-500 font-medium pt-2">
-              Bạn có chắc chắn muốn xóa chủ đề ngữ pháp <span className="text-rose-600 font-bold">"{topic.title}"</span>?
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa chủ đề</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa chủ đề ngữ pháp <strong>"{topic.title}"</strong>?
               Hành động này sẽ xóa tất cả bài học trong chủ đề và không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-[2rem]">
-            <Button 
-              variant="outline" 
-              onClick={() => setOpenDelete(false)} 
-              disabled={isLoading}
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-600"
-            >
-              Hủy Bỏ
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenDelete(false)} disabled={isLoading}>
+              Hủy
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDelete} 
-              disabled={isLoading}
-              className="h-11 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-200 font-black"
-            >
+            <Button variant="destructive" onClick={handleDelete} disabled={isLoading}>
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-              Xác Nhận Xóa
+              Xóa
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -126,36 +113,35 @@ export default function ActionsCell({ topic, allTopics, callback, onSwap }: Prop
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setIsOpen(true) }} disabled={isLoading}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Sửa chủ đề
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => router.push(`/content/grammar/lesson/${topic._id}`)} disabled={isLoading}>
-              <Info className="h-4 w-4 " />
-              Chi tiết
+              <BookOpen className="mr-2 h-4 w-4" />
+              Quản lý bài học
             </DropdownMenuItem>
-
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault()
-                setIsOpen(true)
-              }}
-              disabled={isLoading}
-            >
-              <Pencil className="h-4 w-4" />
-              Sửa
-            </DropdownMenuItem>
-
             <DropdownMenuItem onClick={handleUpdateIsActive} disabled={isLoading}>
-              {!topic.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              {!topic.isActive ? 'Xuất bản' : 'Ẩn'}
+              {topic.isActive ? (
+                <>
+                  <EyeOff className="mr-2 h-4 w-4" />
+                  Ẩn chủ đề
+                </>
+              ) : (
+                <>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Xuất bản
+                </>
+              )}
             </DropdownMenuItem>
-
             <DropdownMenuItem onClick={handleToggleVip} disabled={isLoading}>
-              <Crown className="h-4 w-4" />
+              <Crown className="mr-2 h-4 w-4" />
               {topic.isVipRequired ? 'Chuyển thành thường' : 'Chuyển thành VIP'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-
-            <DropdownMenuItem className="text-red-600" onClick={() => setOpenDelete(true)} disabled={isLoading}>
-              <Trash2 className="h-4 w-4" />
-              Xóa
+            <DropdownMenuItem className="text-red-600" onSelect={(e) => { e.preventDefault(); setOpenDelete(true) }} disabled={isLoading}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa chủ đề
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

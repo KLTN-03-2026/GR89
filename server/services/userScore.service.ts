@@ -192,13 +192,9 @@ export class UserScoreService {
       filter.isActive = isActive;
     }
 
-    const users = await User.find(filter).select("-password").populate({
-      path: "avatar",
-      select: "url",
-    });
+    const users = await User.find(filter).select("-password")
     const activeLessonIds = await this.getActiveLessonIds();
     const summaries = await Promise.all(users.map((user) => this.buildUserScore(user, activeLessonIds)));
-
 
     this.sortUserScores(summaries, sortBy, sortOrder);
 
@@ -320,7 +316,7 @@ export class UserScoreService {
   private static async aggregateBestProgressByCategory(
     userId: string,
     category: string,
-    activeLessonIds: any[]
+    activeLessonIds: string[]
   ): Promise<Array<{ _id: Types.ObjectId; total: number }>> {
     return await StudyHistory.aggregate([
       { $match: { userId: new Types.ObjectId(userId), category, lessonId: { $in: activeLessonIds } } },
@@ -367,7 +363,7 @@ export class UserScoreService {
       userId: userObjectId,
       fullName: user.fullName,
       email: user.email,
-      avatar: user.avatar && (user.avatar as any).url ? (user.avatar as any).url : null,
+      avatar: user?.avatar || '',
       totalPoints,
       vocabularyPoints,
       grammarPoints,

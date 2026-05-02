@@ -169,28 +169,6 @@ export const authenticateTokenContent = CatchAsyncError(
     next();
   })
 
-// MIDDLEWARE XÁC THỰC CHO LOGOUT (không kiểm tra isActive)
-export const authenticateTokenForLogout = CatchAsyncError(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const accessToken = req.cookies.access_token_user || req.cookies.access_token_admin || req.cookies.access_token_content;
-    const refreshToken = req.cookies.refresh_token_user || req.cookies.refresh_token_admin || req.cookies.refresh_token_content;
-
-    // Nếu không có token nào, cho phép tiếp tục (logout vẫn có thể thực hiện)
-    if (!accessToken && !refreshToken) {
-      return next();
-    }
-
-    // Nếu có access token, verify và lấy thông tin user (không kiểm tra isActive)
-    if (accessToken) {
-      const decoded = JWTUtils.verifyAccessToken(accessToken);
-      const userResult = await AuthService.getUserById(decoded.userId);
-      req.user = userResult.user;
-    }
-
-    next();
-  }
-)
-
 // MIDDLEWARE PHÂN QUYỀN
 export const requireRole = (roles: string[]) => {
   return CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {

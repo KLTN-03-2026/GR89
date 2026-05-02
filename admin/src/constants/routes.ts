@@ -49,8 +49,6 @@ const ROUTES_PATH = {
 
   // Learning Management
   ROADMAP: '/roadmap',
-  // Support
-  SUPPORT: '/support',
 
   // User Management
   USER_LIST: '/user/list',
@@ -97,7 +95,7 @@ const ROUTES_PATH = {
   // Center Management
   CLASSES: '/center-management/classes',
   DOCUMENTS: '/center-management/documents',
-  HOMEWORK: '/center-management/homework',
+  SUPPORT: '/center-management/support',
 
   // System & Settings
   GENERAL_SETTINGS: '/system/settings',
@@ -169,7 +167,7 @@ const ROUTES_NAME = {
   // Center Management
   '/center-management/classes': "Quản lý lớp",
   '/center-management/documents': "Quản lý văn bản",
-  '/center-management/homework': "Quản lý bài tập",
+  '/center-management/support': "Hỗ trợ học viên",
 
   // System & Settings
   '/system/settings': "Cài đặt chung",
@@ -396,9 +394,9 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
         icon: BookOpen,
       },
       {
-        title: "Chấm bài tập",
-        href: ROUTES_PATH.HOMEWORK,
-        icon: FileText,
+        title: "Hỗ trợ học viên",
+        href: ROUTES_PATH.SUPPORT,
+        icon: Headphones,
       },
     ],
   },

@@ -116,16 +116,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true)
     await logout()
       .then(async () => {
-        await AuthorizedAxios.post('/auth/logout', { role: 'user' })
-          .then(() => {
-            router.push('/')
-            setUser(null)
-            localStorage.removeItem('user')
-            toast.success('Đăng xuất thành công')
-          })
-          .finally(() => {
-            setIsLoading(false)
-          })
+        router.push('/')
+        setUser(null)
+        localStorage.removeItem('user')
+        toast.success('Đăng xuất thành công')
       })
       .finally(() => {
         setIsLoading(false)

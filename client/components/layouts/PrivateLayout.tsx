@@ -1,7 +1,7 @@
 'use client'
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar, PrivateHeader } from "@/components/common/layout";
-import { AIChatButton, ChatProvider } from '@/features/chat'
+import { AIChatButton, ChatProvider, HumanChatButton } from '@/features/chat'
 
 export function PrivateLayout({ children }: { children: React.ReactNode }) {
 
@@ -22,6 +22,7 @@ export function PrivateLayout({ children }: { children: React.ReactNode }) {
 
         {/* Floating Chat Buttons - Always visible in private area */}
         <AIChatButton />
+        <HumanChatButton />
       </ChatProvider>
     </SidebarProvider>
   )

@@ -25,7 +25,9 @@ export class CookieUtil {
 
   // Xóa tất cả cookies xác thực (khi đăng xuất)
   static clearAuthCookies(res: Response, role: 'admin' | 'user' | 'content') {
-    res.clearCookie(`access_token_${role}`);
-    res.clearCookie(`refresh_token_${role}`);
+    console.log(role)
+
+    res.clearCookie(`access_token_${role === 'content' ? 'admin' : role}`);
+    res.clearCookie(`refresh_token_${role === 'content' ? 'admin' : role}`);
   }
 }

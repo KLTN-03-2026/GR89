@@ -75,6 +75,13 @@ export async function uploadImageSingle(file: File): Promise<ApiResponse<Media>>
   return response.data as ApiResponse<Media>
 }
 
+export async function uploadEditorImage(file: File): Promise<ApiResponse<{ url: string; publicId: string }>> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await AuthorizedAxios.post('/media/upload/editor', formData)
+  return response.data as ApiResponse<{ url: string; publicId: string }>
+}
+
 export async function uploadVideoFromYoutube(youtubeUrl: string): Promise<ApiResponse<Media>> {
   const response = await AuthorizedAxios.post('/media/upload/video/youtube', { youtubeUrl })
   return response.data as ApiResponse<Media>

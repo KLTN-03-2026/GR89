@@ -29,8 +29,9 @@ export function AppSidebar() {
           'Bảng điều khiển',
           'Quản lý học tập',
           'Thư viện nội dung',
-          'Quản lý media'
-          // Lưu ý: 'Giải trí' tạm thời ẩn vì backend chưa implement
+          'Quản lý media',
+          'Giải trí',
+          'Trung tâm Đào tạo'
         ]
         return allowedGroups.includes(group.title)
       }).map(group => {
@@ -91,7 +92,7 @@ export function AppSidebar() {
               {user?.role === 'content' ? 'CONTENT' : 'ADMIN'}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {user?.role === 'content' ? 'Content Manager' : 'Admin'} English Mastery
+              {user?.role === 'content' ? 'Content Manager' : 'Admin'} ActiveLearning
             </p>
           </div>
         </div>
@@ -129,7 +130,7 @@ export function AppSidebar() {
                   {routeGroup.subItems.map((item, itemIndex) => (
                     <SidebarMenuSubItem key={itemIndex}>
                       <SidebarMenuSubButton
-                        className={`cursor-pointer ${itemActive === item.title ? 'bg-black text-white hover:bg-black hover:text-white' : ''}`}
+                        className={`cursor-pointer ${itemActive === item.title ? 'bg-blue-700 text-white hover:bg-blue-600 hover:text-white' : ''}`}
                         asChild
                         onClick={() => setItemActive(item.title)}
                       >

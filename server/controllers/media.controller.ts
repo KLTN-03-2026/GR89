@@ -133,6 +133,19 @@ export class MediaController {
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
+  // TẢI LÊN ẢNH CHO EDITOR (CHỈ TRẢ VỀ LINK + ID, KHÔNG LƯU DB)
+  static uploadEditorImage = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.file) return next(new ErrorHandler('Vui lòng tải lên file', 400));
+
+    const result = await MediaService.uploadRawImage(req.file.path);
+
+    res.status(201).json({
+      success: true,
+      message: 'Upload ảnh editor thành công',
+      data: result
+    });
+  })
+
   // TẢI LÊN 1 MEDIA
   static uploadMedia = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     if (!req.file) return next(new ErrorHandler('Vui lòng tải lên file', 400));

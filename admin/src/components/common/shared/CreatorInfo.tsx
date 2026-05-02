@@ -186,7 +186,7 @@ export function CreatorBadge({ createdBy }: { createdBy: User }) {
   return (
     <div className="flex items-center gap-2">
       <Avatar className="h-6 w-6">
-        <AvatarImage src={createdBy.avatar?.url ? createdBy.avatar?.url : '/images/avatar-default.jpg'} />
+        <AvatarImage src={createdBy.avatar ? createdBy.avatar : '/images/avatar-default.jpg'} />
         <AvatarFallback className="text-xs">
           {getInitials(createdBy.fullName)}
         </AvatarFallback>

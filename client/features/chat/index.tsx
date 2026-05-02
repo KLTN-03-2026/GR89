@@ -3,6 +3,7 @@ export type { ChatType } from './context/ChatProvider'
 
 export { default as AIChatButton } from './components/AIChatButton'
 export { default as AIChatWindow } from './components/AIChatWindow'
+export { HumanChatButton, HumanChatWindow } from './components/chatHuman'
 
 export { useChatbot } from './hooks/useChatbot'
 

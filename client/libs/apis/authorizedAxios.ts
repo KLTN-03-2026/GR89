@@ -164,7 +164,7 @@ api.interceptors.response.use(
         pendingRequests = []
 
         // Refresh hết hạn → logout
-        await api.post('/auth/logout', { role: 'user' })
+        await api.post('/auth/logout')
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
         window.location.href = "/login"
 

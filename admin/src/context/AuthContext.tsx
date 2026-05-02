@@ -50,8 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const logoutUser = async () => {
-    const userRole = user?.role || 'admin'
-    await logout(userRole)
+    await logout()
       .then(() => {
         setUser(null)
         toast.success('Đăng xuất thành công')

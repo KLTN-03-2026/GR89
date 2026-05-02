@@ -2,7 +2,7 @@ export interface UserProfile {
   _id: string
   fullName: string
   email: string
-  avatar?: { _id: string; url: string } | string
+  avatar?: string
   role: string
   currentStreak?: number
   longestStreak?: number

@@ -33,26 +33,11 @@ export function CategoryHeader({ type }: CategoryHeaderProps) {
     { title: 'Giảng viên', value: '15+', change: '8.0+ IELTS', Icon: Clock, color: 'from-emerald-500 to-emerald-400' },
   ];
 
-  const streakCard = {
-    icon: "",
-    title: "Hệ thống",
-    color: "text-white",
-    valueText: "ActiveLearning Center",
-    progress: 100,
-    progressDescription: "Quản lý đào tạo chuyên nghiệp"
-  };
-
-  // Override streakCard with welcomeIcon if needed
   const CustomWelcomeSection = () => {
-    const WelcomeIcon = config.welcomeIcon;
     return (
       <WelcomeSection
         welcomeContent={welcomeContent}
         statsOverview={statsOverview}
-        streakCard={{
-          ...streakCard,
-          icon: <WelcomeIcon className="w-8 h-8" /> as any
-        }}
       />
     );
   };

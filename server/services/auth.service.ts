@@ -59,16 +59,12 @@ export class AuthService {
     if (!user) {
       throw new ErrorHandler('Không tìm thấy người dùng', 404);
     }
-
-    //Lấy avatar media
-    const avatar = await Media.findById(user.avatar)
-
     return {
       user: {
         _id: (user._id as any).toString(),
         fullName: user.fullName,
         email: user.email,
-        avatar: avatar?.url || '',
+        avatar: user.avatar || '',
         dateOfBirth: user.dateOfBirth || null,
         phone: user.phone || '',
         country: user.country || '',
@@ -223,9 +219,6 @@ export class AuthService {
     const updatedUser = await User.findById(user._id)
     if (!updatedUser) throw new ErrorHandler('User không tồn tại', 404)
 
-    //Lấy avatar media
-    const avatar = await Media.findById(updatedUser.avatar)
-
     //Tạo JWT tokens
     const accessToken = JWTUtils.generateAccessToken((updatedUser._id as any).toString());
     const refreshToken = JWTUtils.generateRefreshToken((updatedUser._id as any).toString());
@@ -236,7 +229,7 @@ export class AuthService {
         _id: (user._id as any).toString(),
         fullName: user.fullName,
         email: user.email,
-        avatar: avatar?.url || '/images/avatar-default.jpg',
+        avatar: user.avatar || '',
         dateOfBirth: user.dateOfBirth || null,
         phone: user.phone || '',
         country: user.country || '',

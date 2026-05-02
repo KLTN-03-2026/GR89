@@ -145,21 +145,11 @@ export class AuthController {
 
   // ĐĂNG XUẤT NGƯỜI DÙNG
   static logout = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    // Xác định role từ cookies nếu không có user (trường hợp tài khoản bị khóa)
-    let userRole: 'admin' | 'user' | 'content' = 'user'
+    const { user } = req
 
-    if (req.user) {
-      userRole = req.user.role as 'admin' | 'user' | 'content'
-    } else {
-      // Nếu không có user, kiểm tra cookies để xác định role
-      if (req.cookies.access_token_admin || req.cookies.refresh_token_admin) {
-        userRole = 'admin'
-      } else if (req.cookies.access_token_content || req.cookies.refresh_token_content) {
-        userRole = 'content'
-      }
-    }
+    if (!user) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
 
-    CookieUtil.clearAuthCookies(res, userRole)
+    CookieUtil.clearAuthCookies(res, user.role as 'admin' | 'user')
 
     return res.status(200).json({
       success: true,

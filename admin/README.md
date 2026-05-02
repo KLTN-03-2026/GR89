@@ -1,6 +1,6 @@
-# English Master Admin
+# ActiveLearning Admin
 
-Ứng dụng quản trị dành cho đội ngũ vận hành hệ thống English Master.
+Ứng dụng quản trị dành cho đội ngũ vận hành hệ thống ActiveLearning.
 
 ## Vai trò trong hệ thống
 

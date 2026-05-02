@@ -8,7 +8,6 @@ import { MediaService } from './media.service';
 import { Media, MediaSubtitlePreview } from '../models/media.model';
 import { SpeechAceProvider } from '../providers/speechace.provider';
 import { User } from "../models/user.model";
-import { StreakService } from "./streak.service";
 import { AIProvider } from "../providers/ai.provider";
 import { AssessmentWordResult, ISpeakingProgress, SpeakingProgress } from "../models/speakingProgress.model";
 
@@ -570,7 +569,7 @@ export class SpeakingService {
         weakPhones,
       })
 
-      aiFeedback = await AIProvider.chat([
+      aiFeedback = await AIProvider.chatbotAi([
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ])

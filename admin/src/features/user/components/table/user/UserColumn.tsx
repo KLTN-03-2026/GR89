@@ -76,7 +76,7 @@ export const columnsUser = (): ColumnDef<User>[] => [
       return (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar?.url || '/images/avatar-default.jpg'} className="object-cover" />
+            <AvatarImage src={user.avatar || '/images/avatar-default.jpg'} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary">
               {getInitials(user.fullName)}
             </AvatarFallback>

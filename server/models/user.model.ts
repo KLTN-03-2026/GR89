@@ -6,7 +6,7 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   fullName: string;
-  avatar: Schema.Types.ObjectId | null | string;
+  avatar: string | null;
   dateOfBirth?: Date | null;
   phone?: string;
   country?: string;
@@ -80,9 +80,8 @@ const userSchema = new Schema<IUser>({
     trim: true
   },
   avatar: {
-    type: Schema.Types.ObjectId,
-    ref: 'Media',
-    default: new mongoose.Types.ObjectId('69293c75f29d5312d6568881'),
+    type: String,
+    default: '',
   },
   dateOfBirth: {
     type: Date,

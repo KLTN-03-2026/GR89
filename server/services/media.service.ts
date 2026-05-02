@@ -417,6 +417,35 @@ export class MediaService {
   }
 
   // TẢI LÊN 1 MEDIA
+  // TẢI LÊN ẢNH RAW (DÀNH CHO EDITOR, KHÔNG LƯU VÀO COLLECTION MEDIA)
+  static async uploadRawImage(filePath: string): Promise<{ url: string; publicId: string }> {
+    try {
+      const result = await cloudinary.uploader.upload(filePath, {
+        folder: 'english-editor',
+        resource_type: 'image',
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit' },
+          { quality: 'auto' }
+        ]
+      });
+
+      // Xóa file tạm
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      return {
+        url: result.secure_url,
+        publicId: result.public_id
+      };
+    } catch (error: any) {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      throw new ErrorHandler(`Lỗi upload ảnh: ${error?.message || 'Lỗi không xác định'}`, 400);
+    }
+  }
+
   static async uploadMedia(uploadData: IUploadMedia): Promise<IMedia> {
     const { filePath, userId, originalName } = uploadData;
 

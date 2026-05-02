@@ -37,5 +37,5 @@ export interface IStatsOverview {
 export interface IWelcomeSectionProps {
   welcomeContent: IWelcomeContentProps
   statsOverview: IStatsOverview[]
-  streakCard: IStreakCardProps
+  streakCard?: IStreakCardProps
 }
