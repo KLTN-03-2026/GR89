@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import {
   SheetContent,
   SheetDescription,
@@ -11,23 +11,37 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { UserPlus, Mail } from 'lucide-react'
+import { UserPlus, Mail, Loader2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { addStudentToClass } from '../../services/api'
+import { toast } from 'react-toastify'
 
 interface SheetAddStudentProps {
+  classId: string
   onClose: () => void
-  callback?: () => void
 }
 
-export function SheetAddStudent({ onClose, callback }: SheetAddStudentProps) {
-  const handleSave = () => {
-    console.log('Adding new student...')
-    if (callback) callback()
-    onClose()
+export function SheetAddStudent({ classId, onClose }: SheetAddStudentProps) {
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSave = async () => {
+    if (!email) {
+      toast.error('Vui lòng nhập email học viên')
+      return
+    }
+
+    setLoading(true)
+    await addStudentToClass(classId, { userId: email })
+      .then(() => {
+        toast.success('Đã mời học viên vào lớp thành công')
+        onClose()
+      })
+      .finally(() => setLoading(false))
   }
 
   return (
-    <SheetContent className="sm:max-w-[450px] w-full p-0 flex flex-col h-full border-none shadow-2xl">
+    <SheetContent className="sm:max-w-md w-full p-0 flex flex-col h-full border-none shadow-2xl">
       <SheetHeader className="p-8 pb-6 bg-indigo-50/30 border-b border-indigo-100/50 shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
@@ -52,6 +66,9 @@ export function SheetAddStudent({ onClose, callback }: SheetAddStudentProps) {
                 type="email"
                 placeholder="student@example.com"
                 className="h-12 pl-11 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
             </div>
             <p className="text-[10px] text-gray-400 font-medium px-1 italic">
@@ -69,8 +86,15 @@ export function SheetAddStudent({ onClose, callback }: SheetAddStudentProps) {
 
       <SheetFooter className="p-8 bg-gray-50 border-t border-gray-100 shrink-0">
         <div className="flex items-center justify-end gap-3 w-full">
-          <Button variant="outline" className="rounded-xl px-8 h-12 font-bold" onClick={onClose}>Hủy</Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-8 h-12 font-bold shadow-lg shadow-indigo-100" onClick={handleSave}>Thêm vào lớp</Button>
+          <Button variant="outline" className="rounded-xl px-8 h-12 font-bold" onClick={onClose} disabled={loading}>Hủy</Button>
+          <Button 
+            className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-8 h-12 font-bold shadow-lg shadow-indigo-100" 
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Thêm vào lớp
+          </Button>
         </div>
       </SheetFooter>
     </SheetContent>

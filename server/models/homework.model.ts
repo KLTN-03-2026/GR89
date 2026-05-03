@@ -15,6 +15,7 @@ export interface IHomework extends Document {
   description: string
   submittedAt: Date
   deadline: Date
+  documents: mongoose.Types.ObjectId[]
   submissions: ISubmission[]
 }
 
@@ -72,6 +73,12 @@ const homeworkSchema = new Schema<IHomework>(
       type: Date,
       required: [true, 'Hạn nộp bài là bắt buộc'],
     },
+    documents: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'GlobalDocument',
+      },
+    ],
     submissions: [submissionSchema],
   },
   {

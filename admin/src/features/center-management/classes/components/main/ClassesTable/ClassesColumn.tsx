@@ -4,18 +4,16 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { ClassActionsCell } from './ClassActionsCell'
 import { Calendar, Clock, Lock } from 'lucide-react'
-import { ICenterClass } from '@/features/center-management/types'
+import { ICenterClass } from '../../../type'
 
-export const columnsClasses = (
-  callback: () => void,
-): ColumnDef<ICenterClass>[] => [
+export const columnsClasses = (): ColumnDef<ICenterClass>[] => [
     {
       accessorKey: 'name',
       header: 'Tên lớp học',
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
           <div className="font-extrabold text-gray-900 line-clamp-1">{row.original.name}</div>
-          <div className="text-xs text-gray-500 font-medium">GV: {row.original.teacherName}</div>
+          <div className="text-xs text-gray-500 font-medium">GV: {row.original.teacher?.fullName || 'Chưa phân công'}</div>
         </div>
       )
     },
@@ -43,7 +41,7 @@ export const columnsClasses = (
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-xs font-bold text-gray-600 line-clamp-1">
             <Calendar className="w-3 h-3 text-indigo-500" />
-            {row.original.startDate}
+            {new Date(row.original.startDate).toLocaleDateString('vi-VN')}
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-medium text-gray-400 line-clamp-1">
             <Clock className="w-3 h-3" />
@@ -94,7 +92,7 @@ export const columnsClasses = (
       header: () => <div className="text-right">Thao tác</div>,
       cell: ({ row }) => (
         <div className="flex justify-end">
-          <ClassActionsCell classData={row.original} callback={callback} />
+          <ClassActionsCell classData={row.original} />
         </div>
       )
     }

@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Response } from 'express'
 
 export class CookieUtil {
   // Đặt Access Token vào cookie
@@ -18,16 +18,16 @@ export class CookieUtil {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: (process.env.JWT_REFRESH_EXPIRES_IN as unknown as number) * 24 * 60 * 60 * 1000 || 7 * 24 * 60 * 60 * 1000,  // ⏰ Hết hạn sau 7 ngày
-      path: '/'
+      maxAge:
+        (process.env.JWT_REFRESH_EXPIRES_IN as unknown as number) * 24 * 60 * 60 * 1000 ||
+        7 * 24 * 60 * 60 * 1000, // ⏰ Hết hạn sau 7 ngày
+      path: '/',
     })
   }
 
   // Xóa tất cả cookies xác thực (khi đăng xuất)
   static clearAuthCookies(res: Response, role: 'admin' | 'user' | 'content') {
-    console.log(role)
-
-    res.clearCookie(`access_token_${role === 'content' ? 'admin' : role}`);
-    res.clearCookie(`refresh_token_${role === 'content' ? 'admin' : role}`);
+    res.clearCookie(`access_token_${role === 'content' ? 'admin' : role}`)
+    res.clearCookie(`refresh_token_${role === 'content' ? 'admin' : role}`)
   }
 }

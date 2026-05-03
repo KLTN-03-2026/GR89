@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { MoreHorizontal, Send, Trash2, Loader2, ExternalLink } from 'lucide-react'
+import { MoreHorizontal, Trash2, Loader2, Eye } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,27 +11,38 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { IClassDocument } from '../../types'
-import { ActionConfirmDialog } from '../dialogs/ActionConfirmDialog'
+import { ActionConfirmDialog } from '../../dialogs/ActionConfirmDialog'
+import { IGlobalDocument } from '@/features/center-management/documents/type'
+import { DialogPreviewDocument } from '@/features/center-management/documents/components/dialogs/DialogPreviewDocument'
+import { useParams } from 'next/navigation'
+import { removeDocumentFromClass } from '../../../services/api'
+import { toast } from 'react-toastify'
 
 interface DocumentActionsCellProps {
-  document: IClassDocument
+  document: IGlobalDocument
   callback: () => void
 }
 
 export function DocumentActionsCell({ document, callback }: DocumentActionsCellProps) {
+  const params = useParams()
+  const classId = params?._id as string
   const [isLoading, setIsLoading] = useState(false)
   const [openDelete, setOpenDelete] = useState(false)
+  const [openPreview, setOpenPreview] = useState(false)
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
+    if (!classId) return
     setIsLoading(true)
-    // Mock API call
-    setTimeout(() => {
-      console.log('Delete document:', document.id)
+    try {
+      const res = await removeDocumentFromClass(classId, document._id)
+      if (res.success) toast.success('Đã xóa tài liệu khỏi lớp')
+      callback()
+    } catch {
+      toast.error('Không thể xóa tài liệu')
+    } finally {
       setIsLoading(false)
       setOpenDelete(false)
-      callback()
-    }, 500)
+    }
   }
 
   return (
@@ -40,19 +51,13 @@ export function DocumentActionsCell({ document, callback }: DocumentActionsCellP
         open={openDelete}
         onOpenChange={setOpenDelete}
         title="Xác nhận xóa tài liệu"
-        description={`Bạn có chắc chắn muốn xóa tài liệu "${document.title}" khỏi lớp học này?`}
+        description={`Bạn có chắc chắn muốn xóa tài liệu "${document.name}" không?`}
         onConfirm={handleDeleteConfirm}
         isLoading={isLoading}
       />
 
       <div className="flex items-center justify-end gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="rounded-xl border-indigo-100 text-indigo-600 hover:bg-indigo-50 h-8 px-3 font-bold text-[10px] uppercase tracking-wider"
-        >
-          <Send className="w-3 h-3 mr-1.5" /> Gửi bài
-        </Button>
+        <DialogPreviewDocument open={openPreview} onOpenChange={setOpenPreview} document={document} />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -63,8 +68,8 @@ export function DocumentActionsCell({ document, callback }: DocumentActionsCellP
           <DropdownMenuContent align="end" className="rounded-2xl p-2 w-48">
             <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest">Hành động</DropdownMenuLabel>
             
-            <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => window.open(document.url, '_blank')}>
-              <ExternalLink className="w-4 h-4 mr-2" /> Xem trên Drive
+            <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => setOpenPreview(true)}>
+              <Eye className="w-4 h-4 mr-2" /> Xem tài liệu
             </DropdownMenuItem>
 
             <DropdownMenuSeparator className="my-1 bg-gray-50" />

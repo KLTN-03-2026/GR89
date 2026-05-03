@@ -1,46 +1,44 @@
-import { User } from "../user/types";
+import { User } from "@/features/user/types";
+import { IGlobalDocument } from "../documents/type";
 
-export interface IStudent {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatar?: string;
+export interface IClassStudent {
+  user: User;
   joinDate: string;
-  status: 'active' | 'inactive';
 }
 
-export interface IClassDocument {
-  id: string;
+export interface ISubmission {
+  _id: string;
+  user: User;
+  content: string;
+  feedback: string;
+  submittedAt: string;
+  gradedAt?: string;
+  status: 'pending' | 'graded';
+}
+
+export interface IHomework {
+  _id: string;
   title: string;
-  type: 'pdf' | 'doc' | 'video' | 'audio' | 'link';
-  size?: string;
-  uploadedAt: string;
-  url: string;
+  description: string;
+  submittedAt: string;
+  deadline: string;
+  documents?: IGlobalDocument[];
+  submissions: ISubmission[];
 }
 
 export interface ICenterClass {
-  id: string;
+  _id: string;
   name: string;
   category: 'kids' | 'teenager' | 'adult';
-  teacherName: string;
+  teacher: User;
   startDate: string;
   schedule: string;
   status: 'opening' | 'ongoing' | 'finished';
   password?: string;
   isActive: boolean;
-  students: IStudent[];
-  documents: IClassDocument[];
-}
-
-export interface IHomeworkSubmission {
-  id: string;
-  studentName: string;
-  studentAvatar?: string;
-  className: string;
-  title: string;
-  submittedAt: string;
-  driveLink: string;
-  status: 'pending' | 'corrected';
-  solutionUrl?: string;
+  students: IClassStudent[];
+  documents: IGlobalDocument[];
+  homeworks: IHomework[];
+  createdAt: string;
+  updatedAt: string;
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   SheetContent,
   SheetDescription,
@@ -12,26 +12,150 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Lock, Calendar, Clock, Pencil } from 'lucide-react'
+import { Lock, Calendar, Pencil, Loader2, Clock } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ICenterClass } from '@/features/center-management/types'
+import { ICenterClass } from '../../type'
+import { toast } from 'react-toastify'
+import { updateCenterClass } from '../../services/api'
+import { getAllUsersPaginated } from '@/features/user/services/api'
+import { User } from '@/features/user/types'
+import { useRouter } from 'next/navigation'
 
 interface SheetUpdateClassProps {
   classData: ICenterClass
   onClose: () => void
-  callback?: () => void
 }
 
-export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateClassProps) {
-  const [scheduleType, setScheduleType] = useState<'fixed' | 'flexible'>(
-    classData.schedule.includes(':') ? 'fixed' : 'flexible'
-  )
+export function SheetUpdateClass({ classData, onClose }: SheetUpdateClassProps) {
+  const [loading, setLoading] = useState(false)
+  const [teachers, setTeachers] = useState<User[]>([])
+  const [loadingTeachers, setLoadingTeachers] = useState(false)
+  const router = useRouter()
 
-  const handleSave = () => {
-    console.log('Updating class:', classData.id)
-    if (callback) callback()
-    onClose()
+  const scheduleParsed = (() => {
+    const schedule = classData.schedule || ''
+    const timeMatch = schedule.match(/\((\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})\)\s*$/)
+    if (!timeMatch) {
+      return {
+        scheduleType: 'flexible' as const,
+        flexibleSchedule: schedule,
+        fixedSchedule: {
+          days: [] as string[],
+          startTime: '18:00',
+          endTime: '20:00'
+        }
+      }
+    }
+
+    const dayLabelToValue: Record<string, string> = {
+      'Thứ 2': 'mon',
+      'Thứ 3': 'tue',
+      'Thứ 4': 'wed',
+      'Thứ 5': 'thu',
+      'Thứ 6': 'fri',
+      'Thứ 7': 'sat',
+      'CN': 'sun'
+    }
+
+    const daysPart = schedule.replace(timeMatch[0], '').trim().replace(/,$/, '')
+    const days = daysPart
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(label => dayLabelToValue[label])
+      .filter(Boolean)
+
+    if (days.length === 0) {
+      return {
+        scheduleType: 'flexible' as const,
+        flexibleSchedule: schedule,
+        fixedSchedule: {
+          days: [] as string[],
+          startTime: timeMatch[1],
+          endTime: timeMatch[2]
+        }
+      }
+    }
+
+    return {
+      scheduleType: 'fixed' as const,
+      flexibleSchedule: '',
+      fixedSchedule: {
+        days,
+        startTime: timeMatch[1],
+        endTime: timeMatch[2]
+      }
+    }
+  })()
+
+  const [formData, setFormData] = useState({
+    name: classData.name,
+    category: classData.category,
+    status: classData.status,
+    teacher: classData.teacher?._id || '',
+    startDate: classData.startDate ? new Date(classData.startDate).toISOString().split('T')[0] : '',
+    password: classData.password || '',
+    schedule: scheduleParsed.flexibleSchedule,
+    isActive: classData.isActive
+  })
+
+  const [scheduleType, setScheduleType] = useState<'fixed' | 'flexible'>(scheduleParsed.scheduleType)
+  const [fixedSchedule, setFixedSchedule] = useState(scheduleParsed.fixedSchedule)
+
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      setLoadingTeachers(true)
+      try {
+        const response = await getAllUsersPaginated({ limit: 100, role: 'admin' })
+        const responseContent = await getAllUsersPaginated({ limit: 100, role: 'content' })
+        setTeachers([...response.data, ...responseContent.data])
+      } catch (error) {
+        console.error('Error fetching teachers:', error)
+      } finally {
+        setLoadingTeachers(false)
+      }
+    }
+    fetchTeachers()
+  }, [])
+
+  const handleSave = async () => {
+    if (!formData.name || !formData.teacher || !formData.startDate) {
+      toast.error('Vui lòng điền đầy đủ các trường bắt buộc')
+      return
+    }
+
+    let finalSchedule = formData.schedule
+    if (scheduleType === 'fixed') {
+      if (fixedSchedule.days.length === 0) {
+        toast.error('Vui lòng chọn ít nhất một ngày trong tuần')
+        return
+      }
+      const dayLabels: Record<string, string> = {
+        mon: 'Thứ 2', tue: 'Thứ 3', wed: 'Thứ 4', thu: 'Thứ 5',
+        fri: 'Thứ 6', sat: 'Thứ 7', sun: 'CN'
+      }
+      const days = fixedSchedule.days.map(d => dayLabels[d]).join(', ')
+      finalSchedule = `${days} (${fixedSchedule.startTime} - ${fixedSchedule.endTime})`
+    }
+
+    setLoading(true)
+    await updateCenterClass(classData._id, {...formData, schedule: finalSchedule})
+      .then(() => {
+        toast.success('Cập nhật lớp học thành công')
+        router.refresh()
+        onClose()
+      })
+      .finally(() => setLoading(false))
+  }
+
+  const toggleDay = (day: string) => {
+    setFixedSchedule(prev => ({
+      ...prev,
+      days: prev.days.includes(day)
+        ? prev.days.filter(d => d !== day)
+        : [...prev.days, day]
+    }))
   }
 
   const daysOfWeek = [
@@ -45,7 +169,7 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
   ]
 
   return (
-    <SheetContent className="sm:max-w-[550px] w-full p-0 flex flex-col h-full border-none shadow-2xl">
+    <SheetContent className="sm:max-w-4xl w-full p-0 flex flex-col h-full border-none shadow-2xl">
       <SheetHeader className="p-8 pb-6 bg-indigo-50/30 border-b border-indigo-100/50 shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
@@ -64,14 +188,22 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
         <div className="p-8 space-y-8">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Tên lớp học</Label>
-              <Input defaultValue={classData.name} placeholder="Ví dụ: IELTS Fighter 05" className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-bold" />
+              <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Tên lớp học *</Label>
+              <Input 
+                value={formData.name} 
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Ví dụ: IELTS Fighter 05" 
+                className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-bold"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Danh mục</Label>
-                <Select defaultValue={classData.category}>
+                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Danh mục *</Label>
+                <Select 
+                  value={formData.category}
+                  onValueChange={(v: 'kids' | 'teenager' | 'adult') => setFormData(prev => ({ ...prev, category: v }))}
+                >
                   <SelectTrigger className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold">
                     <SelectValue placeholder="Chọn nhóm" />
                   </SelectTrigger>
@@ -83,8 +215,11 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Trạng thái</Label>
-                <Select defaultValue={classData.status}>
+                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Trạng thái *</Label>
+                <Select 
+                  value={formData.status}
+                  onValueChange={(v: 'opening' | 'ongoing' | 'finished') => setFormData(prev => ({ ...prev, status: v }))}
+                >
                   <SelectTrigger className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold">
                     <SelectValue placeholder="Trạng thái" />
                   </SelectTrigger>
@@ -99,23 +234,48 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Giảng viên</Label>
-                <Input defaultValue={classData.teacherName} placeholder="Tên giáo viên" className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold" />
+                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Giảng viên *</Label>
+                <Select 
+                  value={formData.teacher} 
+                  onValueChange={(v) => setFormData(prev => ({ ...prev, teacher: v }))}
+                >
+                  <SelectTrigger className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold">
+                    <SelectValue placeholder={loadingTeachers ? "Đang tải..." : "Chọn giáo viên"} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl border-gray-100">
+                    {teachers.map(t => (
+                      <SelectItem key={t._id} value={t._id} className="rounded-xl font-bold">
+                        {t.fullName} ({t.role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-amber-500" /> Mật khẩu lớp
+                  <Calendar className="w-3.5 h-3.5 text-indigo-500" /> Ngày khai giảng *
                 </Label>
-                <Input type="password" defaultValue={classData.password} placeholder="Mật khẩu (nếu có)" className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold" />
+                <Input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-indigo-500" /> Ngày khai giảng
+                  <Lock className="w-3.5 h-3.5 text-amber-500" /> Mật khẩu lớp
                 </Label>
-                <Input type="date" defaultValue={classData.startDate} className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold" />
+                <Input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Mật khẩu (nếu có)"
+                  className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold"
+                />
               </div>
             </div>
 
@@ -124,16 +284,16 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
 
               <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-2xl">
                 <Button
-                  variant={scheduleType === 'fixed' ? 'white' as any : 'ghost'}
                   size="sm"
+                  type="button"
                   className={`rounded-xl text-xs font-bold h-10 ${scheduleType === 'fixed' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'}`}
                   onClick={() => setScheduleType('fixed')}
                 >
                   Cố định hàng tuần
                 </Button>
                 <Button
-                  variant={scheduleType === 'flexible' ? 'white' as any : 'ghost'}
                   size="sm"
+                  type="button"
                   className={`rounded-xl text-xs font-bold h-10 ${scheduleType === 'flexible' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'}`}
                   onClick={() => setScheduleType('flexible')}
                 >
@@ -146,26 +306,41 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
                   <div className="flex flex-wrap gap-2">
                     {daysOfWeek.map((day) => (
                       <div key={day.value} className="flex items-center space-x-2 bg-white px-4 py-3 rounded-2xl border border-gray-100 shadow-sm hover:border-indigo-200 transition-all">
-                        <Checkbox id={`update-${day.value}`} className="rounded-md border-gray-300" />
-                        <label htmlFor={`update-${day.value}`} className="text-xs font-black text-gray-600 cursor-pointer select-none">
+                        <Checkbox
+                          id={day.value}
+                          className="rounded-md border-gray-300"
+                          checked={fixedSchedule.days.includes(day.value)}
+                          onCheckedChange={() => toggleDay(day.value)}
+                        />
+                        <label htmlFor={day.value} className="text-xs font-black text-gray-600 cursor-pointer select-none">
                           {day.label}
                         </label>
                       </div>
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-6 rounded-xl border border-gray-100">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <Clock className="w-3 h-3" /> Giờ bắt đầu
                       </Label>
-                      <Input type="time" className="h-11 rounded-xl border-white bg-white shadow-sm font-bold" />
+                      <Input
+                        type="time"
+                        className="h-11 rounded-xl border-white bg-white shadow-sm font-bold"
+                        value={fixedSchedule.startTime}
+                        onChange={(e) => setFixedSchedule(prev => ({ ...prev, startTime: e.target.value }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <Clock className="w-3 h-3" /> Giờ kết thúc
                       </Label>
-                      <Input type="time" className="h-11 rounded-xl border-white bg-white shadow-sm font-bold" />
+                      <Input
+                        type="time"
+                        className="h-11 rounded-xl border-white bg-white shadow-sm font-bold"
+                        value={fixedSchedule.endTime}
+                        onChange={(e) => setFixedSchedule(prev => ({ ...prev, endTime: e.target.value }))}
+                      />
                     </div>
                   </div>
                 </div>
@@ -174,7 +349,12 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
               {scheduleType === 'flexible' && (
                 <div className="space-y-2 animate-in fade-in duration-300">
                   <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Ghi chú lịch học</Label>
-                  <Input defaultValue={classData.schedule} placeholder="Ví dụ: Theo thỏa thuận với học viên" className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold" />
+                  <Input 
+                    value={formData.schedule} 
+                    onChange={(e) => setFormData(prev => ({ ...prev, schedule: e.target.value }))}
+                    placeholder="Ví dụ: Theo thỏa thuận với học viên" 
+                    className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold"
+                  />
                 </div>
               )}
             </div>
@@ -184,8 +364,15 @@ export function SheetUpdateClass({ classData, onClose, callback }: SheetUpdateCl
 
       <SheetFooter className="p-8 bg-gray-50 border-t border-gray-100 shrink-0">
         <div className="flex items-center justify-end gap-3 w-full">
-          <Button variant="outline" className="rounded-xl px-8 h-12 font-bold" onClick={onClose}>Hủy</Button>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-10 h-12 font-bold shadow-lg shadow-indigo-100" onClick={handleSave}>Cập nhật</Button>
+          <Button variant="outline" className="rounded-xl px-8 h-12 font-bold" onClick={onClose} disabled={loading}>Hủy</Button>
+          <Button 
+            className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-10 h-12 font-bold shadow-lg shadow-indigo-100" 
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Cập nhật
+          </Button>
         </div>
       </SheetFooter>
     </SheetContent>

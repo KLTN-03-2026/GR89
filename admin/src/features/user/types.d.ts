@@ -9,6 +9,7 @@ export interface User {
   longestStreak: number;
   totalStudyTime: number;
   totalPoints: number;
+  phoneNumber?: string;
   lastActiveDate?: Date;
   createdAt?: string;
   updatedAt?: string;

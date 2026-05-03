@@ -1,5 +1,6 @@
 import { CenterClass, ICenterClass } from '../models/centerClass.model'
 import { Homework, IHomework } from '../models/homework.model'
+import { GlobalDocument } from '../models/globalDocument.model'
 import ErrorHandler from '../utils/ErrorHandler'
 import mongoose from 'mongoose'
 
@@ -42,6 +43,8 @@ export interface ICreateHomeworkData {
   title: string
   description: string
   deadline: Date
+  documentIds?: string[] | null
+  documentId?: string | null
 }
 
 export class CenterClassService {
@@ -96,7 +99,15 @@ export class CenterClassService {
       .populate('teacher', 'fullName email avatar')
       .populate('students.user', 'fullName email avatar')
       .populate('documents')
-      .populate('homeworks')
+      .populate({
+        path: 'homeworks',
+        strictPopulate: false,
+        populate: [
+          { path: 'documents', strictPopulate: false },
+          { path: 'document', strictPopulate: false },
+          { path: 'submissions.user', select: 'fullName email avatar', strictPopulate: false },
+        ],
+      })
 
     if (!centerClass) {
       throw new ErrorHandler('Không tìm thấy lớp học', 404)
@@ -152,14 +163,74 @@ export class CenterClassService {
     return centerClass
   }
 
+  /* ============================ DOCUMENT MANAGEMENT ============================ */
+
+  static async addDocumentToClass(classId: string, documentId: string): Promise<ICenterClass> {
+    const centerClass = await CenterClass.findById(classId)
+    if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
+
+    const document = await GlobalDocument.findById(documentId)
+    if (!document) throw new ErrorHandler('Tài liệu không tồn tại', 404)
+
+    const alreadyExists = centerClass.documents.some((d) => d.toString() === documentId)
+    if (alreadyExists) throw new ErrorHandler('Tài liệu đã có trong lớp này', 400)
+
+    centerClass.documents.push(new mongoose.Types.ObjectId(documentId))
+    await centerClass.save()
+    return centerClass
+  }
+
+  static async removeDocumentFromClass(classId: string, documentId: string): Promise<ICenterClass> {
+    const centerClass = await CenterClass.findById(classId)
+    if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
+
+    centerClass.documents = centerClass.documents.filter((d) => d.toString() !== documentId)
+    await centerClass.save()
+    return centerClass
+  }
+
+  static async getDocumentsByClassId(classId: string) {
+    const centerClass = await CenterClass.findById(classId).populate('documents')
+    if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
+    return centerClass.documents
+  }
+
+  static async setDocumentsForClass(classId: string, documentIds: string[]): Promise<ICenterClass> {
+    const centerClass = await CenterClass.findById(classId)
+    if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
+
+    const uniqueIds = Array.from(new Set(documentIds.filter(Boolean)))
+    if (uniqueIds.length > 0) {
+      const count = await GlobalDocument.countDocuments({ _id: { $in: uniqueIds } })
+      if (count !== uniqueIds.length) throw new ErrorHandler('Danh sách tài liệu không hợp lệ', 400)
+    }
+
+    centerClass.documents = uniqueIds.map((id) => new mongoose.Types.ObjectId(id))
+    await centerClass.save()
+    return centerClass
+  }
+
   /* ============================ HOMEWORK MANAGEMENT ============================ */
 
   // Tạo bài tập mới cho lớp
   static async createHomework(data: ICreateHomeworkData): Promise<IHomework> {
+    const rawIds =
+      data.documentIds !== undefined ? data.documentIds : data.documentId ? [data.documentId] : []
+    const uniqueIds = Array.from(new Set((rawIds || []).filter(Boolean)))
+
+    if (uniqueIds.length > 0) {
+      const count = await GlobalDocument.countDocuments({ _id: { $in: uniqueIds } })
+      if (count !== uniqueIds.length) throw new ErrorHandler('Danh sách tài liệu không hợp lệ', 400)
+    }
+    const documents = uniqueIds.map((id) => new mongoose.Types.ObjectId(id))
+    const document = documents[0] || null
+
     const homework = await Homework.create({
       title: data.title,
       description: data.description,
       deadline: data.deadline,
+      documents,
+      document,
       submissions: [],
     })
 
@@ -169,6 +240,69 @@ export class CenterClassService {
     })
 
     return homework
+  }
+
+  static async getHomeworksByClassId(classId: string) {
+    const centerClass = await CenterClass.findById(classId).populate({
+      path: 'homeworks',
+      strictPopulate: false,
+      populate: [
+        { path: 'documents', strictPopulate: false },
+        { path: 'document', strictPopulate: false },
+        { path: 'submissions.user', select: 'fullName email avatar', strictPopulate: false },
+      ],
+    })
+    if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
+    return centerClass.homeworks
+  }
+
+  static async updateHomework(
+    homeworkId: string,
+    data: {
+      title?: string
+      description?: string
+      deadline?: Date
+      documentIds?: string[] | null
+      documentId?: string | null
+    },
+  ): Promise<IHomework> {
+    const update: any = {}
+    if (data.title != null) update.title = data.title
+    if (data.description != null) update.description = data.description
+    if (data.deadline != null) update.deadline = data.deadline
+    if (data.documentIds !== undefined || data.documentId !== undefined) {
+      const rawIds =
+        data.documentIds !== undefined ? data.documentIds : data.documentId ? [data.documentId] : []
+      const uniqueIds = Array.from(new Set((rawIds || []).filter(Boolean)))
+      if (uniqueIds.length > 0) {
+        const count = await GlobalDocument.countDocuments({ _id: { $in: uniqueIds } })
+        if (count !== uniqueIds.length)
+          throw new ErrorHandler('Danh sách tài liệu không hợp lệ', 400)
+      }
+      update.documents = uniqueIds.map((id) => new mongoose.Types.ObjectId(id))
+      update.document = update.documents[0] || null
+    }
+
+    const homework = await Homework.findByIdAndUpdate(homeworkId, update, {
+      new: true,
+      runValidators: true,
+    }).populate([
+      { path: 'documents', strictPopulate: false },
+      { path: 'document', strictPopulate: false },
+    ])
+
+    if (!homework) throw new ErrorHandler('Không tìm thấy bài tập', 404)
+    return homework
+  }
+
+  static async deleteHomeworkFromClass(classId: string, homeworkId: string): Promise<void> {
+    const centerClass = await CenterClass.findById(classId)
+    if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
+
+    const inClass = centerClass.homeworks.some((h) => h.toString() === homeworkId)
+    if (!inClass) throw new ErrorHandler('Bài tập không thuộc lớp này', 400)
+
+    await CenterClassService.deleteHomework(homeworkId)
   }
 
   // Học sinh nộp bài
@@ -225,10 +359,14 @@ export class CenterClassService {
   }
 
   static async getHomeworkById(id: string): Promise<IHomework> {
-    const homework = await Homework.findById(id).populate(
-      'submissions.user',
-      'fullName email avatar',
-    )
+    const homework = await Homework.findById(id)
+      .populate({ path: 'documents', strictPopulate: false })
+      .populate({ path: 'document', strictPopulate: false })
+      .populate({
+        path: 'submissions.user',
+        select: 'fullName email avatar',
+        strictPopulate: false,
+      })
     if (!homework) throw new ErrorHandler('Không tìm thấy bài tập', 404)
     return homework
   }

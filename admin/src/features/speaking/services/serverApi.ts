@@ -1,6 +1,6 @@
 import 'server-only'
 import { fetchServer } from '@/lib/apis/fetch-server'
-import { SpeakingQueryParams } from './api'
+import { SpeakingOverviewStats, SpeakingQueryParams } from './api'
 import { Speaking } from '../types'
 
 /*=============================================================================
@@ -29,7 +29,7 @@ export async function getSpeakingListServer(params?: SpeakingQueryParams): Promi
   if (params?.isActive !== undefined) queryParams.append('isActive', String(params.isActive))
 
   const url = `/speaking/admin?${queryParams.toString()}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<Speaking[]>(url)
 
   return {
     data: response.data || [],
@@ -48,12 +48,12 @@ export async function getSpeakingListServer(params?: SpeakingQueryParams): Promi
 
 export async function getSpeakingByIdServer(id: string): Promise<Speaking | null> {
   const url = `/speaking/admin/${id}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<Speaking>(url)
   return response.data || null
 }
 
-export async function getSpeakingOverviewStatsServer(): Promise<any> {
-  const url = '/speaking/overview-stats'
-  const response = await fetchServer<any>(url)
+export async function getSpeakingOverviewStatsServer(): Promise<SpeakingOverviewStats | null> {
+  const url = '/speaking/overview'
+  const response = await fetchServer<SpeakingOverviewStats>(url)
   return response.data || null
 }

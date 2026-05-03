@@ -56,9 +56,58 @@ router.delete(
   CenterClassController.removeStudent,
 )
 
+/*============================ QUẢN LÝ TÀI LIỆU ============================*/
+
+router.post(
+  '/:id/documents',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.addDocument,
+)
+
+router.get(
+  '/:id/documents',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.getDocuments,
+)
+
+router.put(
+  '/:id/documents',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.setDocuments,
+)
+
+router.delete(
+  '/:id/documents/:documentId',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.removeDocument,
+)
+
 /*============================ QUẢN LÝ BÀI TẬP ============================*/
 
 // Admin/Content: Giao bài, chấm bài, xóa bài, xem chi tiết
+router.get(
+  '/:id/homeworks',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.getHomeworks,
+)
+router.post(
+  '/:id/homeworks',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.createHomeworkForClass,
+)
+router.delete(
+  '/:id/homeworks/:homeworkId',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.deleteHomeworkForClass,
+)
+
 router.post(
   '/homework',
   authenticateTokenAdmin,
@@ -82,6 +131,12 @@ router.get(
   authenticateTokenAdmin,
   requireRole(['admin', 'content']),
   CenterClassController.getHomeworkById,
+)
+router.put(
+  '/homework/:id',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.updateHomework,
 )
 
 // User: Nộp bài

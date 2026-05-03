@@ -1,37 +1,43 @@
 'use client'
 
 import React, { useState } from 'react'
-import { MoreHorizontal, Pencil, Trash2, Loader2, UserMinus } from 'lucide-react'
+import { MoreHorizontal, Loader2, UserMinus } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { ActionConfirmDialog } from '../dialogs/ActionConfirmDialog'
-import { IStudent } from '@/features/center-management/types'
+import { ActionConfirmDialog } from '../../dialogs/ActionConfirmDialog'
+import { IClassStudent } from '../../../type'
+import { removeStudentFromClass } from '../../../services/api'
+import { toast } from 'react-toastify'
+import { useParams, useRouter } from 'next/navigation'
 
 interface StudentActionsCellProps {
-  student: IStudent
-  callback: () => void
+  student: IClassStudent
 }
 
-export function StudentActionsCell({ student, callback }: StudentActionsCellProps) {
+export function StudentActionsCell({ student }: StudentActionsCellProps) {
+  const params = useParams()
+  const classId = params?._id as string
   const [isLoading, setIsLoading] = useState(false)
   const [openDelete, setOpenDelete] = useState(false)
+  const router = useRouter()
 
-  const handleRemoveFromClass = () => {
+  const handleRemoveFromClass = async () => {
     setIsLoading(true)
-    // Mock API call
-    setTimeout(() => {
-      console.log('Remove student from class:', student.id)
-      setIsLoading(false)
-      setOpenDelete(false)
-      callback()
-    }, 500)
+    await removeStudentFromClass(classId, student.user._id)
+      .then(() => {
+        toast.success('Xóa học viên khỏi lớp thành công')
+        router.refresh()
+      })
+      .finally(() => {
+        setIsLoading(false)
+        setOpenDelete(false)
+      })
   }
 
   return (
@@ -40,7 +46,7 @@ export function StudentActionsCell({ student, callback }: StudentActionsCellProp
         open={openDelete}
         onOpenChange={setOpenDelete}
         title="Xác nhận xóa học viên"
-        description={`Bạn có chắc chắn muốn xóa học viên "${student.name}" khỏi lớp học này?`}
+        description={`Bạn có chắc chắn muốn xóa học viên "${student.user.fullName}" khỏi lớp học này?`}
         onConfirm={handleRemoveFromClass}
         isLoading={isLoading}
       />
@@ -53,12 +59,6 @@ export function StudentActionsCell({ student, callback }: StudentActionsCellProp
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="rounded-2xl p-2 w-48">
           <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest">Hành động</DropdownMenuLabel>
-
-          <DropdownMenuItem className="rounded-xl cursor-pointer">
-            <Pencil className="w-4 h-4 mr-2" /> Chỉnh sửa thông tin
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator className="my-1 bg-gray-50" />
 
           <DropdownMenuItem className="rounded-xl text-red-600 cursor-pointer" onClick={() => setOpenDelete(true)}>
             <UserMinus className="w-4 h-4 mr-2" /> Xóa khỏi lớp

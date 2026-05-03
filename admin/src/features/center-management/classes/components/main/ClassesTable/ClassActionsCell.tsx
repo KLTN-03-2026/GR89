@@ -12,43 +12,58 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { ActionConfirmDialog } from '../dialogs/ActionConfirmDialog'
-import { SheetUpdateClass } from '../dialogs/SheetUpdateClass'
+import { ActionConfirmDialog } from '../../dialogs/ActionConfirmDialog'
+import { SheetUpdateClass } from '../../dialogs/SheetUpdateClass'
 import { Sheet } from '@/components/ui/sheet'
-import { ICenterClass } from '@/features/center-management/types'
+import { ICenterClass } from '../../../type'
+import { deleteCenterClass, updateCenterClassActive } from '../../../services/api'
+import { toast } from 'react-toastify'
 
 interface ClassActionsCellProps {
   classData: ICenterClass
-  callback: () => void
 }
 
-export function ClassActionsCell({ classData, callback }: ClassActionsCellProps) {
+export function ClassActionsCell({ classData }: ClassActionsCellProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [openDelete, setOpenDelete] = useState(false)
   const [openToggleActive, setOpenToggleActive] = useState(false)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
 
-  const handleToggleActiveConfirm = () => {
+  const handleToggleActiveConfirm = async () => {
     setIsLoading(true)
-    // Mock API call
-    setTimeout(() => {
-      console.log('Toggle active for class:', classData.id)
+    try {
+      const response = await updateCenterClassActive(classData._id, !classData.isActive)
+      if (response.success) {
+        toast.success(`${classData.isActive ? 'Khóa' : 'Kích hoạt'} lớp học thành công`)
+        router.refresh()
+      } else {
+        toast.error(response.message || 'Có lỗi xảy ra, vui lòng thử lại sau')
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra, vui lòng thử lại sau')
+    } finally {
       setIsLoading(false)
       setOpenToggleActive(false)
-      callback()
-    }, 500)
+    }
   }
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     setIsLoading(true)
-    // Mock API call
-    setTimeout(() => {
-      console.log('Delete class:', classData.id)
+    try {
+      const response = await deleteCenterClass(classData._id)
+      if (response.success) {
+        toast.success('Xóa lớp học thành công')
+        router.refresh()
+      } else {
+        toast.error(response.message || 'Có lỗi xảy ra, vui lòng thử lại sau')
+      }
+    } catch {
+      toast.error('Có lỗi xảy ra, vui lòng thử lại sau')
+    } finally {
       setIsLoading(false)
       setOpenDelete(false)
-      callback()
-    }, 500)
+    }
   }
 
   return (
@@ -57,7 +72,6 @@ export function ClassActionsCell({ classData, callback }: ClassActionsCellProps)
         <SheetUpdateClass
           classData={classData}
           onClose={() => setIsUpdateModalOpen(false)}
-          callback={callback}
         />
       </Sheet>
 
@@ -91,13 +105,13 @@ export function ClassActionsCell({ classData, callback }: ClassActionsCellProps)
         <DropdownMenuContent align="end" className="rounded-2xl p-2 w-48">
           <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest">Hành động</DropdownMenuLabel>
 
-          <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => router.push(`/center-management/classes/students/${classData.id}`)}>
+          <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => router.push(`/center-management/classes/students/${classData._id}`)}>
             <Users className="w-4 h-4 mr-2" /> Quản lý học viên
           </DropdownMenuItem>
-          <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => router.push(`/center-management/classes/documents/${classData.id}`)}>
+          <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => router.push(`/center-management/classes/documents/${classData._id}`)}>
             <FileText className="w-4 h-4 mr-2" /> Quản lý tài liệu
           </DropdownMenuItem>
-          <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => router.push(`/center-management/classes/homework/${classData.id}`)}>
+          <DropdownMenuItem className="rounded-xl cursor-pointer" onClick={() => router.push(`/center-management/classes/homework/${classData._id}`)}>
             <BookOpenCheck className="w-4 h-4 mr-2" /> Quản lý bài tập
           </DropdownMenuItem>
 

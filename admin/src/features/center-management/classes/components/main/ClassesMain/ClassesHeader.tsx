@@ -5,15 +5,14 @@ import { AdminPageHeader } from '@/components/common/shared/AdminPageHeader'
 import { GraduationCap, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetTrigger } from "@/components/ui/sheet"
-import { SheetAddClass } from '../dialogs/SheetAddClass'
+import { SheetAddClass } from '../../dialogs/SheetAddClass'
 
 interface ClassesHeaderProps {
   isAddModalOpen: boolean
   setIsAddModalOpen: (open: boolean) => void
-  callback?: () => void
 }
 
-export function ClassesHeader({ isAddModalOpen, setIsAddModalOpen, callback }: ClassesHeaderProps) {
+export function ClassesHeader({ isAddModalOpen, setIsAddModalOpen }: ClassesHeaderProps) {
   return (
     <AdminPageHeader
       title="Quản lý Lớp học"
@@ -28,7 +27,7 @@ export function ClassesHeader({ isAddModalOpen, setIsAddModalOpen, callback }: C
               Tạo lớp học mới
             </Button>
           </SheetTrigger>
-          <SheetAddClass onClose={() => setIsAddModalOpen(false)} callback={callback} />
+          <SheetAddClass onClose={() => setIsAddModalOpen(false)} />
         </Sheet>
       }
     />

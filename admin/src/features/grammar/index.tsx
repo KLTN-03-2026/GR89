@@ -1,5 +1,4 @@
 export { GrammarTopicMain, GrammarLessonMain } from './components/main'
-export { DialogAddGrammarTopic, DialogUpdateGrammarTopic } from './components/dialogs'
 export type {
   GrammarLessonDraft,
   LessonSection,

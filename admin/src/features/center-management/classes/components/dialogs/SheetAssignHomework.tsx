@@ -15,11 +15,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { Calendar, FileText, BookOpenCheck, Info, Check, Search, X, Plus, Loader2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter as DialogFooterUI } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DocumentCard } from '@/features/center-management/documents/components/DocumentGrid/DocumentCard'
+import { DialogPreviewDocument } from '@/features/center-management/documents/components/dialogs/DialogPreviewDocument'
 import { toast } from 'react-toastify'
-import { getGlobalDocuments } from '@/features/center-management/documents/services/api'
-import { IGlobalDocument } from '@/features/center-management/documents/type'
+import { getGlobalDocumentById, getGlobalDocumentCategories, getGlobalDocuments } from '@/features/center-management/documents/services/api'
+import { IDocumentCategory, IGlobalDocument } from '@/features/center-management/documents/type'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useParams, useRouter } from 'next/navigation'
+import { createHomeworkForClass } from '../../services/api'
 
 interface SheetAssignHomeworkProps {
   onClose: () => void
@@ -27,6 +31,9 @@ interface SheetAssignHomeworkProps {
 }
 
 export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkProps) {
+  const params = useParams()
+  const classId = params?._id as string
+
   // Get current date and time for defaults
   const now = new Date()
   const today = now.toISOString().split('T')[0]
@@ -40,13 +47,22 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
   const [startTime, setStartTime] = useState(currentTime)
   const [endDate, setEndDate] = useState(nextWeekDate)
   const [endTime, setEndTime] = useState('23:59')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const router = useRouter()
 
   const [isDocDialogOpen, setIsDocDialogOpen] = useState(false)
-  const [selectedDoc, setSelectedDoc] = useState<IGlobalDocument | null>(null)
+  const [selectedDocs, setSelectedDocs] = useState<IGlobalDocument[]>([])
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState<IGlobalDocument | null>(null)
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
   const [docSearch, setDocSearch] = useState('')
   const debouncedSearch = useDebounce(docSearch, 500)
   const [documents, setDocuments] = useState<IGlobalDocument[]>([])
   const [isLoadingDocs, setIsLoadingDocs] = useState(false)
+  const [categories, setCategories] = useState<IDocumentCategory[]>([])
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all')
 
   useEffect(() => {
     if (isDocDialogOpen) {
@@ -55,6 +71,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
           try {
             const response = await getGlobalDocuments({
               search: debouncedSearch,
+              category: selectedCategoryId === 'all' ? undefined : selectedCategoryId,
               limit: 100 // Lấy danh sách đủ dùng trong dialog
             })
             if (response.success && response.data) {
@@ -69,17 +86,35 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
         }
       fetchDocuments()
     }
-  }, [isDocDialogOpen, debouncedSearch])
+  }, [isDocDialogOpen, debouncedSearch, selectedCategoryId])
+
+  useEffect(() => {
+    if (!isDocDialogOpen) return
+    if (categories.length > 0) return
+    const fetchCategories = async () => {
+      try {
+        const res = await getGlobalDocumentCategories()
+        setCategories(res.data || [])
+      } catch {
+        setCategories([])
+      }
+    }
+    fetchCategories()
+  }, [isDocDialogOpen, categories.length])
 
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Basic validation
     const start = new Date(`${startDate}T${startTime}`)
     const end = new Date(`${endDate}T${endTime}`)
-    const nowCheck = new Date()
 
-    if (start < new Date(nowCheck.getTime() - 60000)) { // Allow 1 min buffer
-      toast.error('Thời gian bắt đầu không được ở quá khứ')
+    if (!classId) {
+      toast.error('Không xác định được lớp học')
+      return
+    }
+
+    if (!title.trim()) {
+      toast.error('Vui lòng nhập tên bài tập')
       return
     }
 
@@ -88,14 +123,34 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
       return
     }
 
-    console.log('Assigning new homework...')
-    if (callback) callback()
-    onClose()
-    toast.success('Đã giao bài tập thành công')
+    setIsSaving(true)
+    try {
+      const res = await createHomeworkForClass(classId, {
+        title: title.trim(),
+        description: description.trim(),
+        deadline: end.toISOString(),
+        documentIds: selectedDocs.map(d => d._id),
+      })
+      if (res.success) {
+        toast.success('Đã giao bài tập thành công')
+        callback?.()
+        router.refresh()
+        onClose()
+      } else {
+        toast.error(res.message || 'Không thể giao bài tập')
+      }
+    } catch {
+      toast.error('Không thể giao bài tập')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
     <>
+      {previewDoc ? (
+        <DialogPreviewDocument open={isPreviewOpen} onOpenChange={setIsPreviewOpen} document={previewDoc} />
+      ) : null}
       {/* Dialog chọn tài liệu từ kho */}
       <Dialog open={isDocDialogOpen} onOpenChange={setIsDocDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col rounded-3xl p-0 border-none shadow-2xl">
@@ -105,14 +160,29 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
           </DialogHeader>
 
           <div className="p-8 space-y-6 flex-1 overflow-hidden flex flex-col">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Tìm kiếm tài liệu..."
-                className="pl-10 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium"
-                value={docSearch}
-                onChange={(e) => setDocSearch(e.target.value)}
-              />
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Tìm kiếm tài liệu..."
+                  className="pl-10 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium"
+                  value={docSearch}
+                  onChange={(e) => setDocSearch(e.target.value)}
+                />
+              </div>
+              <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                <SelectTrigger className="w-56 rounded-2xl border-gray-100 bg-gray-50 font-bold">
+                  <SelectValue placeholder="Thư mục" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-gray-100">
+                  <SelectItem value="all" className="rounded-xl font-bold">Tất cả</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c._id} value={c._id} className="rounded-xl font-bold">
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -128,8 +198,14 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                       key={doc._id}
                       document={doc}
                       selectable
-                      isSelected={selectedDoc?._id === doc._id}
-                      onSelect={() => setSelectedDoc(doc)}
+                      isSelected={selectedDocs.some(d => d._id === doc._id)}
+                      onSelect={() => {
+                        setSelectedDocs(prev => {
+                          const exists = prev.some(d => d._id === doc._id)
+                          if (exists) return prev.filter(d => d._id !== doc._id)
+                          return [...prev, doc]
+                        })
+                      }}
                     />
                   ))}
                 </div>
@@ -144,9 +220,9 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
 
           <DialogFooterUI className="p-8 pt-4 bg-gray-50/50 border-t border-gray-100 gap-2 sm:gap-0">
             <div className="flex-1 text-sm text-gray-500 font-medium flex items-center">
-              {selectedDoc ? (
+              {selectedDocs.length > 0 ? (
                 <span className="text-indigo-600 font-bold flex items-center">
-                  <Check className="w-4 h-4 mr-1.5" /> Đã chọn: {selectedDoc.name}
+                  <Check className="w-4 h-4 mr-1.5" /> Đã chọn {selectedDocs.length} tài liệu
                 </span>
               ) : 'Chưa chọn tài liệu nào'}
             </div>
@@ -154,7 +230,6 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-8"
               onClick={() => setIsDocDialogOpen(false)}
-              disabled={!selectedDoc}
             >
               Xác nhận chọn
             </Button>
@@ -182,7 +257,12 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
             <div className="space-y-6">
               <div className="space-y-3">
                 <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Tên bài tập</Label>
-                <Input placeholder="Ví dụ: Writing Task 1 - Line Graph" className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-bold shadow-sm" />
+                <Input
+                  placeholder="Ví dụ: Writing Task 1 - Line Graph"
+                  className="h-12 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-bold shadow-sm"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               </div>
 
               <div className="space-y-3">
@@ -190,6 +270,8 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                 <Textarea
                   placeholder="Nhập chi tiết yêu cầu bài tập cho học viên..."
                   className="min-h-28 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium p-6 resize-none shadow-inner"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                 />
               </div>
 
@@ -238,21 +320,61 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                 <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-indigo-500" /> Tài liệu đính kèm
                 </Label>
-                {selectedDoc ? (
-                  <div className="flex items-center justify-between bg-indigo-50 p-4 rounded-2xl border border-indigo-100 animate-in zoom-in-95 duration-200">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-xl text-indigo-600 shadow-sm">
-                        <FileText className="w-4 h-4" />
+                {selectedDocs.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedDocs.map((doc) => (
+                      <div key={doc._id} className="flex items-center justify-between border border-gray-100 rounded-2xl px-4 py-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-black text-gray-900 truncate">{doc.name}</div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            className="rounded-xl px-4 h-10 font-bold border-gray-200 text-gray-700 hover:bg-gray-50"
+                            onClick={async () => {
+                              if (doc.content) {
+                                setPreviewDoc(doc)
+                                setIsPreviewOpen(true)
+                                return
+                              }
+                              setIsLoadingPreview(true)
+                              try {
+                                const res = await getGlobalDocumentById(doc._id)
+                                if (res.success && res.data) {
+                                  setPreviewDoc(res.data)
+                                  setIsPreviewOpen(true)
+                                } else {
+                                  toast.error('Không thể tải nội dung tài liệu')
+                                }
+                              } catch {
+                                toast.error('Không thể tải nội dung tài liệu')
+                              } finally {
+                                setIsLoadingPreview(false)
+                              }
+                            }}
+                            disabled={isLoadingPreview}
+                          >
+                            {isLoadingPreview ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            Xem
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50"
+                            onClick={() => setSelectedDocs(prev => prev.filter(d => d._id !== doc._id))}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <span className="text-sm font-bold text-indigo-900 truncate max-w-2xs">{selectedDoc.name}</span>
-                    </div>
+                    ))}
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-indigo-400 hover:text-rose-500 hover:bg-rose-50"
-                      onClick={() => setSelectedDoc(null)}
+                      variant="outline"
+                      className="w-full h-14 rounded-2xl border-dashed border-gray-200 bg-gray-50 text-sm font-bold text-gray-400 hover:bg-gray-100 hover:border-indigo-300 hover:text-indigo-600 transition-all group"
+                      onClick={() => setIsDocDialogOpen(true)}
                     >
-                      <X className="w-4 h-4" />
+                      <Plus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                      Thêm tài liệu...
                     </Button>
                   </div>
                 ) : (
@@ -284,8 +406,11 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
 
         <SheetFooter className="p-8 bg-gray-50 border-t border-gray-100 shrink-0">
           <div className="flex items-center justify-end gap-3 w-full">
-            <Button variant="outline" className="rounded-xl px-8 h-12 font-bold" onClick={onClose}>Hủy bỏ</Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-10 h-12 font-bold shadow-lg shadow-indigo-100" onClick={handleSave}>Giao bài tập</Button>
+            <Button variant="outline" className="rounded-xl px-8 h-12 font-bold" onClick={onClose} disabled={isSaving}>Hủy bỏ</Button>
+            <Button className="bg-indigo-600 hover:bg-indigo-700 rounded-xl px-10 h-12 font-bold shadow-lg shadow-indigo-100" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Giao bài tập
+            </Button>
           </div>
         </SheetFooter>
       </SheetContent>

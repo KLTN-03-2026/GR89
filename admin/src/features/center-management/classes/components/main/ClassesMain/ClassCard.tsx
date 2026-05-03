@@ -12,7 +12,6 @@ import {
   EyeOff,
   Edit,
   Trash2,
-  Lock,
   BookOpenCheck
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -25,16 +24,17 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetTrigger } from "@/components/ui/sheet"
-import { ICenterClass } from '@/features/center-management/types'
-import { SheetUpdateClass } from '../dialogs/SheetUpdateClass'
-import { ActionConfirmDialog } from '../dialogs/ActionConfirmDialog'
+import { ICenterClass } from '../../../type'
+import { SheetUpdateClass } from '../../dialogs/SheetUpdateClass'
+import { ActionConfirmDialog } from '../../dialogs/ActionConfirmDialog'
+import { deleteCenterClass, updateCenterClassActive } from '../../../services/api'
+import { toast } from 'react-toastify'
 
 interface ClassCardProps {
   classData: ICenterClass
-  callback: () => void
 }
 
-export function ClassCard({ classData, callback }: ClassCardProps) {
+export function ClassCard({ classData }: ClassCardProps) {
   const router = useRouter()
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [openDelete, setOpenDelete] = useState(false)
@@ -48,35 +48,41 @@ export function ClassCard({ classData, callback }: ClassCardProps) {
   }
 
   const handleManageStudents = () => {
-    router.push(`/center-management/classes/students/${classData.id}`)
+    router.push(`/center-management/classes/students/${classData._id}`)
   }
 
   const handleManageDocuments = () => {
-    router.push(`/center-management/classes/documents/${classData.id}`)
+    router.push(`/center-management/classes/documents/${classData._id}`)
   }
 
   const handleManageHomework = () => {
-    router.push(`/center-management/classes/homework/${classData.id}`)
+    router.push(`/center-management/classes/homework/${classData._id}`)
   }
 
-  const handleToggleActiveConfirm = () => {
+  const handleToggleActiveConfirm = async () => {
     setIsLoading(true)
-    setTimeout(() => {
-      console.log('Toggle active for class:', classData.id)
-      setIsLoading(false)
-      setOpenToggleActive(false)
-      callback()
-    }, 500)
+    await updateCenterClassActive(classData._id, !classData.isActive)
+      .then(() => {
+        toast.success(`${classData.isActive ? 'Khóa' : 'Kích hoạt'} lớp học thành công`)
+        router.refresh()
+      })
+      .finally(() => {
+        setIsLoading(false)
+        setOpenToggleActive(false)
+      })
   }
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     setIsLoading(true)
-    setTimeout(() => {
-      console.log('Delete class:', classData.id)
+    await deleteCenterClass(classData._id)
+      .then(() => {
+        toast.success('Xóa lớp học thành công')
+        router.refresh()
+      })
+    .finally(() => {
       setIsLoading(false)
       setOpenDelete(false)
-      callback()
-    }, 500)
+    })
   }
 
   return (
@@ -85,7 +91,6 @@ export function ClassCard({ classData, callback }: ClassCardProps) {
         <SheetUpdateClass
           classData={classData}
           onClose={() => setIsUpdateModalOpen(false)}
-          callback={callback}
         />
       </Sheet>
 
@@ -169,7 +174,7 @@ export function ClassCard({ classData, callback }: ClassCardProps) {
 
           <div>
             <h3 className="text-xl font-extrabold text-gray-900 group-hover:text-indigo-600 transition-colors">{classData.name}</h3>
-            <p className="text-sm text-gray-500 font-medium mt-1">GV: {classData.teacherName}</p>
+            <p className="text-sm text-gray-500 font-medium mt-1">GV: {classData.teacher?.fullName || 'Chưa phân công'}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 pt-2">
@@ -177,7 +182,9 @@ export function ClassCard({ classData, callback }: ClassCardProps) {
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
                 <Calendar className="w-3 h-3" /> Khai giảng
               </p>
-              <p className="text-sm font-bold text-gray-700">{classData.startDate}</p>
+              <p className="text-sm font-bold text-gray-700">
+                {new Date(classData.startDate).toLocaleDateString('vi-VN')}
+              </p>
             </div>
             <div className="space-y-1">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
@@ -187,20 +194,19 @@ export function ClassCard({ classData, callback }: ClassCardProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-indigo-600" onClick={(e) => { e.stopPropagation(); handleManageStudents(); }}>
-                <Users className="w-3.5 h-3.5 text-indigo-500" />
-                {classData.students.length} HS
+          <div className="flex items-center gap-6 pt-4 border-t border-gray-50">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <Users className="w-4 h-4" />
               </div>
-              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-emerald-600" onClick={(e) => { e.stopPropagation(); handleManageDocuments(); }}>
-                <FileText className="w-3.5 h-3.5 text-emerald-500" />
-                {classData.documents.length} TL
-              </div>
+              <span className="text-sm font-bold text-gray-700">{classData.students?.length || 0}</span>
             </div>
-            <Badge variant="outline" className="border-gray-100 text-[10px] font-bold text-gray-400">
-              {classData.status === 'ongoing' ? 'Đang dạy' : classData.status === 'opening' ? 'Đang tuyển' : 'Kết thúc'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <FileText className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-bold text-gray-700">{classData.documents?.length || 0}</span>
+            </div>
           </div>
         </div>
       </div>

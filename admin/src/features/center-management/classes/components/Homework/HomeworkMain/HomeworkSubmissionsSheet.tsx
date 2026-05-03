@@ -10,16 +10,15 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet"
 import { Badge } from '@/components/ui/badge'
-import { FileCheck, Users, Clock, CheckCircle2, User, ExternalLink, Send, Search } from 'lucide-react'
-import { MOCK_HOMEWORK_SUBMISSIONS } from '@/features/center-management/mockData'
-import { IHomeworkSubmission } from '@/features/center-management/types'
+import { FileCheck, Users, Clock, CheckCircle2, Search } from 'lucide-react'
+import { IHomework } from '../../../type'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { HomeworkSubmissionActionsCell } from './HomeworkSubmissionActionsCell'
 
 interface HomeworkSubmissionsSheetProps {
-  homework: IHomeworkSubmission
+  homework: IHomework | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -27,17 +26,17 @@ interface HomeworkSubmissionsSheetProps {
 export function HomeworkSubmissionsSheet({ homework, open, onOpenChange }: HomeworkSubmissionsSheetProps) {
   const [search, setSearch] = useState('')
 
-  // Mock filtering submissions for this specific homework
-  const submissions = MOCK_HOMEWORK_SUBMISSIONS.filter(s => s.title === homework?.title)
+  const submissions = homework?.submissions || []
   const filteredSubmissions = submissions.filter(s =>
-    s.studentName.toLowerCase().includes(search.toLowerCase())
+    s.user?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+    s.user?.email?.toLowerCase().includes(search.toLowerCase())
   )
 
   const pendingCount = submissions.filter(s => s.status === 'pending').length
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[600px] w-full p-0 flex flex-col h-full border-none shadow-2xl">
+      <SheetContent className="sm:max-w-150 w-full p-0 flex flex-col h-full border-none shadow-2xl">
         <SheetHeader className="p-8 pb-6 bg-gray-50/50 border-b border-gray-100 shrink-0">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
@@ -88,52 +87,51 @@ export function HomeworkSubmissionsSheet({ homework, open, onOpenChange }: Homew
 
             <div className="space-y-4">
               {filteredSubmissions.map((sub) => (
-                <div key={sub.id} className="bg-white rounded-3xl border border-gray-100 p-5 hover:shadow-lg hover:shadow-indigo-50/50 transition-all space-y-4">
+                <div key={sub._id} className="bg-white rounded-3xl border border-gray-100 p-5 hover:shadow-lg hover:shadow-indigo-50/50 transition-all space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-                        <User className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold">
+                        {sub.user?.fullName?.charAt(0) || 'U'}
                       </div>
                       <div>
-                        <h4 className="font-extrabold text-gray-900">{sub.studentName}</h4>
+                        <h4 className="font-extrabold text-gray-900">{sub.user?.fullName}</h4>
                         <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
                           <Clock className="w-3 h-3" />
-                          {sub.submittedAt}
+                          {new Date(sub.submittedAt).toLocaleString('vi-VN')}
                         </div>
                       </div>
                     </div>
                     <Badge
                       variant="outline"
-                      className={sub.status === 'corrected' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}
+                      className={sub.status === 'graded' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
-                      {sub.status === 'corrected' ? 'Đã sửa' : 'Chờ sửa'}
+                      {sub.status === 'graded' ? 'Đã chấm' : 'Chờ chấm'}
                     </Badge>
                   </div>
 
-                  <div className="flex gap-2 pt-2 border-t border-gray-50">
-                    <Button
-                      variant="outline"
-                      className="flex-1 rounded-xl border-blue-100 text-blue-600 hover:bg-blue-50 h-10 font-bold text-xs"
-                      onClick={() => window.open(sub.driveLink, '_blank')}
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" /> Google Drive
-                    </Button>
-                    <Button
-                      className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl h-10 font-bold text-xs"
-                    >
-                      <Send className="w-4 h-4 mr-2" /> Gửi bài giải
-                    </Button>
+                  <div className="text-sm text-gray-600 line-clamp-2 bg-gray-50 p-3 rounded-xl font-medium">
+                    {sub.content.replace(/<[^>]*>?/gm, '').slice(0, 100)}...
                   </div>
+
+                  {homework ? (
+                    <HomeworkSubmissionActionsCell
+                      homeworkId={homework._id}
+                      submission={sub}
+                    />
+                  ) : null}
                 </div>
               ))}
 
               {filteredSubmissions.length === 0 && (
-                <div className="py-12 text-center space-y-2">
-                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-300">
-                    <Users className="w-8 h-8" />
+                <div className="py-20 text-center space-y-6 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-100 animate-in fade-in duration-500">
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
+                    <Users className="w-8 h-8 text-gray-200" />
                   </div>
-                  <p className="text-gray-400 font-bold">Không tìm thấy bài nộp nào</p>
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-bold text-gray-900">Chưa có bài nộp nào</h4>
+                    <p className="text-gray-400 text-xs max-w-28 mx-auto font-medium">Hiện tại chưa có học viên nào nộp bài cho bài tập này.</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -149,4 +147,3 @@ export function HomeworkSubmissionsSheet({ homework, open, onOpenChange }: Homew
     </Sheet>
   )
 }
-
