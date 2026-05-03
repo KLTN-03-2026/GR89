@@ -21,6 +21,7 @@ import { roadmapRoutes } from './roadmap.routes'
 import { reportRoutes } from './report.routes'
 import { dailySuggestionRoutes } from './dailySuggestion.routes'
 import { globalDocumentRoutes } from './globalDocument.routes'
+import { centerClassRoutes } from './centerClass.routes'
 
 const router = express.Router()
 
@@ -47,6 +48,7 @@ router.use('/roadmap', roadmapRoutes)
 router.use('/report', reportRoutes)
 router.use('/daily-suggestion', dailySuggestionRoutes)
 router.use('/global-documents', globalDocumentRoutes)
+router.use('/center-classes', centerClassRoutes)
 
 // ✅ ROOT ENDPOINT
 router.get('/', (req, res) => {

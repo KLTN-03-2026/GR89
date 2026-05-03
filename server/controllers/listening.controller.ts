@@ -5,7 +5,6 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { IListening } from "../models/listening.model";
 import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
 import { AdminActivityService } from "../services/adminActivity.service";
-import { StreakService } from "../services/streak.service";
 
 export class ListeningController {
   private static async logAdminAction(req: Request, payload: {
@@ -112,12 +111,12 @@ export class ListeningController {
       pagination: {
         page: result.page,
         limit: result.limit,
-        total: result.total || result.totalDocs || 0,
-        pages: result.pages || result.totalPages || 0,
-        hasNext: result.hasNext || result.hasNextPage || false,
-        hasPrev: result.hasPrev || result.hasPrevPage || false,
-        next: result.next || result.nextPage || null,
-        prev: result.prev || result.prevPage || null
+        total: result.totalDocs || 0,
+        pages: result.totalPages || 0,
+        hasNext: result.hasNextPage || false,
+        hasPrev: result.hasPrevPage || false,
+        next: result.nextPage || null,
+        prev: result.prevPage || null
       }
     })
   })

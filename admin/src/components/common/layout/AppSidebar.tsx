@@ -84,11 +84,11 @@ export function AppSidebar() {
             alt="logo"
             width={60}
             height={60}
-            className="min-w-[32px] min-h-[32px] w-10 h-10 object-contain"
+            className="min-w-32px min-h-32px w-10 h-10 object-contain"
           />
 
           <div>
-            <h1 className="font-bold text-lg bg-gradient-to-r from-[#FF6B35] to-[#4A90E2] bg-clip-text text-transparent">
+            <h1 className="font-bold text-lg bg-linear-to-r from-[#FF6B35] to-[#4A90E2] bg-clip-text text-transparent">
               {user?.role === 'content' ? 'CONTENT' : 'ADMIN'}
             </h1>
             <p className="text-xs text-muted-foreground">

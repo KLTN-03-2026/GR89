@@ -27,7 +27,7 @@ interface ApiResponse<T> {
 // Lấy danh sách tài liệu từ Server (Dùng trong page.tsx)
 export async function getGlobalDocumentsServer(params?: DocumentQueryParams): Promise<{
   data: IGlobalDocument[]
-  pagination: ApiResponse<any>['pagination']
+  pagination: ApiResponse<IGlobalDocument[]>['pagination']
 }> {
   const queryParams = new URLSearchParams()
   if (params?.page) queryParams.append('page', String(params.page))
@@ -39,12 +39,8 @@ export async function getGlobalDocumentsServer(params?: DocumentQueryParams): Pr
 
   const url = `/global-documents?${queryParams.toString()}`
 
-  // fetchServer đã được cấu hình sẵn để lấy data từ response.data
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<IGlobalDocument[]>(url)
 
-  console.log(response)
-  // fetchServer của dự án trả về trực tiếp data bên trong, nhưng cấu trúc GlobalDocument
-  // có chứa cả mảng documents và object pagination
   return {
     data: response.data || [],
     pagination: response.pagination

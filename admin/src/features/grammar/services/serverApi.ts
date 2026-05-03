@@ -29,7 +29,7 @@ export async function getGrammarTopicsServer(params?: GrammarQueryParams): Promi
   if (params?.isActive !== undefined) queryParams.append('isActive', String(params.isActive))
 
   const url = `/grammar?${queryParams.toString()}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<GrammarTopic[]>(url)
 
   return {
     data: response.data || [],
