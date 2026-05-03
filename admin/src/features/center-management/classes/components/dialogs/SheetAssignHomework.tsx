@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   SheetContent,
   SheetDescription,
@@ -12,12 +12,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Calendar, FileText, BookOpenCheck, Info, Check, Search, X, Plus } from 'lucide-react'
+import { Calendar, FileText, BookOpenCheck, Info, Check, Search, X, Plus, Loader2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter as DialogFooterUI } from '@/components/ui/dialog'
 import { DocumentCard } from '@/features/center-management/documents/components/DocumentGrid/DocumentCard'
 import { toast } from 'react-toastify'
-import { MOCK_GLOBAL_DOCUMENTS } from '@/features/center-management/mockData'
+import { getGlobalDocuments } from '@/features/center-management/documents/services/api'
+import { IGlobalDocument } from '@/features/center-management/documents/type'
+import { useDebounce } from '@/hooks/useDebounce'
 
 interface SheetAssignHomeworkProps {
   onClose: () => void
@@ -40,12 +42,35 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
   const [endTime, setEndTime] = useState('23:59')
 
   const [isDocDialogOpen, setIsDocDialogOpen] = useState(false)
-  const [selectedDoc, setSelectedDoc] = useState<any>(null)
+  const [selectedDoc, setSelectedDoc] = useState<IGlobalDocument | null>(null)
   const [docSearch, setDocSearch] = useState('')
+  const debouncedSearch = useDebounce(docSearch, 500)
+  const [documents, setDocuments] = useState<IGlobalDocument[]>([])
+  const [isLoadingDocs, setIsLoadingDocs] = useState(false)
 
-  const filteredDocs = MOCK_GLOBAL_DOCUMENTS.filter(d =>
-    d.name.toLowerCase().includes(docSearch.toLowerCase())
-  )
+  useEffect(() => {
+    if (isDocDialogOpen) {
+        const fetchDocuments = async () => {
+          setIsLoadingDocs(true)
+          try {
+            const response = await getGlobalDocuments({
+              search: debouncedSearch,
+              limit: 100 // Lấy danh sách đủ dùng trong dialog
+            })
+            if (response.success && response.data) {
+              setDocuments(response.data)
+            }
+          } catch (error) {
+            console.error('Lỗi khi tải tài liệu:', error)
+            toast.error('Không thể tải danh sách tài liệu')
+          } finally {
+            setIsLoadingDocs(false)
+          }
+        }
+      fetchDocuments()
+    }
+  }, [isDocDialogOpen, debouncedSearch])
+
 
   const handleSave = () => {
     // Basic validation
@@ -73,7 +98,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
     <>
       {/* Dialog chọn tài liệu từ kho */}
       <Dialog open={isDocDialogOpen} onOpenChange={setIsDocDialogOpen}>
-        <DialogContent className="sm:max-w-[900px] max-h-[85vh] overflow-hidden flex flex-col rounded-3xl p-0 border-none shadow-2xl">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col rounded-3xl p-0 border-none shadow-2xl">
           <DialogHeader className="p-8 pb-0">
             <DialogTitle className="text-2xl font-black text-gray-900">Chọn tài liệu từ kho</DialogTitle>
             <DialogDescription>Đính kèm tài liệu hỗ trợ cho bài tập này.</DialogDescription>
@@ -91,17 +116,29 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredDocs.map((doc) => (
-                  <DocumentCard
-                    key={doc.id}
-                    document={doc}
-                    selectable
-                    isSelected={selectedDoc?.id === doc.id}
-                    onSelect={() => setSelectedDoc(doc)}
-                  />
-                ))}
-              </div>
+              {isLoadingDocs ? (
+                <div className="flex flex-col items-center justify-center h-full py-20 text-gray-400 gap-3">
+                  <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+                  <p className="font-bold text-sm">Đang tải danh sách tài liệu...</p>
+                </div>
+              ) : documents.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {documents.map((doc) => (
+                    <DocumentCard
+                      key={doc._id}
+                      document={doc}
+                      selectable
+                      isSelected={selectedDoc?._id === doc._id}
+                      onSelect={() => setSelectedDoc(doc)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full py-20 text-gray-400 gap-3">
+                  <FileText className="w-10 h-10 opacity-20" />
+                  <p className="font-bold text-sm">Không tìm thấy tài liệu nào</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -125,7 +162,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
         </DialogContent>
       </Dialog>
 
-      <SheetContent className="sm:max-w-[550px] w-full p-0 flex flex-col h-full border-none shadow-2xl">
+      <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col h-full border-none shadow-2xl">
         <SheetHeader className="p-8 pb-6 bg-indigo-50/30 border-b border-indigo-100/50 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
@@ -152,7 +189,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                 <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Mô tả & Hướng dẫn</Label>
                 <Textarea
                   placeholder="Nhập chi tiết yêu cầu bài tập cho học viên..."
-                  className="min-h-[150px] rounded-[2rem] border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium p-6 resize-none shadow-inner"
+                  className="min-h-28 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all font-medium p-6 resize-none shadow-inner"
                 />
               </div>
 
@@ -170,7 +207,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                     />
                     <Input
                       type="time"
-                      className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold w-[120px]"
+                      className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold w-28"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
                     />
@@ -189,7 +226,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                     />
                     <Input
                       type="time"
-                      className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold w-[120px]"
+                      className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold w-28"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
                     />
@@ -207,7 +244,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                       <div className="p-2 bg-white rounded-xl text-indigo-600 shadow-sm">
                         <FileText className="w-4 h-4" />
                       </div>
-                      <span className="text-sm font-bold text-indigo-900 truncate max-w-[250px]">{selectedDoc.name}</span>
+                      <span className="text-sm font-bold text-indigo-900 truncate max-w-2xs">{selectedDoc.name}</span>
                     </div>
                     <Button
                       variant="ghost"
@@ -230,7 +267,7 @@ export function SheetAssignHomework({ onClose, callback }: SheetAssignHomeworkPr
                 )}
               </div>
 
-              <div className="bg-indigo-50/50 p-6 rounded-[2rem] border border-indigo-100 flex gap-4">
+              <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 flex gap-4">
                 <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
                   <Info className="w-5 h-5" />
                 </div>

@@ -1,4 +1,4 @@
-import { ICenterClass, IHomeworkSubmission } from "./types";
+import { ICenterClass, IHomeworkSubmission } from "../center-management/classes/type";
 
 export const MOCK_CENTER_CLASSES: ICenterClass[] = [
   {

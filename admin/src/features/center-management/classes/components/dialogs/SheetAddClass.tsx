@@ -41,7 +41,7 @@ export function SheetAddClass({ onClose, callback }: SheetAddClassProps) {
   ]
 
   return (
-    <SheetContent className="sm:max-w-[550px] w-full p-0 flex flex-col h-full border-none shadow-2xl">
+    <SheetContent className="sm:max-w-4xl w-full p-0 flex flex-col h-full border-none shadow-2xl">
       <SheetHeader className="p-8 pb-6 bg-indigo-50/30 border-b border-indigo-100/50 shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
