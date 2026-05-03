@@ -3,12 +3,14 @@ export interface User {
   fullName: string;
   email: string;
   isActive: boolean;
+  avatar?: string
   role: 'user' | 'admin' | 'content';
   currentStreak: number;
   longestStreak: number;
   totalStudyTime: number;
   totalPoints: number;
-  avatar?: string;
+  phoneNumber?: string;
+  lastActiveDate?: Date;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -18,8 +20,10 @@ export interface UserScore {
   userId: string;
   fullName: string;
   email: string;
+  avatar: string;
   currentLevel: string;
   totalPoints: number;
+  ipaPoints: number;
   vocabularyPoints: number;
   grammarPoints: number;
   readingPoints: number;
@@ -57,4 +61,23 @@ export interface TopUser {
 export interface SkillAnalysis {
   name: string;
   avg: number;
+}
+
+/** Một dòng lịch sử học (StudyHistory) — API admin GET /user/:id/study-history */
+export interface UserStudyHistoryEntry {
+  lessonId: string;
+  category:
+  | 'grammar'
+  | 'vocabulary'
+  | 'reading'
+  | 'listening'
+  | 'speaking'
+  | 'ipa'
+  | 'writing';
+  lessonTitle: string;
+  status: 'passed' | 'failed' | 'in_progress';
+  progress: number;
+  duration: number;
+  level: string;
+  createdAt: string;
 }

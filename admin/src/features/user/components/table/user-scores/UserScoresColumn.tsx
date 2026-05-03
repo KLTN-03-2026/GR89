@@ -1,11 +1,12 @@
 "use client"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import ActionsCell from "./ActionsCell"
 import { TrendingUp, Clock } from "lucide-react"
 import { formatScore } from "@/lib/scoreUtils"
 import { UserScore } from "@/features/user/types"
+import { formatStudyTime } from "@/lib/utils"
 
 function getInitials(fullName: string) {
   return fullName
@@ -17,7 +18,6 @@ function getInitials(fullName: string) {
 }
 
 export const columnsUserScores = (): ColumnDef<UserScore>[] => [
-  // Hidden column for search functionality
   {
     id: "searchable",
     accessorFn: (row) => `${row.fullName} ${row.email}`,
@@ -40,12 +40,13 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       return (
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
+            <AvatarImage src={user.avatar || '/images/avatar-default.jpg'} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary">
               {getInitials(user.fullName)}
             </AvatarFallback>
           </Avatar>
-          <div className="space-y-1">
-            <div className="font-medium">{user.fullName}</div>
+          <div className="space-y-1 line-clamp-2">
+            <div className="font-medium ">{user.fullName}</div>
             <div className="text-sm text-muted-foreground">{user.email}</div>
           </div>
         </div>
@@ -60,7 +61,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const points = row.original.totalPoints
       return (
-        <div className="text-center">
+        <div className="text-center line-clamp-2">
           <div className="font-bold text-lg">{formatScore(points)}</div>
           <div className="text-sm text-muted-foreground">điểm</div>
         </div>
@@ -74,20 +75,23 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const user = row.original
       const skills = [
-        { name: 'TV', points: user.vocabularyPoints },
-        { name: 'NG', points: user.grammarPoints },
-        { name: 'ĐH', points: user.readingPoints },
-        { name: 'NH', points: user.listeningPoints },
-        { name: 'N', points: user.speakingPoints },
-        { name: 'V', points: user.writingPoints }
+        { name: 'IPA', points: user.ipaPoints },
+        { name: 'Vocab', points: user.vocabularyPoints },
+        { name: 'Gram', points: user.grammarPoints },
+        { name: 'Read', points: user.readingPoints },
+        { name: 'Listen', points: user.listeningPoints },
+        { name: 'Speak', points: user.speakingPoints },
+        { name: 'Write', points: user.writingPoints }
       ]
 
       return (
-        <div className="flex flex-wrap gap-1 justify-center">
+        <div className="grid grid-cols-4 gap-2 text-center">
           {skills.map((skill, index) => (
-            <div key={index} className="flex flex-col items-center">
+            <div key={index} className="line-clamp-2">
               <div className="text-xs font-medium">{skill.name}</div>
-              <div className="text-xs text-muted-foreground">{formatScore(skill.points)}</div>
+              <div className="text-xs text-muted-foreground">
+                {formatScore(skill.points)}
+              </div>
             </div>
           ))}
         </div>
@@ -101,7 +105,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const streak = row.original.currentStreak
       return (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 line-clamp-1">
           <TrendingUp className="w-4 h-4 text-muted-foreground" />
           <div className="text-center">
             <div className="font-medium">{streak}</div>
@@ -118,11 +122,10 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     cell: ({ row }) => {
       const time = row.original.totalStudyTime
       return (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 line-clamp-1">
           <Clock className="w-4 h-4 text-muted-foreground" />
           <div className="text-center">
-            <div className="font-medium">{time}</div>
-            <div className="text-xs text-muted-foreground">giờ</div>
+            <div className="font-medium">{formatStudyTime(time)}</div>
           </div>
         </div>
       )
@@ -138,7 +141,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       // Kiểm tra nếu không có lastActiveDate hoặc giá trị không hợp lệ
       if (!lastActiveDate) {
         return (
-          <div className="text-center">
+          <div className="text-center line-clamp-1">
             <div className="text-sm text-muted-foreground">Chưa có</div>
           </div>
         )
@@ -149,7 +152,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       // Kiểm tra nếu ngày không hợp lệ (NaN hoặc năm 1970)
       if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
         return (
-          <div className="text-center">
+          <div className="text-center line-clamp-1">
             <div className="text-sm text-muted-foreground">Chưa có</div>
           </div>
         )
@@ -159,7 +162,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
       const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
 
       return (
-        <div className="text-center">
+        <div className="text-center line-clamp-2">
           <div className="text-sm">
             {diffDays === 0 ? 'Hôm nay' :
               diffDays === 1 ? 'Hôm qua' :
@@ -178,7 +181,7 @@ export const columnsUserScores = (): ColumnDef<UserScore>[] => [
     accessorKey: "isActive",
     header: () => <div className="text-center">Trạng thái</div>,
     cell: ({ row }) => (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center line-clamp-1">
         <Badge variant={row.original.isActive ? "default" : "secondary"}>
           {row.original.isActive ? "Hoạt động" : "Tạm khóa"}
         </Badge>

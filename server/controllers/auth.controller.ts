@@ -53,7 +53,7 @@ export class AuthController {
   // XÁC NHẬN EMAIL
   static verifyEmail = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { token } = req.query
-    const appUrl = process.env.APP_BASE_URL || 'http://localhost:3000'
+    const appUrl = process.env.CLIENT_BASE_URL || 'http://localhost:3000'
 
     if (!token || typeof token !== 'string') {
       return res.status(400).render('auth/verify-error', {
@@ -145,21 +145,11 @@ export class AuthController {
 
   // ĐĂNG XUẤT NGƯỜI DÙNG
   static logout = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    // Xác định role từ cookies nếu không có user (trường hợp tài khoản bị khóa)
-    let userRole: 'admin' | 'user' | 'content' = 'user'
+    const { user } = req
 
-    if (req.user) {
-      userRole = req.user.role as 'admin' | 'user' | 'content'
-    } else {
-      // Nếu không có user, kiểm tra cookies để xác định role
-      if (req.cookies.access_token_admin || req.cookies.refresh_token_admin) {
-        userRole = 'admin'
-      } else if (req.cookies.access_token_content || req.cookies.refresh_token_content) {
-        userRole = 'content'
-      }
-    }
+    if (!user) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
 
-    CookieUtil.clearAuthCookies(res, userRole)
+    CookieUtil.clearAuthCookies(res, user.role as 'admin' | 'user')
 
     return res.status(200).json({
       success: true,
@@ -169,7 +159,18 @@ export class AuthController {
 
   // REFESH TOKEN
   static refeshToken = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { role } = req.body
+    const requestedRole = req.body?.role as 'admin' | 'user' | 'content' | undefined
+    let role: 'admin' | 'user' | 'content' | undefined = requestedRole
+
+    // Tự động suy luận role nếu body không gửi hoặc gửi sai role
+    if (!role || !req.cookies[`refresh_token_${role}`]) {
+      if (req.cookies.refresh_token_admin) role = 'admin'
+      else if (req.cookies.refresh_token_content) role = 'content'
+      else if (req.cookies.refresh_token_user) role = 'user'
+    }
+
+    if (!role) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
+
     const refreshToken = req.cookies[`refresh_token_${role}`]
     if (!refreshToken) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
 
@@ -219,10 +220,8 @@ export class AuthController {
     if (password.length > 30)
       return next(new ErrorHandler('Mật khẩu không được vượt quá 30 ký tự', 400))
 
-    const allowedTlds = ['com', 'net', 'org', 'vn', 'edu', 'gov', 'io', 'co']
-    const emailRegex = new RegExp('^[^\s@]+@[^\s@]+\.(?<tld>[a-zA-Z]{2,})$')
-    const match = email.match(emailRegex)
-    if (!match || !allowedTlds.includes(match.groups?.tld?.toLowerCase() || '')) {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9]{2,}$/
+    if (!emailRegex.test(email)) {
       return next(new ErrorHandler('Email không hợp lệ', 400))
     }
 

@@ -1,6 +1,6 @@
 import express from "express";
 import { AuthController } from "../controllers/auth.controller";
-import { authenticateTokenAdmin, authenticateTokenForLogout, requireRole } from "../middleware/auth.middleware";
+import { authenticateTokenAdmin, authenticateTokenContent, authenticateTokenUser, requireRole } from "../middleware/auth.middleware";
 
 const router = express.Router();
 
@@ -32,10 +32,10 @@ router.post('/login/google', AuthController.loginGoogle)
 router.post('/refresh-token', AuthController.refeshToken)
 
 // ĐĂNG XUẤT NGƯỜI DÙNG
-router.post('/logout', authenticateTokenForLogout, AuthController.logout)
+router.post('/logout', authenticateTokenUser, AuthController.logout)
 
 // ĐĂNG XUẤT ADMIN
-router.post('/admin/logout', authenticateTokenForLogout, AuthController.logout)
+router.post('/admin/logout', authenticateTokenAdmin, AuthController.logout)
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 

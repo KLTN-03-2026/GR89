@@ -27,8 +27,8 @@ export async function login(data: LoginRequest): Promise<Response<User>> {
   return response.data as Response<User>
 }
 
-export async function logout(role: string = 'admin'): Promise<Response<User>> {
-  const response = await AuthorizedAxios.post<Response<User>>('/auth/logout', { role })
+export async function logout(): Promise<Response<User>> {
+  const response = await AuthorizedAxios.post<Response<User>>('/auth/admin/logout')
   return response.data as Response<User>
 }
 

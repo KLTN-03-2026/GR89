@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
-import { toast } from 'react-toastify'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { getDashboardReport, type DashboardReportResponse, type ReportQueryParams } from '@/lib/apis/api'
 import { PageHeader } from '@/components/common/shared/PageHeader'
 import { StatsGrid } from '@/components/common/shared/StatsGrid'
@@ -34,25 +33,22 @@ export default function Page() {
 
   const formatVnd = (value: number) => `${Math.round(value || 0).toLocaleString('vi-VN')} ₫`
 
-  const fetchReport = async (params?: ReportQueryParams) => {
-    setLoading(true)
-    try {
-      const res = await getDashboardReport(params || { startDate, endDate, category })
-      if (res.success && res.data) {
-        setReport(res.data)
-      } else {
-        toast.error(res.message || 'Không tải được dữ liệu báo cáo')
+  const fetchReport = useCallback(
+    async (params?: ReportQueryParams) => {
+      setLoading(true)
+      try {
+        const res = await getDashboardReport(params ?? { startDate, endDate, category })
+        setReport(res.data || null)
+      } finally {
+        setLoading(false)
       }
-    } catch {
-      toast.error('Không tải được dữ liệu báo cáo')
-    } finally {
-      setLoading(false)
-    }
-  }
+    },
+    [startDate, endDate, category],
+  )
 
   useEffect(() => {
     fetchReport({ startDate: defaultDates.startDate, endDate: defaultDates.endDate, category: 'all' })
-  }, [defaultDates.endDate, defaultDates.startDate])
+  }, [defaultDates, fetchReport])
 
   const stats = [
     {
@@ -139,7 +135,7 @@ export default function Page() {
               </Select>
             </div>
             <div className="flex items-end gap-3">
-              <Button className="w-full" disabled={loading} onClick={() => fetchReport()}>
+              <Button className="w-full" disabled={loading} onClick={() => fetchReport({ startDate, endDate, category })}>
                 {loading ? 'Đang tải...' : 'Áp dụng'}
               </Button>
               <Button

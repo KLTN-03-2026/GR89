@@ -37,7 +37,7 @@ export function TestimonialsSection() {
             Học Viên Nói Gì Về Chúng Tôi
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Hơn 50,000 học viên đã cải thiện tiếng Anh với English Mastery
+            Hơn 50,000 học viên đã cải thiện tiếng Anh với ActiveLearning
           </p>
         </div>
 

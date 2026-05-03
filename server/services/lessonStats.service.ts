@@ -116,22 +116,6 @@ const computeStats = (
   }
 }
 
-// Helper function to convert docs to ID set
-const toIdSet = (docs: any[]): Set<string> =>
-  new Set(docs.map((doc) => String(doc?._id)))
-
-// Helper function to filter docs by active references
-const filterByActiveRefs = <T>(
-  docs: T[],
-  getRef: (doc: T) => Types.ObjectId | string | undefined | null,
-  activeIds: Set<string>
-) =>
-  docs.filter((doc) => {
-    const ref = getRef(doc)
-    if (!ref) return false
-    return activeIds.has(String(ref))
-  })
-
 export class LessonStatsService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
@@ -145,11 +129,11 @@ export class LessonStatsService {
     const [activeLessonsRaw, progressesAggregation] = await Promise.all([
       lessonModel.find({ isActive: true }).select("_id").lean(),
       StudyHistory.aggregate([
-        { 
-          $match: { 
-            userId: userObjectId, 
-            category 
-          } 
+        {
+          $match: {
+            userId: userObjectId,
+            category
+          }
         },
         { $sort: { progress: -1, createdAt: -1 } },
         { $group: { _id: { $toString: "$lessonId" }, best: { $first: "$$ROOT" }, totalTime: { $sum: "$duration" } } }
@@ -238,11 +222,5 @@ export class LessonStatsService {
       ipa,
     };
   }
-
-  /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
-
-  /*============================ NGƯỜI DÙNG & CHUNG ============================*/
-
-  /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 }
 

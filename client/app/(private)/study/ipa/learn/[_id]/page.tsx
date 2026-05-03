@@ -7,7 +7,7 @@ export default async function page({ params }: { params: { _id: string } }) {
   const ipaData = await fetchServer<IIpa>(`/ipa/user/${_id}`)
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="mx-auto">
       <HeaderIpaLearning _id={_id} />
       <IpaLearning ipaData={ipaData} />
     </div>

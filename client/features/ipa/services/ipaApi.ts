@@ -2,6 +2,7 @@
 
 import authorizedAxios from '@/libs/apis/authorizedAxios'
 import type { StudySessionPayload } from '@/libs/apis/types'
+import { IIpa } from '../types'
 
 interface ApiResponse<T = unknown> {
   success: boolean
@@ -55,5 +56,10 @@ export async function saveHighestIpaScore(
       studySession
     }
   )
+  return response.data
+}
+
+export async function getIpaSound(sound: string): Promise<ApiResponse<IIpa>> {
+  const response = await authorizedAxios.get(`/ipa/user/sound/${sound}`)
   return response.data
 }

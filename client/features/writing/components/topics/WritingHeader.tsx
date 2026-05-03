@@ -1,8 +1,8 @@
 'use client'
 
 import { WelcomeSection } from '@/components/common/WelcomeSection'
-import { IButton, IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
-import { PenTool, Play, FileText, Brain, Target, Clock } from 'lucide-react'
+import { IDescription, IStatsOverview, IStreakCardProps, IWelcomeContentProps } from '@/types'
+import { PenTool, FileText, Brain, Target, Clock } from 'lucide-react'
 import { WritingOverview } from '@/libs/apis/api'
 import { formatStudyTime } from '@/libs/utils/formatStudyTime'
 
@@ -11,11 +11,6 @@ interface WritingHeaderProps {
 }
 
 export function WritingHeader({ overview }: WritingHeaderProps) {
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Bắt đầu viết', icon: Play },
-    { type: 'outline', text: 'Xem bài viết', icon: PenTool }
-  ]
-
   const descriptions: IDescription[] = [
     { text: 'Luyện kỹ năng viết tiếng Anh với các chủ đề đa dạng. Từ đoạn văn đến bài luận, nâng cao khả năng diễn đạt.' }
   ]
@@ -30,11 +25,10 @@ export function WritingHeader({ overview }: WritingHeaderProps) {
   const streakCard: IStreakCardProps = {
     icon: '✍️',
     title: 'Tiến độ viết',
-    value: completionPercent,
     valueText: `${completionPercent}%`,
     progress: completionPercent,
     progressDescription: totalAvailable > 0
-      ? `Đã hoàn thành ${completed}/${totalAvailable} bài viết`
+      ? `Hoàn thành ${completionPercent}%`
       : 'Chưa có bài viết nào',
     color: 'from-teal-500 to-teal-400'
   }
@@ -45,16 +39,15 @@ export function WritingHeader({ overview }: WritingHeaderProps) {
     title: 'Luyện Viết',
     titleHighlight: 'Tiếng Anh',
     badge: ' Sáng tạo',
-    badge2: `✍️ Hoàn thành ${completionPercent}%`,
+    badge2: `✍️ Tiến độ viết ${completionPercent}%`,
     descriptions,
-    buttons,
     background: 'from-teal-500 via-cyan-500 to-blue-200'
   }
 
   const statsOverview: IStatsOverview[] = [
     {
       title: 'Bài viết',
-      value: `${completed}/${totalAvailable}`,
+      value: `${overview?.total ? overview?.total : 0}/${overview?.totalAvailable ?? 0}`,
       change: '',
       Icon: FileText,
       color: 'from-teal-500 to-teal-400'

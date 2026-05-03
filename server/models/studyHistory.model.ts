@@ -5,23 +5,17 @@ export interface IStudyHistory extends Document {
   lessonId: Schema.Types.ObjectId;
   category: 'grammar' | 'vocabulary' | 'reading' | 'listening' | 'speaking' | 'ipa' | 'writing';
 
-  // Results
-  progress: number;               // 0-100
-  duration: number;            // seconds
-  correctAnswers: number;
-  totalQuestions: number;
+  progress: number;
+  duration: number;
 
-  // AI analysis fields
-  weakPoints: string[];        // e.g., ["past-tense", "pronunciation-th"]
+  weakPoints: string[];
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
   status: 'passed' | 'failed' | 'in_progress';
   createdAt: Date;
 
-  // Link to detailed result
   resultId?: Schema.Types.ObjectId[];
   resultModel?: string;
-  resultData?: unknown;
 }
 
 const studyHistorySchema = new Schema<IStudyHistory>({
@@ -50,16 +44,17 @@ const studyHistorySchema = new Schema<IStudyHistory>({
     default: 'in_progress'
   },
 
-  // Link to detailed result (Dynamic ref)
-  resultId: [{ type: Schema.Types.ObjectId, refPath: 'resultModel' }],
+  resultId: [{
+    type: Schema.Types.ObjectId,
+    refPath: 'resultModel'
+  }],
   resultModel: {
     type: String,
-    enum: ['QuizResult', 'WritingUser', 'SpeakingProgress', 'IpaScoring', 'ListeningProgress']
-  },
-  resultData: { type: Schema.Types.Mixed }
+    enum: ['QuizResult', 'WritingUser', 'SpeakingProgress', 'IpaScoring', 'ListeningProgress'],
+    required: true
+  }
 }, { timestamps: true });
 
-// Index for fast query by AI
 studyHistorySchema.index({ userId: 1, createdAt: -1 });
 studyHistorySchema.index({ userId: 1, lessonId: 1, progress: -1 });
 studyHistorySchema.index({ userId: 1, category: 1 });

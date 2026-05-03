@@ -1,7 +1,7 @@
 'use client'
 import { WelcomeSection } from "@/components/common/WelcomeSection"
 import { IStatsOverview, IWelcomeContentProps, IStreakCardProps } from "@/types"
-import { Clock, Flame, Star, PlayCircle, ChartColumn, LucideIcon } from "lucide-react"
+import { Clock, Flame, Star } from "lucide-react"
 import { LessonStatsResponse } from "@/libs/apis/api"
 import SkillsProgress from "./SkillsProgress"
 import StudyTimeStats from "./StudyTimeStats"
@@ -11,23 +11,21 @@ import type { EntertainmentStatsEntry } from '@/features/entertainment'
 import { User } from "@/types/user"
 import { QuickActions } from "./QuickActions"
 import { RecentActivities } from "./RecentActivities"
+import type { RecentActivity, IDailySuggestion } from "../types"
 
 interface DashboardContentProps {
   user: User
   lessonStats: LessonStatsResponse | null
   entertainmentStats: EntertainmentStatsEntry[]
+  recentActivities: RecentActivity[]
+  dailySuggestion: IDailySuggestion | null
 }
 
-export function DashboardContent({ user, lessonStats, entertainmentStats }: DashboardContentProps) {
+export function DashboardContent({ user, lessonStats, entertainmentStats, recentActivities, dailySuggestion }: DashboardContentProps) {
   const streak = user?.currentStreak || 0
   const longestStreak = user?.longestStreak || 0
 
-  const buttons: { type: 'outline' | 'default'; text: string; icon: LucideIcon }[] = [
-    { type: 'outline', text: 'Xem tiến độ', icon: ChartColumn },
-    { type: 'default', text: 'Tiếp tục học', icon: PlayCircle }
-  ]
-
-  const descriptions: { text: string, textHighlight?: string | '' }[] = [
+  const descriptions: { text: string, textHighlight?: string }[] = [
     {
       text: (streak ?? 0) === 0
         ? 'Chào mừng! Hôm nay hãy bắt đầu với'
@@ -48,7 +46,6 @@ export function DashboardContent({ user, lessonStats, entertainmentStats }: Dash
     ? {
       icon: "🌱",
       title: "Bắt đầu chuỗi ngày",
-      value: 0,
       valueText: '0',
       progress: 30,
       progressDescription: "Học một bài hôm nay để khởi động chuỗi!",
@@ -57,7 +54,6 @@ export function DashboardContent({ user, lessonStats, entertainmentStats }: Dash
     : {
       icon: "🔥",
       title: "Chuỗi ngày hiện tại",
-      value: Number(streak ?? 0),
       valueText: String(streak ?? 0),
       progress: 30,
       progressDescription: "Tiếp tục cố gắng nhé!",
@@ -76,7 +72,6 @@ export function DashboardContent({ user, lessonStats, entertainmentStats }: Dash
         ? `🔥 Chuỗi ${streak} ngày | 🏆 Kỷ lục ${longestStreak ?? 0} ngày`
         : `🔥 Chuỗi ${streak ?? 0} ngày`),
     descriptions: descriptions,
-    buttons: buttons,
     background: "from-blue-800 to-blue-500"
   }
 
@@ -147,8 +142,8 @@ export function DashboardContent({ user, lessonStats, entertainmentStats }: Dash
 
       {/* Hành động nhanh & Hoạt động gần đây */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 w-full mt-4">
-        <QuickActions />
-        <RecentActivities />
+        <QuickActions dailySuggestion={dailySuggestion} />
+        <RecentActivities activities={recentActivities} />
       </div>
     </>
   )

@@ -268,14 +268,14 @@ export async function updateQuiz(quizId: string, data: IDataUpdateQuiz): Promise
 
 /*=============== IMPORT / EXPORT ==============*/
 export async function importVocabularyJson(
-  topics: any[],
+  topics: VocabularyTopic[],
   skipErrors: boolean = false
-): Promise<ApiResponse<any>> {
+): Promise<ApiResponse<VocabularyTopic[]>> {
   const response = await AuthorizedAxios.post('/vocabulary/import-json', {
     topics,
     skipErrors,
   })
-  return response.data as ApiResponse<any>
+  return response.data as ApiResponse<VocabularyTopic[]>
 }
 
 export async function exportVocabularyExcel(): Promise<Blob> {

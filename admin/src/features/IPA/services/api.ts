@@ -200,12 +200,12 @@ export async function deleteMultipleExamplesIpa(
 
 /*=============== IPA export/import ==============*/
 
-export async function importIpaJson(ipas: any[], skipErrors: boolean = false): Promise<ApiResponse<any>> {
+export async function importIpaJson(ipas: IIpaCreateData[], skipErrors: boolean = false): Promise<ApiResponse<Ipa>> {
   const response = await AuthorizedAxios.post('/ipa/import-json', {
     ipas,
     skipErrors,
   })
-  return response.data as ApiResponse<any>
+  return response.data as ApiResponse<Ipa>
 }
 
 export async function exportIpaExcel(): Promise<Blob> {

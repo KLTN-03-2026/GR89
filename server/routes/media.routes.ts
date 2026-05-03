@@ -27,6 +27,9 @@ router.delete('/', authenticateTokenAdmin, requireRole(['admin', 'content']), Me
 // TẢI LÊN 1 MEDIA
 router.post('/upload/single', authenticateTokenAdmin, requireRole(['admin', 'content']), upload.single('file'), MediaController.uploadMedia)
 
+// TẢI LÊN ẢNH CHO EDITOR (CHỈ TRẢ VỀ LINK + ID)
+router.post('/upload/editor', authenticateTokenAdmin, requireRole(['admin', 'content']), upload.single('file'), MediaController.uploadEditorImage)
+
 // TẢI LÊN VIDEO
 router.post('/upload/video', authenticateTokenAdmin, requireRole(['admin', 'content']), upload.single('file'), MediaController.uploadMedia)
 

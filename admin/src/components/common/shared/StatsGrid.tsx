@@ -4,7 +4,7 @@ import { StatsCard } from "./StatsCard";
 interface StatsData {
   title: string;
   value: string | number;
-  change: {
+  change?: {
     value: string;
     isPositive: boolean;
   };

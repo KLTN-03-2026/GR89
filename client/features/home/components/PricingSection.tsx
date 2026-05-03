@@ -51,7 +51,6 @@ export function PricingSection() {
       const res = await createPaymentUrl({
         planId,
         couponCode: coupon,
-        returnUrl: `${window.location.origin}/payment/callback`
       })
 
       if (res.success && res.data?.paymentUrl) {
@@ -69,7 +68,7 @@ export function PricingSection() {
     }
   }
 
-  if (user?.isVip) {
+  if (user?.vipStartDate && user?.vipExpireDate && user?.vipExpireDate > new Date()) {
     return null
   }
 

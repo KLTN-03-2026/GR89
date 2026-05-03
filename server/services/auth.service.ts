@@ -7,7 +7,6 @@ import { sendMail } from '../providers/mailer.provider';
 import bcrypt from 'bcrypt';
 import { StreakService } from './streak.service'
 import axios from 'axios';
-import { Plan } from '../models/plan.model';
 
 interface RegisterData {
   fullName: string;
@@ -27,6 +26,10 @@ export interface UserInfo {
   fullName: string;
   email: string;
   avatar: string;
+  dateOfBirth?: Date | null;
+  phone?: string;
+  country?: string;
+  city?: string;
   role: string;
   currentLevel: string;
   currentStreak: number;
@@ -34,9 +37,9 @@ export interface UserInfo {
   totalStudyTime: number;
   totalPoints: number;
   isActive: boolean;
-  isVip: boolean;
   vipPlanId: string;
-  vipStartDate: Date;
+  vipStartDate?: Date;
+  vipExpireDate?: Date
 }
 
 interface AuthResponse {
@@ -56,21 +59,21 @@ export class AuthService {
     if (!user) {
       throw new ErrorHandler('Không tìm thấy người dùng', 404);
     }
-
-    //Lấy avatar media
-    const avatar = await Media.findById(user.avatar)
-
     return {
       user: {
         _id: (user._id as any).toString(),
         fullName: user.fullName,
         email: user.email,
-        avatar: avatar?.url || '',
+        avatar: user.avatar || '',
+        dateOfBirth: user.dateOfBirth || null,
+        phone: user.phone || '',
+        country: user.country || '',
+        city: user.city || '',
         role: user.role,
         isActive: user.isActive,
-        isVip: user.isVip || false,
         vipPlanId: user.vipPlanId?.toString() || '',
         vipStartDate: user.vipStartDate || null,
+        vipExpireDate: user.vipExpireDate || null,
       } as unknown as UserInfo
     };
   }
@@ -157,7 +160,7 @@ export class AuthService {
     user.resetPasswordExpires = expires;
     await user.save();
 
-    const resetUrl = `${process.env.APP_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const resetUrl = `${process.env.CLIENT_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
     await sendMail({
       to: email,
       subject: 'Đặt lại mật khẩu',
@@ -216,9 +219,6 @@ export class AuthService {
     const updatedUser = await User.findById(user._id)
     if (!updatedUser) throw new ErrorHandler('User không tồn tại', 404)
 
-    //Lấy avatar media
-    const avatar = await Media.findById(updatedUser.avatar)
-
     //Tạo JWT tokens
     const accessToken = JWTUtils.generateAccessToken((updatedUser._id as any).toString());
     const refreshToken = JWTUtils.generateRefreshToken((updatedUser._id as any).toString());
@@ -229,10 +229,14 @@ export class AuthService {
         _id: (user._id as any).toString(),
         fullName: user.fullName,
         email: user.email,
-        avatar: avatar?.url || '/images/avatar-default.jpg',
+        avatar: user.avatar || '',
+        dateOfBirth: user.dateOfBirth || null,
+        phone: user.phone || '',
+        country: user.country || '',
+        city: user.city || '',
         role: user.role,
         isActive: user.isActive,
-        isVip: user.isVip || false,
+        vipExpireDate: user.vipExpireDate || null,
         vipPlanId: user.vipPlanId?.toString() || '',
         vipStartDate: user.vipStartDate || null,
       } as unknown as UserInfo,
@@ -288,9 +292,13 @@ export class AuthService {
         fullName: existingUser.fullName,
         email: existingUser.email,
         avatar: existingUser.avatar || '/images/avatar-default.jpg',
+        dateOfBirth: existingUser.dateOfBirth || null,
+        phone: existingUser.phone || '',
+        country: existingUser.country || '',
+        city: existingUser.city || '',
         role: existingUser.role,
         isActive: existingUser.isActive,
-        isVip: existingUser.isVip || false,
+        vipExpireDate: existingUser.vipExpireDate || null,
         vipPlanId: existingUser.vipPlanId?.toString() || '',
         vipStartDate: existingUser.vipStartDate || null,
       } as unknown as UserInfo,
@@ -341,9 +349,13 @@ export class AuthService {
       fullName: newUser.fullName,
       email: newUser.email,
       avatar: '',
+      dateOfBirth: newUser.dateOfBirth || null,
+      phone: newUser.phone || '',
+      country: newUser.country || '',
+      city: newUser.city || '',
       role: newUser.role,
       isActive: newUser.isActive,
-      isVip: newUser.isVip || false,
+      vipExpireDate: newUser.vipExpireDate || null,
       vipPlanId: newUser.vipPlanId?.toString() || '',
       vipStartDate: newUser.vipStartDate || null,
     } as unknown as UserInfo

@@ -4,11 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import { submitWriting } from '@/features/writing/services/writingApi'
-import { resultWriting } from '@/types'
 import { Edit3, Loader2, RefreshCw, Send } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { notifyStreakIncrease } from '@/libs/streakToast'
 import { useStudySession } from '@/libs/hooks/useStudySession'
+import { resultWriting } from '../../types'
 
 interface props {
   minWords: number
@@ -46,7 +45,6 @@ export default function WritingEditorCard({ minWords, setResult, _id }: props) {
     submitWriting(_id, { content: essay }, studySession)
       .then(async (res) => {
         setResult(res.data as unknown as resultWriting)
-        await notifyStreakIncrease()
       })
       .finally(() => {
         setIsLoading(false)

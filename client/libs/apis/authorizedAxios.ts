@@ -7,13 +7,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 let isRefreshing = false
 let pendingRequests: (() => void)[] = []
 
-// =========================
-//  UTILITY FUNCTIONS
-// =========================
+export const AuthorizedAxios = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+})
 
-/**
- * Dịch các message lỗi tiếng Anh phổ biến sang tiếng Việt
- */
 function translateErrorMessage(message: string): string {
   const translations: Record<string, string> = {
     "Duplicate title entered": "Tiêu đề đã tồn tại",
@@ -166,7 +164,7 @@ api.interceptors.response.use(
         pendingRequests = []
 
         // Refresh hết hạn → logout
-        await api.post('/auth/logout', { role: 'user' })
+        await api.post('/auth/logout')
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
         window.location.href = "/login"
 

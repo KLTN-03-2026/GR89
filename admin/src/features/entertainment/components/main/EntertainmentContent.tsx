@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { DataTable } from '@/components/common'
 import { columnsEntertainment } from '@/features/entertainment'
 import { getEntertainmentPaginated, deleteManyEntertainment, updateMultipleEntertainmentStatus } from '../../services/api'
@@ -7,7 +7,27 @@ import type { Entertainment } from '../../types'
 import { toast } from 'react-toastify'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Loader2, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Loader2, Trash2, Eye, EyeOff, Filter, ChevronDown } from 'lucide-react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import FiltersPanel from './FiltersPanel'
+
+// Custom hook for debouncing
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface Props {
   refresh: boolean
@@ -18,7 +38,28 @@ interface Props {
 }
 
 export default function EntertainmentContent({ refresh, callback, type, parentId, onManageEpisodes }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const rawSortBy = searchParams.get('sortBy')
+  const rawSortOrder = searchParams.get('sortOrder')
+  const rawIsActive = searchParams.get('isActive')
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = [5, 10, 20, 50].includes(Number(searchParams.get('limit'))) ? Number(searchParams.get('limit')) : 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
+  const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') : 'orderIndex'
+  const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
+
+  const [isLoading, setIsLoading] = useState(false)
   const [items, setItems] = useState<Entertainment[]>([])
+  const [total, setTotal] = useState(0)
+  const [pages, setPages] = useState(0)
+  const [search, setSearch] = useState(urlSearch)
+  const [showFilters, setShowFilters] = useState(false)
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0)
   const [selectedRows, setSelectedRows] = useState<Entertainment[]>([])
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -26,16 +67,83 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
   const [loadingAction, setLoadingAction] = useState(false)
 
-  const fetchData = async () => {
-    const params: any = { page: 1, limit: 100, type: type === 'series' || type === 'episode' ? undefined : type }
-    if (parentId) params.parentId = parentId
-    await getEntertainmentPaginated(params).then((res) => setItems(res.data))
-  }
+  // Debounce search input
+  const debouncedSearch = useDebounce(search, 500)
+
+  useEffect(() => {
+    if (urlSearch !== debouncedSearch) {
+      setSearch(urlSearch)
+    }
+  }, [urlSearch, debouncedSearch])
+
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const params: any = {
+        page: urlPage,
+        limit: urlLimit,
+        search: urlSearch || undefined,
+        sortBy: urlSortBy,
+        sortOrder: urlSortOrder,
+        status: urlIsActive,
+        type: type === 'series' || type === 'episode' ? undefined : type
+      }
+      if (parentId) params.parentId = parentId
+
+      const res = await getEntertainmentPaginated(params)
+      setItems(res.data || [])
+      setTotal(res.pagination?.total || 0)
+      setPages(res.pagination?.pages || 0)
+    } catch (error) {
+      console.error('❌ Error fetching:', error)
+      setItems([])
+    } finally {
+      setIsLoading(false)
+    }
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, type, parentId])
 
   useEffect(() => {
     fetchData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refresh, type, parentId])
+  }, [fetchData, refresh])
+
+  useEffect(() => {
+    let count = 0
+    if (urlSearch) count++
+    if (urlIsActive !== undefined) count++
+    if (urlSortBy !== 'orderIndex') count++
+    if (urlSortOrder !== 'asc') count++
+    setActiveFiltersCount(count)
+  }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || (pages && newPage > pages)) {
+      return
+    }
+    updateUrl({ page: newPage })
+  }
+
+  const handleSearch = (value: string) => {
+    setSearch(value)
+  }
 
   const handleDeleteMultiple = (ids: string[]) => {
     if (ids.length === 0) {
@@ -107,8 +215,56 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
 
   return (
     <>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 ml-auto">
+          {activeFiltersCount > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              <Filter className="h-3 w-3" />
+              {activeFiltersCount} bộ lọc
+            </Badge>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Bộ lọc
+            {showFilters ? <ChevronDown className="h-4 w-4 rotate-180" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {showFilters && (
+        <FiltersPanel
+          urlIsActive={urlIsActive}
+          urlSortBy={urlSortBy}
+          urlSortOrder={urlSortOrder}
+          urlLimit={urlLimit}
+          updateUrl={updateUrl}
+          search={search}
+          setSearch={setSearch}
+          handleSearch={handleSearch}
+          activeFiltersCount={activeFiltersCount}
+          setShowFilters={setShowFilters}
+          itemsLength={items.length}
+          total={total}
+        />
+      )}
+
       <DataTable
         data={items}
+        isLoading={isLoading}
+        serverSidePagination
+        pagination={{
+          page: urlPage,
+          limit: urlLimit,
+          total: total,
+          pages: pages
+        }}
+        onPageChange={handlePageChange}
+        onSearch={handleSearch}
         columns={columnsEntertainment(() => {
           fetchData()
           callback()

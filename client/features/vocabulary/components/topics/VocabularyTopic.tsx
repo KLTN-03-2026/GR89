@@ -1,7 +1,7 @@
 'use client'
 import CardVocabularyTopic from "./CardVocabularyTopic";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { VocabularyTopics } from "@/types/vocabulary";
+import { VocabularyTopics } from "../../types";
 import { BookOpen, Layers } from "lucide-react";
 
 interface VocabularyTopicProps {

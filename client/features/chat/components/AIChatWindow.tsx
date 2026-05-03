@@ -18,6 +18,7 @@ export default function AIChatWindow({ onClose, setOpenChat }: AIChatWindowProps
   const [isMinimized, setIsMinimized] = useState(false)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isLoadingChat, setIsLoadingChat] = useState(false)
 
   const {
     isLoadingPrompt,
@@ -34,8 +35,10 @@ export default function AIChatWindow({ onClose, setOpenChat }: AIChatWindowProps
   const handleSend = async () => {
     if (!input.trim() || isLoadingPrompt) return
 
-    sendMessage(input)
+    setIsLoadingChat(true)
     setInput('')
+    await sendMessage(input)
+    setIsLoadingChat(false)
   }
 
   if (isMinimized) {
@@ -65,7 +68,7 @@ export default function AIChatWindow({ onClose, setOpenChat }: AIChatWindowProps
         value={input}
         onChange={setInput}
         onSend={handleSend}
-        disabled={isLoadingPrompt}
+        disabled={isLoadingPrompt || isLoadingChat}
       />
     </div>
   )

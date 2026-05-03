@@ -148,18 +148,27 @@ export function DialogAddVideo({ onLoad }: { onLoad?: () => void }) {
     <Card className="h-full flex flex-col min-h-[200px]">
       <CardContent className="flex flex-col h-full">
         <Tabs defaultValue="upload" className="w-full h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upload" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Upload File
+          <TabsList className="grid w-full grid-cols-3 h-auto gap-1 p-1">
+            <TabsTrigger value="upload" className="min-w-0 px-2 py-1.5 text-xs sm:text-sm">
+              <span className="hidden sm:inline-flex items-center gap-1">
+                <Upload className="w-4 h-4" />
+                File
+              </span>
+              <span className="sm:hidden">Upload</span>
             </TabsTrigger>
-            <TabsTrigger value="youtube" className="flex items-center gap-2">
-              <Link className="w-4 h-4" />
-              YouTube Link
+            <TabsTrigger value="youtube" className="min-w-0 px-2 py-1.5 text-xs sm:text-sm">
+              <span className="hidden sm:inline-flex items-center gap-1">
+                <Link className="w-2 h-2" />
+                YouTube
+              </span>
+              <span className="sm:hidden">YouTube</span>
             </TabsTrigger>
-            <TabsTrigger value="vimeo" className="flex items-center gap-2">
-              <Link className="w-4 h-4" />
-              Vimeo Link
+            <TabsTrigger value="vimeo" className="min-w-0 px-2 py-1.5 text-xs sm:text-sm">
+              <span className="hidden sm:inline-flex items-center gap-1">
+                <Link className="w-2 h-2" />
+                Vimeo
+              </span>
+              <span className="sm:hidden">Vimeo</span>
             </TabsTrigger>
           </TabsList>
 

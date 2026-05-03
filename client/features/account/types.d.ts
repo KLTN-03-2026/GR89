@@ -2,13 +2,13 @@ export interface UserProfile {
   _id: string
   fullName: string
   email: string
-  avatar?: { _id: string; url: string } | string
+  avatar?: string
   role: string
   currentStreak?: number
   longestStreak?: number
   totalStudyTime?: number
   totalPoints?: number
-  isVip?: boolean
+  vipExpireDate?: Date | null
   vipPlanId?: string
   vipStartDate?: Date | null
 }

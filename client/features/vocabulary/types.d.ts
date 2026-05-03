@@ -11,6 +11,7 @@ export interface VocabularyTopics {
   isCompleted: boolean
   point: number
   isResult: boolean
+  level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
   vocabularies: Vocabulary[]
 }
 

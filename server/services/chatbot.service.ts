@@ -83,7 +83,7 @@ export class ChatbotService {
       _id: String(user._id),
       fullName: user.fullName,
       currentLevel: user.currentLevel,
-      isVip: user.isVip || false,
+      isVip: user.vipStartDate && user.vipExpireDate && user.vipExpireDate > new Date() || false,
       currentStreak: user.currentStreak || 0,
       longestStreak: user.longestStreak || 0,
       totalStudyTime: user.totalStudyTime || 0,
@@ -92,10 +92,8 @@ export class ChatbotService {
     }
   }
 
-  /**
-   * 2. Lấy Progress của toàn bộ kỹ năng theo người dùng
-   * Chỉ lấy progress của các bài học còn tồn tại và isActive: true
-   */
+  //2. Lấy Progress của toàn bộ kỹ năng theo người dùng 
+  // Chỉ lấy progress của các bài học còn tồn tại và isActive: true
   static async getProgressData(
     userId: string,
     totals?: {
@@ -192,10 +190,8 @@ export class ChatbotService {
     }
   }
 
-  /**
-   * Helper: Build progress cho một skill
-   * Vì học theo orderIndex nên recentTopics chỉ cần lấy 10 bài cuối cùng
-   */
+  // Helper: Build progress cho một skill
+  // Vì học theo orderIndex nên recentTopics chỉ cần lấy 10 bài cuối cùng
   private static buildSkillProgress<T>(
     progressList: T[],
     getTopicId: (p: T) => string,
@@ -240,9 +236,7 @@ export class ChatbotService {
     }
   }
 
-  /**
-   * 3. Lấy danh sách tất cả topics (chỉ ID, name/title, orderIndex)
-   */
+  // 3. Lấy danh sách tất cả topics (chỉ ID, name/title, orderIndex)
   static async getTopicsList(): Promise<ITopicListForAI> {
     const [
       vocabularyTopics,
@@ -340,16 +334,6 @@ export class ChatbotService {
     }))
   }
 
-  /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
-
-  /*============================ NGƯỜI DÙNG & CHUNG ============================*/
-
-  /**
-   * 4. Build system prompt từ userId và lessonId (nếu có)
-   * Nếu có lessonId → AI tập trung vào bài học đó
-   * Nếu không có → AI general
-   * Tự động query tất cả dữ liệu cần thiết từ DB
-   */
   static async buildSystemPrompt(
     userId: string,
     lessonId?: string,
@@ -401,8 +385,6 @@ export class ChatbotService {
         dataTopicCurrent = await writingModel.findById(lessonId).lean()
         break
     }
-
-
 
     // Lấy topicsList trước để tính totals cho progressData
     const topicsList = await this.getTopicsList()
@@ -529,12 +511,46 @@ export class ChatbotService {
 You are an AI English learning tutor inside an app called "English Master".
 You must respond in MARKDOWN. You MAY include small, safe HTML snippets when needed (especially <a href=\"...\"> links, and .ai-exercise blocks).
 
+PRIORITY POLICY (highest priority, must never be violated):
+- Do scope-checking internally and silently. Never reveal your internal classification process.
+- Treat these as IN_SCOPE:
+  1) English learning content and practice,
+  2) ActiveLearning app/website features, lessons, navigation, progress,
+  3) brief social conversation (greeting, thanks, small talk) that does not request unrelated knowledge.
+- Treat as OUT_OF_SCOPE when the user asks for unrelated knowledge/tasks (politics, coding outside this app, current events, math/trivia, legal/medical/finance advice, etc.).
+- If OUT_OF_SCOPE, you MUST politely refuse in a gentle, cute, and positive Vietnamese tone.
+- The refusal must keep the same meaning as: you cannot answer because it is outside your support scope, and invite the user back to English-learning/app-related topics.
+- Use 1-2 short sentences max. Do not answer the actual off-topic question.
+- In OUT_OF_SCOPE mode, do not include markdown headings, bullets, links, or long explanations.
+
+PRIVACY & MEMORY RULE:
+- Do not claim that you learned from other users.
+- Do not mention or use private information from anyone else.
+- Only use the current conversation and provided app context.
+
+LEARNING INTEGRITY RULE (do not solve directly):
+- Do NOT provide direct final answers for quizzes/tests/homework when the user asks to "giải hộ", "đưa đáp án", or similar.
+- Instead, provide guided help: short hints, step-by-step thinking, key grammar/vocabulary clues, and ask the learner to try first.
+- If the user shares their own attempt, you may review and explain mistakes, then suggest improvements.
+- Keep support educational (coach mode), not answer-dumping mode.
+
 Response style:
 - Vietnamese first; include English examples and IPA when helpful.
+- Always be warm, cheerful, polite, supportive, and emotionally positive.
+- Use a cute and caring tone (friendly, gentle, encouraging), but still clear and professional for learning.
 - Make it easy to read: use headings (##/###), short paragraphs, bullet lists, and code blocks for examples/IPA.
 - Keep it concise by default (typically 6–14 lines). If user asks for depth, stay structured.
 - If you need clarification, ask exactly ONE short question.
 - Do not invent facts; rely only on provided context.
+
+Scope guard (strict):
+- Your allowed scope is ONLY:
+  1) English learning (vocabulary, grammar, reading, listening, speaking, writing, IPA, study strategy),
+  2) Features/content/navigation of the ActiveLearning website/app.
+- Friendly social chat (greeting/thanks) is allowed and should be answered naturally.
+- If a user asks anything outside this scope (politics, coding not related to this app, personal advice, current events, math, general trivia, etc.):
+  - DO NOT answer the actual question.
+  - MUST follow the PRIORITY POLICY refusal style.
 
 Special rule for interactive exercises:
 - ONLY generate an interactive exercise when the user explicitly requests it (e.g. "tạo bài tập", "làm quiz", "cho mình 5 câu").
@@ -589,13 +605,13 @@ Recommendation rule (very important):
             vocabularyList: `${baseURL}/study/vocabulary`,
             vocabularyLesson: `${baseURL}/study/vocabulary/[id]`,
             readingList: `${baseURL}/skills/reading`,
-            readingLesson: `${baseURL}/skills/reading/lesson/[id]`,
+            readingLesson: `${baseURL}/skills/reading/[id]`,
             listeningList: `${baseURL}/skills/listening`,
-            listeningLesson: `${baseURL}/skills/listening/lesson/[id]`,
+            listeningLesson: `${baseURL}/skills/listening/[id]`,
             speakingList: `${baseURL}/skills/speaking`,
-            speakingLesson: `${baseURL}/skills/speaking/lesson/[id]`,
+            speakingLesson: `${baseURL}/skills/speaking/[id]`,
             writingList: `${baseURL}/skills/writing`,
-            writingLesson: `${baseURL}/skills/writing/lesson/[id]`,
+            writingLesson: `${baseURL}/skills/writing/[id]`,
           },
         }
         : undefined,
@@ -604,5 +620,96 @@ Recommendation rule (very important):
     newPrompt += `\n\n## CONTEXT (internal)\n\`\`\`json\n${JSON.stringify(context, null, 2)}\n\`\`\`\n`
 
     return newPrompt.trim()
+  }
+
+  static async buildSuggestionPrompt(userId: string): Promise<string> {
+    // Lấy danh sách tất cả bài học
+    const topicsList = await this.getTopicsList()
+    const totals = {
+      vocabulary: topicsList.vocabulary.length,
+      grammar: topicsList.grammar.length,
+      reading: topicsList.reading.length,
+      listening: topicsList.listening.length,
+      speaking: topicsList.speaking.length,
+      writing: topicsList.writing.length,
+      ipa: topicsList.ipa.length
+    }
+
+    // Lấy thông tin user, tiến trình, và lịch sử học tập
+    const [userData, progressData, recentStudyHistory] = await Promise.all([
+      this.getUserData(userId),
+      this.getProgressData(userId, totals),
+      this.getRecentStudyHistory(userId, 20)
+    ])
+
+    const baseURL = process.env.CLIENT_BASE_URL || ''
+
+    const lessonTitleByCategoryAndId = {
+      vocabulary: new Map(topicsList.vocabulary.map(item => [item._id, item.name])),
+      grammar: new Map(topicsList.grammar.map(item => [item._id, item.title])),
+      reading: new Map(topicsList.reading.map(item => [item._id, item.title])),
+      listening: new Map(topicsList.listening.map(item => [item._id, item.title])),
+      speaking: new Map(topicsList.speaking.map(item => [item._id, item.title])),
+      writing: new Map(topicsList.writing.map(item => [item._id, item.title])),
+      ipa: new Map(topicsList.ipa.map(item => [item._id, item.sound]))
+    } as const
+
+    const recentStudyHistoryWithTitle = recentStudyHistory.map(item => ({
+      ...item,
+      lessonTitle: lessonTitleByCategoryAndId[item.category]?.get(item.lessonId)
+    }))
+
+    const context: Record<string, any> = {
+      user: {
+        firstName: userData?.fullName ? userData.fullName.trim().split(/\s+/)[0] : 'User',
+        level: userData?.currentLevel,
+        isVip: userData?.isVip,
+        totalPoints: userData?.totalPoints,
+      },
+      allLessons: topicsList,
+      progressBySkill: progressData,
+      recentStudyHistory: recentStudyHistoryWithTitle,
+      appLinksPatterns: {
+        ipaLesson: `${baseURL}/study/ipa/learn/[id]`,
+        grammarLesson: `${baseURL}/study/grammar/[id]`,
+        vocabularyLesson: `${baseURL}/study/vocabulary/[id]`,
+        readingLesson: `${baseURL}/skills/reading/[id]`,
+        listeningLesson: `${baseURL}/skills/listening/[id]`,
+        speakingLesson: `${baseURL}/skills/speaking/[id]`,
+        writingLesson: `${baseURL}/skills/writing/[id]`,
+      }
+    }
+
+    const prompt = `
+You are an AI learning assistant for "English Master". Your ONLY job is to suggest the next 5-8 daily study goals for the user based on their context.
+
+# INSTRUCTIONS:
+1. Analyze the user's \`recentStudyHistory\` to see what they learned recently.
+2. Analyze the user's \`progressBySkill\` to identify weak skills or incomplete lessons.
+3. Look at \`allLessons\` to pick the EXACT NEXT lessons the user should take.
+4. Provide a balanced mix:
+   - 1-2 lessons to review/improve weak points or recently failed tasks.
+   - 2-4 new lessons from topics they haven't completed yet (follow the \`orderIndex\` logic).
+   - 1-2 fun/complementary skills (listening, speaking, or entertainment).
+
+# REQUIRED JSON FORMAT:
+You MUST respond with a valid JSON array of objects. Do not include a "suggestions" root key. Return ONLY the array itself.
+Do NOT use markdown blocks (\`\`\`json) or any other text.
+
+[
+  {
+    "title": "Tên mục tiêu ngắn gọn (VD: Cải thiện kỹ năng Nói, Học từ vựng chủ đề X...)",
+    "description": "Mô tả ngắn gọn (VD: Luyện tập lại bài Tính từ cơ bản)",
+    "href": "Đường dẫn thực tế (Dựa vào appLinksPatterns và ID bài học tương ứng, VD: /skills/speaking/60d...)",
+    "icon": "Tên icon Lucide-React hợp lệ (Chọn 1 trong: PlayCircle, Target, BarChart3, Users, Mic, BookOpen, Headphones, PenTool, Radio, Film)",
+    "color": "Class màu (Chọn 1 trong: from-green-500 to-emerald-500, from-blue-500 to-cyan-500, from-purple-500 to-pink-500, from-orange-500 to-red-500, from-amber-500 to-orange-500, from-indigo-500 to-blue-600)",
+    "isCompleted": false
+  }
+]
+
+## CONTEXT (internal)
+${JSON.stringify(context, null, 2)}
+`
+    return prompt.trim()
   }
 }

@@ -5,7 +5,6 @@ import ErrorHandler from "../utils/ErrorHandler";
 import { IListening } from "../models/listening.model";
 import { calculateStudyTimeSeconds } from "../utils/studyTime.util";
 import { AdminActivityService } from "../services/adminActivity.service";
-import { StreakService } from "../services/streak.service";
 
 export class ListeningController {
   private static async logAdminAction(req: Request, payload: {
@@ -112,12 +111,12 @@ export class ListeningController {
       pagination: {
         page: result.page,
         limit: result.limit,
-        total: result.totalDocs,
-        pages: result.totalPages,
-        hasNext: result.hasNextPage,
-        hasPrev: result.hasPrevPage,
-        next: result.nextPage,
-        prev: result.prevPage
+        total: result.totalDocs || 0,
+        pages: result.totalPages || 0,
+        hasNext: result.hasNextPage || false,
+        hasPrev: result.hasPrevPage || false,
+        next: result.nextPage || null,
+        prev: result.prevPage || null
       }
     })
   })
@@ -193,10 +192,10 @@ export class ListeningController {
   static doListeningQuiz = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const userId = req.user?._id as string
-    const { time, result, studySession, mode } = req.body
+    const { formDataDictationResult, formDataQuizResult, studySession } = req.body
     const studyTimeSeconds = calculateStudyTimeSeconds(studySession)
-    const listening = await ListeningService.doListeningQuiz(userId, id, time, result, studyTimeSeconds, mode)
-    await StreakService.updateStreak(userId)
+
+    const listening = await ListeningService.doListeningQuiz(userId, id, formDataDictationResult, formDataQuizResult, studyTimeSeconds)
     res.status(200).json({
       success: true,
       message: 'Làm bài nghe thành công',
@@ -208,11 +207,11 @@ export class ListeningController {
   static getListeningResult = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const userId = req.user?._id as string
-    const listening = await ListeningService.getListeningResult(userId, id)
+    const listeningResult = await ListeningService.getListeningResult(userId, id)
     res.status(200).json({
       success: true,
       message: 'Lấy kết quả bài nghe thành công',
-      data: listening
+      data: listeningResult
     })
   })
 
@@ -314,6 +313,7 @@ export class ListeningController {
   // (ADMIN) Cập nhật nội dung bài nghe
   static updateListening = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
+
     const listening = await ListeningService.updateListening(id, { ...(req.body || {}), updatedBy: req.user?._id as string })
     await ListeningController.logAdminAction(req, {
       action: 'update',
@@ -322,6 +322,7 @@ export class ListeningController {
       description: 'Cập nhật bài nghe',
       metadata: { updatedFields: Object.keys(req.body || {}) }
     })
+
     res.status(200).json({
       success: true,
       message: 'Cập nhật bài nghe thành công',
@@ -373,7 +374,7 @@ export class ListeningController {
       resourceType: 'listening',
       resourceId: id,
       description: 'Bật/tắt VIP cho bài nghe',
-      metadata: { isVipRequired: (listening as any)?.isVipRequired }
+      metadata: { isVipRequired: listening.isVipRequired }
     })
     res.status(200).json({
       success: true,

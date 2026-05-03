@@ -23,7 +23,8 @@ router.delete("/bulk-delete", authenticateTokenAdmin, requireRole(["admin", "con
 
 router.get("/user", authenticateTokenUser, requireRole(["user"]), GrammarController.getAllTopicsByUser);
 router.get("/topic-user/:id/quizzes", authenticateTokenUser, requireRole(["user"]), checkVipContentUser('grammar'), GrammarController.getGrammarQuizForUser);
-router.post("/quizzes/:id/do", authenticateTokenUser, requireRole(["user"]),checkVipContentUser('grammar'), GrammarController.doGrammarQuiz);
+router.post("/quizzes/:id/do", authenticateTokenUser, requireRole(["user"]), checkVipContentUser('grammar'), GrammarController.doGrammarQuiz);
+router.get("/quizzes/:id/result", authenticateTokenUser, requireRole(["user"]), checkVipContentUser('grammar'), GrammarController.getGrammarQuizResult);
 
 /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 

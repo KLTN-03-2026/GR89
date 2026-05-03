@@ -29,8 +29,9 @@ export function AppSidebar() {
           'Bảng điều khiển',
           'Quản lý học tập',
           'Thư viện nội dung',
-          'Quản lý media'
-          // Lưu ý: 'Giải trí' tạm thời ẩn vì backend chưa implement
+          'Quản lý media',
+          'Giải trí',
+          'Trung tâm Đào tạo'
         ]
         return allowedGroups.includes(group.title)
       }).map(group => {
@@ -81,17 +82,17 @@ export function AppSidebar() {
             title="icon"
             src='/images/logo.png'
             alt="logo"
-            width={40}
-            height={40}
-            className="min-w-[32px] min-h-[32px] w-8 h-8 object-contain"
+            width={60}
+            height={60}
+            className="min-w-32px min-h-32px w-10 h-10 object-contain"
           />
 
           <div>
-            <h1 className="font-bold text-lg bg-gradient-to-r from-[#FF6B35] to-[#4A90E2] bg-clip-text text-transparent">
+            <h1 className="font-bold text-lg bg-linear-to-r from-[#FF6B35] to-[#4A90E2] bg-clip-text text-transparent">
               {user?.role === 'content' ? 'CONTENT' : 'ADMIN'}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {user?.role === 'content' ? 'Content Manager' : 'Admin'} English Mastery
+              {user?.role === 'content' ? 'Content Manager' : 'Admin'} ActiveLearning
             </p>
           </div>
         </div>
@@ -129,7 +130,7 @@ export function AppSidebar() {
                   {routeGroup.subItems.map((item, itemIndex) => (
                     <SidebarMenuSubItem key={itemIndex}>
                       <SidebarMenuSubButton
-                        className={`cursor-pointer ${itemActive === item.title ? 'bg-black text-white hover:bg-black hover:text-white' : ''}`}
+                        className={`cursor-pointer ${itemActive === item.title ? 'bg-blue-700 text-white hover:bg-blue-600 hover:text-white' : ''}`}
                         asChild
                         onClick={() => setItemActive(item.title)}
                       >

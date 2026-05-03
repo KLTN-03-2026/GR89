@@ -69,7 +69,7 @@ export default function CardSpeakingTopic({ topic }: CardSpeakingTopicProps) {
       </PopoverTrigger>
 
       <EnhancedPopover
-        href={`/skills/speaking/lesson/${topic._id}`}
+        href={`/skills/speaking/${topic._id}`}
         skill="speaking"
         isCompleted={topic.isCompleted || !!topic.isResult}
         resultId={topic._id}

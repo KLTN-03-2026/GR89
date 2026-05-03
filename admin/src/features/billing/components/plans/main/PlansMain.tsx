@@ -4,12 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/common"
 import { columnsPlans, PlanRow } from "../table/PlansColumn"
-import { Download, Upload, Eye, EyeOff, LayoutGrid, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
+import { Eye, EyeOff, LayoutGrid, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
 import {
   getPlansPaginated,
   updateManyPlansStatus,
-  exportPlanExcel,
-  importPlanExcel,
   PlanQueryParams
 } from "@/lib/apis/api"
 import { toast } from "react-toastify"
@@ -25,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -42,19 +41,35 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function PlansMain() {
+interface PlansMainProps {
+  initialData: PlanRow[]
+  pagination: {
+    total: number
+    pages: number
+    page: number
+    limit: number
+  }
+}
+
+export function PlansMain({ initialData, pagination: initialPagination }: PlansMainProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [plans, setPlans] = useState<PlanRow[]>([])
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
-  const [search, setSearch] = useState("")
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
-  const [displayType, setDisplayType] = useState<"default" | "vip" | "premium" | "all">("all")
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly" | "lifetime" | "all">("all")
-  const [sortBy] = useState<string>("sortOrder")
-  const [sortOrder] = useState<'asc' | 'desc'>('asc')
+  const [plans, setPlans] = useState<PlanRow[]>(initialData)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = Number(searchParams.get('limit')) || 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = searchParams.get('isActive') === 'true' ? true : searchParams.get('isActive') === 'false' ? false : undefined
+  const urlDisplayType = searchParams.get('displayType') || "all"
+  const urlBillingCycle = searchParams.get('billingCycle') || "all"
+  const urlSortBy = searchParams.get('sortBy') || "sortOrder"
+  const urlSortOrder = (searchParams.get('sortOrder') === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc'
+
+  const [total, setTotal] = useState(initialPagination.total)
+  const [pages, setPages] = useState(initialPagination.pages)
+  const [search, setSearch] = useState(urlSearch)
   const [selectedRows, setSelectedRows] = useState<PlanRow[]>([])
   const [openPublishDialog, setOpenPublishDialog] = useState(false)
   const [publishAction, setPublishAction] = useState<'publish' | 'unpublish'>('publish')
@@ -64,13 +79,29 @@ export function PlansMain() {
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
 
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '' || value === 'all') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
   const fetchPlans = useCallback(async (params: PlanQueryParams) => {
     setIsLoading(true)
     try {
       const res = await getPlansPaginated(params)
       setPlans(res.data.map(p => ({ ...p, active: p.isActive })))
-      setPage(res.pagination.page)
-      setLimit(res.pagination.limit)
       setTotal(res.pagination.total)
       setPages(res.pagination.pages)
     } catch (error: unknown) {
@@ -83,18 +114,18 @@ export function PlansMain() {
   }, [])
 
   useEffect(() => {
-    const params: PlanQueryParams = {
-      page,
-      limit,
-      search: debouncedSearch,
-      sortBy,
-      sortOrder,
-      isActive: isActive,
-      displayType: displayType !== "all" ? displayType : undefined,
-      billingCycle: billingCycle !== "all" ? billingCycle : undefined,
-    }
-    fetchPlans(params)
-  }, [page, limit, debouncedSearch, sortBy, sortOrder, isActive, displayType, billingCycle, fetchPlans, refreshKey])
+    // Luôn fetch khi URL thay đổi để đồng bộ dữ liệu
+    fetchPlans({
+      page: urlPage,
+      limit: urlLimit,
+      search: urlSearch,
+      sortBy: urlSortBy,
+      sortOrder: urlSortOrder,
+      isActive: urlIsActive,
+      displayType: urlDisplayType !== "all" ? urlDisplayType as any : undefined,
+      billingCycle: urlBillingCycle !== "all" ? urlBillingCycle as any : undefined,
+    })
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, urlDisplayType, urlBillingCycle, fetchPlans, refreshKey])
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(prev => prev + 1)
@@ -118,33 +149,6 @@ export function PlansMain() {
       toast.error(err?.response?.data?.message || 'Không thể cập nhật trạng thái')
     } finally {
       setLoadingAction(false)
-    }
-  }
-
-  const handleExport = async () => {
-    try {
-      const blob = await exportPlanExcel()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `plans_${new Date().toISOString().split('T')[0]}.xlsx`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Xuất Excel thành công')
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Không thể xuất Excel')
-    }
-  }
-
-  const handleImport = async (file: File) => {
-    try {
-      const result = await importPlanExcel(file, false)
-      toast.success(`Import thành công: ${result.data?.created} tạo mới, ${result.data?.updated} cập nhật`)
-      setRefreshKey(prev => prev + 1)
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err?.response?.data?.message || 'Không thể import Excel')
     }
   }
 
@@ -192,24 +196,6 @@ export function PlansMain() {
           <p className="text-gray-500 font-medium">Quản lý các gói dịch vụ và quyền lợi người dùng.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExport} className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-            <Download className="w-4 h-4 mr-2 text-gray-400" />
-            Xuất Excel
-          </Button>
-          <label className="cursor-pointer">
-            <Button variant="outline" asChild className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-              <span><Upload className="w-4 h-4 mr-2 text-gray-400" /> Nhập Excel</span>
-            </Button>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleImport(file)
-              }}
-            />
-          </label>
           <SheetAddPlan callback={handleRefresh} />
         </div>
       </div>
@@ -262,7 +248,7 @@ export function PlansMain() {
                 className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[250px] transition-all font-medium"
               />
             </div>
-            <Select value={isActive === undefined ? "all" : isActive ? "active" : "inactive"} onValueChange={(v) => setIsActive(v === "all" ? undefined : v === "active")}>
+            <Select value={urlIsActive === undefined ? "all" : urlIsActive ? "active" : "inactive"} onValueChange={(v) => updateUrl({ isActive: v === "all" ? undefined : v === "active", page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
@@ -272,7 +258,7 @@ export function PlansMain() {
                 <SelectItem value="inactive">Tạm tắt</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={displayType} onValueChange={(v: "all" | "default" | "vip" | "premium") => setDisplayType(v)}>
+            <Select value={urlDisplayType} onValueChange={(v) => updateUrl({ displayType: v, page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Loại hiển thị" />
               </SelectTrigger>
@@ -283,7 +269,7 @@ export function PlansMain() {
                 <SelectItem value="premium">Premium</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={billingCycle} onValueChange={(v: "all" | "monthly" | "yearly" | "lifetime") => setBillingCycle(v)}>
+            <Select value={urlBillingCycle} onValueChange={(v) => updateUrl({ billingCycle: v, page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Chu kỳ" />
               </SelectTrigger>
@@ -304,16 +290,13 @@ export function PlansMain() {
             isLoading={isLoading}
             serverSidePagination={true}
             pagination={{
-              page,
+              page: urlPage,
               pages,
               total,
-              limit,
+              limit: urlLimit,
             }}
-            onPageChange={(newPage) => setPage(newPage)}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit)
-              setPage(1)
-            }}
+            onPageChange={(newPage) => updateUrl({ page: newPage })}
+            onLimitChange={(newLimit) => updateUrl({ limit: newLimit, page: 1 })}
             onSelectedRowsChange={(rows) => setSelectedRows(rows)}
           />
         </CardContent>

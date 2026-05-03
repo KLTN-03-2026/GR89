@@ -120,10 +120,7 @@ export const columnsVocabulary = (callback: () => void): ColumnDef<Vocabulary>[]
       }
       return (
         <div className="flex justify-center">
-          <CreatorBadge
-            createdBy={vocabulary.createdBy}
-            createdAt={vocabulary.createdAt}
-          />
+          <CreatorBadge createdBy={vocabulary.createdBy} />
         </div>
       )
     }

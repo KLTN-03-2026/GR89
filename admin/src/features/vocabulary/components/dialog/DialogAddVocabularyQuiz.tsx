@@ -47,17 +47,16 @@ export function DialogAddVocabularyQuiz({ topicId, onSuccess }: DialogAddProps) 
     }
 
     setIsLoading(true)
-    try {
-      await createVocabularyQuiz(topicId, { ...data, options: nonEmptyOptions })
-      toast.success('Tạo quiz thành công')
-      onSuccess()
-      setOpen(false)
-      setData({ question: '', type: 'Multiple Choice', options: [], answer: '', explanation: '' })
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
-    } finally {
-      setIsLoading(false)
-    }
+    await createVocabularyQuiz(topicId, { ...data, options: nonEmptyOptions })
+      .then(() => {
+        toast.success('Tạo quiz thành công')
+        onSuccess()
+        setOpen(false)
+        setData({ question: '', type: 'Multiple Choice', options: [], answer: '', explanation: '' })
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }
 
   const addOption = () => {
@@ -187,7 +186,7 @@ export function DialogAddVocabularyQuiz({ topicId, onSuccess }: DialogAddProps) 
                     </div>
                   ))}
                   {(data.options || []).length === 0 && (
-                    <p className="text-xs text-center text-muted-foreground py-2 italic">Chưa có lựa chọn nào. Nhấn "Thêm lựa chọn" để bắt đầu.</p>
+                    <p className="text-xs text-center text-muted-foreground py-2 italic">Chưa có lựa chọn nào.Nhấn`&quot;`Thêm lựa chọn`&quot;` để bắt đầu.</p>
                   )}
                 </div>
               </div>

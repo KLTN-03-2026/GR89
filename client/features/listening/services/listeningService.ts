@@ -33,6 +33,7 @@ export async function getListeningData() {
   }
 }
 
+// Lấy dữ liệu bài học listening
 export async function getListeningLesson(_id: string) {
   const listening = await fetchServer<IListening>(`/listening/user/${_id}`)
   return listening

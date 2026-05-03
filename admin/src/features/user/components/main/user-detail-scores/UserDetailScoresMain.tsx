@@ -17,28 +17,83 @@ import {
   PieChart
 } from "lucide-react"
 import Link from "next/link"
-import { getUserScoreById } from "@/features/user/services/api"
-import { UserScore } from "@/features/user/types"
+import { getUserScoreById, getUserStudyHistory } from "@/features/user/services/api"
+import { UserScore, UserStudyHistoryEntry } from "@/features/user/types"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 interface UserDetailScoresMainProps {
   userId: string
+}
+
+const categoryHistoryLabels: Record<UserStudyHistoryEntry['category'], string> = {
+  vocabulary: 'Từ vựng',
+  grammar: 'Ngữ pháp',
+  ipa: 'Phiên âm IPA',
+  listening: 'Nghe',
+  speaking: 'Nói',
+  reading: 'Đọc',
+  writing: 'Viết',
+}
+
+function formatStudyDuration(seconds: number): string {
+  if (!seconds || seconds < 0) return '—'
+  if (seconds < 60) return `${seconds}s`
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m} phút ${s > 0 ? `${s}s` : ''}`.trim()
+}
+
+function statusHistoryLabel(status: UserStudyHistoryEntry['status']): string {
+  if (status === 'passed') return 'Đạt'
+  if (status === 'failed') return 'Chưa đạt'
+  return 'Đang học'
 }
 
 export function UserDetailScoresMain({ userId }: UserDetailScoresMainProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [userData, setUserData] = useState<UserScore | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [studyHistory, setStudyHistory] = useState<UserStudyHistoryEntry[]>([])
+  const [historyError, setHistoryError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchUserData = async () => {
       setIsLoading(true)
       setError(null)
+      setHistoryError(null)
       try {
-        const response = await getUserScoreById(userId)
-        if (response.success && response.data) {
-          setUserData(response.data)
+        const [scoreOutcome, historyOutcome] = await Promise.allSettled([
+          getUserScoreById(userId),
+          getUserStudyHistory(userId, 100),
+        ])
+        if (scoreOutcome.status === 'fulfilled') {
+          const scoreRes = scoreOutcome.value
+          if (scoreRes.success && scoreRes.data) {
+            setUserData(scoreRes.data)
+          } else {
+            setError("Không thể tải dữ liệu người dùng")
+          }
         } else {
+          console.error(scoreOutcome.reason)
           setError("Không thể tải dữ liệu người dùng")
+        }
+        if (historyOutcome.status === 'fulfilled') {
+          const historyRes = historyOutcome.value
+          if (historyRes.success && historyRes.data) {
+            setStudyHistory(historyRes.data)
+          } else {
+            setHistoryError(historyRes.message || "Không tải được lịch sử học tập")
+          }
+        } else {
+          console.error(historyOutcome.reason)
+          setHistoryError("Không tải được lịch sử học tập")
         }
       } catch (err) {
         console.error("Error fetching user score:", err)
@@ -256,9 +311,8 @@ export function UserDetailScoresMain({ userId }: UserDetailScoresMainProps) {
 
       {/* Main Content */}
       <Tabs defaultValue="skills" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="skills">Kỹ năng</TabsTrigger>
-          <TabsTrigger value="achievements">Thành tựu</TabsTrigger>
           <TabsTrigger value="history">Lịch sử</TabsTrigger>
           <TabsTrigger value="progress">Tiến độ</TabsTrigger>
         </TabsList>
@@ -293,22 +347,6 @@ export function UserDetailScoresMain({ userId }: UserDetailScoresMainProps) {
           </Card>
         </TabsContent>
 
-        <TabsContent value="achievements" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Thành tựu đã đạt được
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Chức năng thành tựu đang được phát triển
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="history" className="space-y-6">
           <Card>
             <CardHeader>
@@ -318,9 +356,65 @@ export function UserDetailScoresMain({ userId }: UserDetailScoresMainProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Chức năng lịch sử học tập đang được phát triển
-              </div>
+              {historyError && (
+                <p className="text-sm text-destructive mb-4">{historyError}</p>
+              )}
+              {!historyError && studyHistory.length === 0 && (
+                <div className="text-center py-10 text-muted-foreground text-sm">
+                  Chưa có bản ghi lịch sử học tập (StudyHistory) cho người dùng này.
+                </div>
+              )}
+              {!historyError && studyHistory.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Thời gian</TableHead>
+                      <TableHead>Loại</TableHead>
+                      <TableHead>Bài học</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead className="text-right">Tiến độ</TableHead>
+                      <TableHead className="text-right">Thời lượng</TableHead>
+                      <TableHead>Trình độ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {studyHistory.map((row, idx) => (
+                      <TableRow key={`${row.lessonId}-${row.createdAt}-${idx}`}>
+                        <TableCell className="whitespace-nowrap">
+                          {new Date(row.createdAt).toLocaleString('vi-VN')}
+                        </TableCell>
+                        <TableCell>{categoryHistoryLabels[row.category]}</TableCell>
+                        <TableCell className="max-w-[220px]">
+                          <span className="line-clamp-2" title={row.lessonTitle}>
+                            {row.lessonTitle}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              row.status === 'passed'
+                                ? 'border-green-600 text-green-700'
+                                : row.status === 'failed'
+                                  ? 'border-red-500 text-red-600'
+                                  : 'border-amber-500 text-amber-700'
+                            }
+                          >
+                            {statusHistoryLabel(row.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {Math.round(row.progress ?? 0)}%
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatStudyDuration(row.duration ?? 0)}
+                        </TableCell>
+                        <TableCell>{row.level}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -372,7 +466,7 @@ export function UserDetailScoresMain({ userId }: UserDetailScoresMainProps) {
                   <ul className="text-sm space-y-1">
                     <li>• Tập trung vào kỹ năng Nói và Viết (hiện tại dưới 30%)</li>
                     <li>• Luyện tập Nghe hiểu để tăng điểm từ 50% lên 70%</li>
-                    <li>• Duy trì chuỗi học tập hiện tại để đạt thành tựu &quot;Học liên tục 30 ngày&quot;</li>
+                    <li>• Duy trì chuỗi học tập hiện tại để củng cố thói quen học đều đặn</li>
                   </ul>
                 </div>
               </div>

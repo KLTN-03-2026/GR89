@@ -7,7 +7,7 @@ export function Footer() {
       <div className="grid grid-cols-1 xl:grid-cols-4 xl:gap-4 gap-8 py-4 w-full">
         {/* EnglishMaster */}
         <div>
-          <span className="font-bold text-2xl">EnglishMaster</span>
+          <span className="font-bold text-2xl">ActiveLearning</span>
           <p className="text-gray-500 mt-4">Nền tảng học tiếng Anh trực tuyến hàng đầu Việt Nam với phương pháp học hiệu quả và cá nhân hóa</p>
           {/* Liên kết mạng xã hội */}
           <div className="flex items-center gap-2 mt-2">
@@ -52,7 +52,7 @@ export function Footer() {
       </div>
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-        <span className="text-gray-500">© 2024 EnglishMaster - Tất cả các quyền được bảo lưu</span>
+        <span className="text-gray-500">© 2026 ActiveLearning - Tất cả các quyền được bảo lưu</span>
         <div className="flex items-center gap-4">
           <Link href="/" className="text-gray-500 hover:text-primary">Chính sách bảo mật</Link>
           <Link href="/" className="text-gray-500 hover:text-primary">Điều khoản và điều kiện</Link>

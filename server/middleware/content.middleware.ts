@@ -10,7 +10,6 @@ import { writingModel } from "../models/writing.model";
 import { UserInfo } from "../services/auth.service";
 import { Entertainment } from "../models/entertainment.model";
 import { Ipa } from "../models/ipa.model";
-import { StudyHistory } from "../models/studyHistory.model";
 
 // MIDDLEWARE PHÂN QUYỀN
 export const checkUnlockContentUser = (contentType: 'vocabulary' | 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'ipa', paramName: string = 'id') => {
@@ -47,65 +46,73 @@ export const checkUnlockContentUser = (contentType: 'vocabulary' | 'grammar' | '
   })
 }
 
-export const checkVipContentUser = (contentType: 'vocabulary' | 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'entertainment' | 'ipa', paramName: string = 'id') => {
+export const checkVipContentUser = (contentType: 'vocabulary' | 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'entertainment' | 'ipa' | 'chatbotAI', paramName: string = 'id') => {
   return CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const contentId = req.params[paramName]
+    let contentId: string | undefined
     const user = req.user as UserInfo
     if (!user) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
 
     //Kiếm tra role
     if (user.role !== 'user') return next(new ErrorHandler('Bạn không có quyền truy cập', 403))
+    if (!contentType) return next(new ErrorHandler('Nội dung không tồn tại', 400))
+    const checkVip = user.vipStartDate && user.vipExpireDate && new Date(user.vipExpireDate) > new Date()
 
-    if (!contentType || !contentId) return next(new ErrorHandler('Nội dung không tồn tại', 400))
+    if (contentType !== 'chatbotAI') {
+      contentId = String(req.params[paramName])
+      if (!contentId) return next(new ErrorHandler('Nội dung không tồn tại', 400))
+    }
+    else {
+      if (!checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+    }
 
     //Kiểm tra vip
     switch (contentType) {
       case 'vocabulary':
         const vocabularyTopic = await VocabularyTopic.findById(contentId)
         if (!vocabularyTopic) return next(new ErrorHandler('Bài học từ vựng không tồn tại', 404))
-        if (vocabularyTopic.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (vocabularyTopic.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
 
       case 'grammar':
         const grammarTopic = await GrammarTopic.findById(contentId)
         if (!grammarTopic) return next(new ErrorHandler('Chủ đề ngữ pháp không tồn tại', 404))
-        if (grammarTopic.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (grammarTopic.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
 
       case 'reading':
         const reading = await Reading.findById(contentId)
         if (!reading) return next(new ErrorHandler('Bài đọc không tồn tại', 404))
-        if (reading.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (reading.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
 
       case 'listening':
         const listening = await Listening.findById(contentId)
         if (!listening) return next(new ErrorHandler('Bài nghe không tồn tại', 404))
-        if (listening.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (listening.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
 
       case 'speaking':
         const speaking = await Speaking.findById(contentId)
         if (!speaking) return next(new ErrorHandler('Bài nói không tồn tại', 404))
-        if (speaking.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (speaking.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
 
       case 'writing':
         const writing = await writingModel.findById(contentId)
         if (!writing) return next(new ErrorHandler('Bài viết không tồn tại', 404))
-        if (writing.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (writing.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
 
       case 'entertainment':
         const entertainment = await Entertainment.findById(contentId)
         if (!entertainment) return next(new ErrorHandler('Nội dung giải trí không tồn tại', 404))
-        if (entertainment.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (entertainment.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
 
       case 'ipa':
         const ipa = await Ipa.findById(contentId)
         if (!ipa) return next(new ErrorHandler('Nội dung IPA không tồn tại', 404))
-        if (ipa.isVipRequired && !user.isVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
+        if (ipa.isVipRequired && !checkVip) return next(new ErrorHandler('Bạn cần nâng cấp tài khoản để sử dụng nội dung này', 403))
         break
     }
 

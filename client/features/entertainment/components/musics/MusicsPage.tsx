@@ -2,8 +2,8 @@
 import { useMemo } from "react"
 import { WelcomeSection } from "@/components/common/WelcomeSection"
 import { Musics } from "./Musics"
-import { IStreakCardProps, IWelcomeContentProps, IButton, IDescription, IStatsOverview } from "@/types"
-import { Clock, Play, Music, Target } from "lucide-react"
+import { IStreakCardProps, IWelcomeContentProps, IDescription, IStatsOverview } from "@/types"
+import { Clock, Music, Target } from "lucide-react"
 import type { EntertainmentStatsEntry, EntertainmentItem } from '@/features/entertainment'
 import { formatStudyTime } from "@/libs/utils/formatStudyTime"
 
@@ -17,11 +17,6 @@ export function MusicsPage({ musicStats, items }: MusicsPageProps) {
   const listenedTracks = musicStats?.viewedCount ?? 0
   const completion = totalTracks > 0 ? Math.round((listenedTracks / totalTracks) * 100) : 0
   const timeLabel = formatStudyTime(musicStats?.totalWatchTime)
-
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Nghe nhạc mới', icon: Play },
-    { type: 'outline', text: 'Xem lại bài hát yêu thích', icon: Music }
-  ]
 
   const descriptions: IDescription[] = [
     {
@@ -47,7 +42,6 @@ export function MusicsPage({ musicStats, items }: MusicsPageProps) {
     badge: " Giải trí",
     badge2: totalTracks > 0 ? `🎵 ${listenedTracks}/${totalTracks} bài` : "Chưa có dữ liệu",
     descriptions,
-    buttons,
     background: "from-purple-500 via-violet-500 to-indigo-200"
   }
 

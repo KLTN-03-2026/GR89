@@ -17,6 +17,13 @@ interface GrammarLessonMainProps {
 export function GrammarLessonMain({ topic }: GrammarLessonMainProps) {
   const [draft, setDraft] = useState<GrammarLessonDraft>(topic)
 
+  // Syncing state with props
+  const [prevTopic, setPrevTopic] = useState(topic)
+  if (topic !== prevTopic) {
+    setDraft(topic)
+    setPrevTopic(topic)
+  }
+
   const [activeSectionIndex, setActiveSectionIndex] = useState<number>(0)
   const [activePracticeIndex, setActivePracticeIndex] = useState<number>(0)
   const [activeQuizId, setActiveQuizId] = useState<Quiz['_id']>(topic.quizzes.length > 0 ? topic.quizzes[0]._id : '')

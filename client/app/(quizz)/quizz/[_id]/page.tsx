@@ -28,7 +28,6 @@ export default async function page({ params, searchParams }: {
   }
 
   const response = await fetchServer<IQuiz[]>(endpoint)
-  // Ensure response is an array, not an object
   const quizzes = Array.isArray(response) ? response : []
   return (
     <Quizz _id={_id} type={safeType} quizzes={quizzes} />

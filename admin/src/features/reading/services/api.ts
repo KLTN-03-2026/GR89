@@ -73,7 +73,7 @@ export async function exportReadingExcel(): Promise<Blob> {
   return new Blob([res?.data as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 }
 
-export async function importReadingJson(readings: any[], skipErrors: boolean = false): Promise<Response<any>> {
+export async function importReadingJson(readings: Reading[], skipErrors: boolean = false): Promise<Response<any>> {
   const response = await AuthorizedAxios.post('/reading/import-json', {
     readings,
     skipErrors,

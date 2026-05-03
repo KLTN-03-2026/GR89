@@ -7,7 +7,7 @@ export default async function page() {
   const accessToken = cookieStore?.get('access_token_admin')?.value;
 
   if (accessToken) {
-    return redirect('/dashboard/overview');
+    return redirect('/');
   }
 
   return (

@@ -5,19 +5,16 @@ export interface IPayment extends Document {
   userId: mongoose.Types.ObjectId;
   planId: mongoose.Types.ObjectId; // Reference to Plan._id
   amount: number; // Số tiền thanh toán (sau giảm giá nếu có)
-  provider: "vnpay" | "momo" | "stripe" | "paypal"; // Cổng thanh toán
+  provider: "vnpay" | "momo" | "stripe" | "paypal" | "payos"; // Cổng thanh toán
   status: "pending" | "paid" | "failed" | "refunded" | "cancelled";
   paymentDate?: Date; // Ngày thanh toán thành công
   couponId?: mongoose.Types.ObjectId; // Mã giảm giá đã sử dụng (nếu có)
   discountAmount?: number; // Số tiền được giảm từ coupon
+  orderCode: number; // Mã đơn hàng (unique)
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Interface for pagination result
-// Note: customLabels trong payment.service.ts map:
-// - totalDocs -> total
-// - totalPages -> pages
 export interface IPaymentPaginateResult {
   payments: IPayment[];
   total: number; // mapped from totalDocs
@@ -52,7 +49,7 @@ const paymentSchema = new Schema<IPayment>(
     },
     provider: {
       type: String,
-      enum: ["vnpay", "momo", "stripe", "paypal"],
+      enum: ["vnpay", "momo", "stripe", "paypal", "payos"],
       required: [true, "Cổng thanh toán là bắt buộc"],
       default: "vnpay",
     },
@@ -72,6 +69,10 @@ const paymentSchema = new Schema<IPayment>(
       type: Number,
       default: 0,
       min: [0, "Số tiền giảm phải lớn hơn hoặc bằng 0"],
+    },
+    orderCode: {
+      type: Number,
+      unique: true,
     },
   },
   { timestamps: true }

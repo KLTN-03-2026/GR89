@@ -9,6 +9,7 @@ import { updateExampleIpa } from '@/features/IPA/services/api'
 import { Example } from '@/features/IPA/types'
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 
 interface DialogUpdateIpaExampleProps {
   ipaId: string

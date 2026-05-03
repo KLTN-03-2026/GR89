@@ -11,35 +11,34 @@ export function useLessonContext() {
       return { lessonId: undefined, lessonType: undefined }
     }
 
-    // Lấy _id là segment cuối cùng trong URL
-    const segments = pathname.split('/').filter(Boolean)
-    const _id = segments[segments.length - 1] || undefined
+    const matchers: Array<{
+      lessonType: 'grammar' | 'vocabulary' | 'reading' | 'writing' | 'speaking' | 'listening' | 'ipa'
+      regex: RegExp
+    }> = [
+      { lessonType: 'reading', regex: /^\/skills\/reading\/(?:lesson|result)\/([^/]+)\/?$/ },
+      { lessonType: 'listening', regex: /^\/skills\/listening\/(?:quiz|result)\/([^/]+)\/?$/ },
+      { lessonType: 'listening', regex: /^\/skills\/listening\/([^/]+)\/?$/ },
+      { lessonType: 'speaking', regex: /^\/skills\/speaking\/(?:lesson|result)\/([^/]+)\/?$/ },
+      { lessonType: 'writing', regex: /^\/skills\/writing\/(?:lesson|result)\/([^/]+)\/?$/ },
+      { lessonType: 'vocabulary', regex: /^\/study\/vocabulary\/learn\/([^/]+)\/?$/ },
+      { lessonType: 'vocabulary', regex: /^\/study\/vocabulary\/([^/]+)\/?$/ },
+      { lessonType: 'grammar', regex: /^\/study\/grammar\/([^/]+)\/?$/ },
+      { lessonType: 'ipa', regex: /^\/study\/ipa\/learn\/([^/]+)\/?$/ },
+      { lessonType: 'ipa', regex: /^\/study\/ipa\/([^/]+)\/?$/ },
+    ]
 
-    if (!_id) {
-      return { lessonId: undefined, lessonType: undefined }
-    }
+    for (const { lessonType, regex } of matchers) {
+      const matched = pathname.match(regex)
+      if (!matched?.[1]) continue
 
-    // Detect lesson type từ pathname
-    if (pathname.includes('/skills/reading/lesson/')) {
-      return { lessonId: _id, lessonType: 'reading' as const }
-    }
-    if (pathname.includes('/skills/listening/') && !pathname.includes('/result/')) {
-      return { lessonId: _id, lessonType: 'listening' as const }
-    }
-    if (pathname.includes('/skills/speaking/lesson/')) {
-      return { lessonId: _id, lessonType: 'speaking' as const }
-    }
-    if (pathname.includes('/skills/writing/lesson')) {
-      return { lessonId: _id, lessonType: 'writing' as const }
-    }
-    if (pathname.includes('/study/vocabulary/')) {
-      return { lessonId: _id, lessonType: 'vocabulary' as const }
-    }
-    if (pathname.includes('/study/grammar/')) {
-      return { lessonId: _id, lessonType: 'grammar' as const }
-    }
-    if (pathname.includes('/study/ipa/')) {
-      return { lessonId: _id, lessonType: 'ipa' as const }
+      const lessonId = matched[1]
+
+      // Skip static route names (avoid treating listing pages as lesson IDs)
+      if (['lesson', 'result', 'quiz', 'learn', 'reading', 'listening', 'speaking', 'writing', 'vocabulary', 'grammar', 'ipa', 'skills', 'study'].includes(lessonId)) {
+        continue
+      }
+
+      return { lessonId, lessonType }
     }
 
     return { lessonId: undefined, lessonType: undefined }

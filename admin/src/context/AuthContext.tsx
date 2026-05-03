@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .then((res) => {
         setUser(res.data as User)
         toast.success('Đăng nhập thành công')
-        router.push('/dashboard/overview')
+        router.push('/')
         localStorage.setItem('admin', JSON.stringify(res.data))
       })
       .finally(() => {
@@ -50,8 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   const logoutUser = async () => {
-    const userRole = user?.role || 'admin'
-    await logout(userRole)
+    await logout()
       .then(() => {
         setUser(null)
         toast.success('Đăng xuất thành công')

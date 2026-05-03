@@ -4,14 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/common"
 import { columnsCoupons } from "../table/CouponsColumn"
-import { Plus, Download, Upload, Trash2, Eye, EyeOff, Ticket, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
+import { Trash2, Eye, EyeOff, Ticket, CheckCircle2, AlertCircle, TrendingUp, Search, Filter } from "lucide-react"
 import {
   getCouponsPaginated,
   deleteCoupon,
   deleteManyCoupons,
   updateManyCouponsStatus,
-  exportCouponExcel,
-  importCouponExcel,
   Coupon,
   CouponQueryParams,
   getPlansPaginated,
@@ -24,6 +22,7 @@ import { SheetAddCoupon } from "./SheetAddCoupon"
 import { SheetUpdateCoupon } from "./SheetUpdateCoupon"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -38,17 +37,34 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function CouponsMain() {
+interface CouponsMainProps {
+  initialData: Coupon[]
+  pagination: {
+    total: number
+    pages: number
+    page: number
+    limit: number
+  }
+}
+
+export function CouponsMain({ initialData, pagination: initialPagination }: CouponsMainProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [coupons, setCoupons] = useState<Coupon[]>([])
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
-  const [search, setSearch] = useState("")
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
-  const [sortBy, setSortBy] = useState<string>("createdAt")
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [coupons, setCoupons] = useState<Coupon[]>(initialData)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const rawIsActive = searchParams.get('isActive')
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = Number(searchParams.get('limit')) || 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
+  const urlSortBy = searchParams.get('sortBy') || 'createdAt'
+  const urlSortOrder = (searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc'
+
+  const [total, setTotal] = useState(initialPagination.total)
+  const [pages, setPages] = useState(initialPagination.pages)
+  const [search, setSearch] = useState(urlSearch)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Coupon | null>(null)
   const [plans, setPlans] = useState<Plan[]>([])
@@ -60,61 +76,58 @@ export function CouponsMain() {
 
   const debouncedSearch = useDebounce(search, 500)
 
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '' || value === 'all') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
   const fetchCoupons = useCallback(async (params: CouponQueryParams) => {
     setIsLoading(true)
-    await getCouponsPaginated(params)
-      .then(res => {
-        setCoupons(res.data)
-        setPage(res.pagination.page)
-        setLimit(res.pagination.limit)
-        setTotal(res.pagination.total)
-        setPages(res.pagination.pages)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
+    try {
+      const res = await getCouponsPaginated(params)
+      setCoupons(res.data)
+      setTotal(res.pagination.total)
+      setPages(res.pagination.pages)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    const params: CouponQueryParams = {
-      page,
-      limit,
-      search: debouncedSearch,
-      sortBy,
-      sortOrder,
-      isActive: isActive,
-    }
-    fetchCoupons(params)
-  }, [page, limit, debouncedSearch, sortBy, sortOrder, isActive, fetchCoupons])
+    // Luôn fetch khi URL thay đổi để đồng bộ dữ liệu
+    fetchCoupons({
+      page: urlPage,
+      limit: urlLimit,
+      search: urlSearch,
+      sortBy: urlSortBy,
+      sortOrder: urlSortOrder,
+      isActive: urlIsActive,
+    })
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, fetchCoupons])
 
-  // Fetch plans when dialog opens
+  // Fetch plans once so both Add and Edit sheets can use them.
   useEffect(() => {
-    if (open) {
-      getPlansPaginated({ limit: 100 })
-        .then(res => {
-          setPlans(res.data || [])
-        })
-        .catch(() => {
-          toast.error('Không thể tải danh sách gói')
-        })
-    }
-  }, [open])
-
-  const handleEdit = (row: Coupon) => {
-    setEditing(row)
-    setOpen(true)
-  }
-
-  const handleDelete = async (row: Coupon) => {
-    if (!confirm(`Bạn có chắc muốn xóa mã giảm giá "${row.code}"?`)) return
-    try {
-      await deleteCoupon(row._id)
-      toast.success('Xóa mã giảm giá thành công')
-      fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể xóa mã giảm giá')
-    }
-  }
+    getPlansPaginated({ limit: 100 })
+      .then(res => {
+        setPlans(res.data || [])
+      })
+      .catch(() => {
+        toast.error('Không thể tải danh sách gói')
+      })
+  }, [])
 
   const handleBulkDelete = async () => {
     if (selectedRows.length === 0) {
@@ -128,8 +141,9 @@ export function CouponsMain() {
       setSelectedRows([])
       setOpenDeleteDialog(false)
       fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể xóa mã giảm giá')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể xóa mã giảm giá'
+      toast.error(message)
     } finally {
       setLoadingAction(false)
     }
@@ -147,46 +161,39 @@ export function CouponsMain() {
       setSelectedRows([])
       setOpenPublishDialog(false)
       fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể cập nhật trạng thái')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể cập nhật trạng thái'
+      toast.error(message)
     } finally {
       setLoadingAction(false)
     }
   }
 
-  const handleExport = async () => {
-    try {
-      const blob = await exportCouponExcel()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `coupons_${new Date().toISOString().split('T')[0]}.xlsx`
-      a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Xuất Excel thành công')
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể xuất Excel')
-    }
-  }
-
-  const handleImport = async (file: File) => {
-    try {
-      const result = await importCouponExcel(file, false)
-      toast.success(`Import thành công: ${result.data?.created} tạo mới, ${result.data?.updated} cập nhật`)
-      fetchCoupons(refreshParams())
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể import Excel')
-    }
-  }
-
   const refreshParams = useCallback(() => ({
-    page,
-    limit,
-    search: debouncedSearch,
-    sortBy,
-    sortOrder,
-    isActive
-  }), [page, limit, debouncedSearch, sortBy, sortOrder, isActive])
+    page: urlPage,
+    limit: urlLimit,
+    search: urlSearch,
+    sortBy: urlSortBy,
+    sortOrder: urlSortOrder,
+    isActive: urlIsActive
+  }), [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
+
+  const handleEdit = useCallback((row: Coupon) => {
+    setEditing(row)
+    setOpen(true)
+  }, [])
+
+  const handleDelete = useCallback(async (row: Coupon) => {
+    if (!confirm(`Bạn có chắc muốn xóa mã giảm giá "${row.code}"?`)) return
+    try {
+      await deleteCoupon(row._id)
+      toast.success('Xóa mã giảm giá thành công')
+      fetchCoupons(refreshParams())
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể xóa mã giảm giá'
+      toast.error(message)
+    }
+  }, [fetchCoupons, refreshParams])
 
   const cols = useMemo(
     () => columnsCoupons(handleEdit, handleDelete, () => fetchCoupons(refreshParams())),
@@ -199,7 +206,7 @@ export function CouponsMain() {
     return [
       {
         title: "Mã giảm giá",
-        value: total,
+        value: coupons.length.toString(),
         change: { value: "Tổng cộng", isPositive: true },
         icon: TrendingUp,
         tone: "rose" as const,
@@ -235,24 +242,6 @@ export function CouponsMain() {
           <p className="text-gray-500 font-medium">Quản lý các chương trình khuyến mãi và mã giảm giá.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExport} className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-            <Download className="w-4 h-4 mr-2 text-gray-400" />
-            Xuất Excel
-          </Button>
-          <label className="cursor-pointer">
-            <Button variant="outline" asChild className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-              <span><Upload className="w-4 h-4 mr-2 text-gray-400" /> Nhập Excel</span>
-            </Button>
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleImport(file)
-              }}
-            />
-          </label>
           <SheetAddCoupon
             plans={plans}
             callback={() => fetchCoupons(refreshParams())}
@@ -316,7 +305,7 @@ export function CouponsMain() {
                 className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[250px] transition-all font-medium"
               />
             </div>
-            <Select value={isActive === undefined ? "all" : isActive ? "active" : "inactive"} onValueChange={(v) => setIsActive(v === "all" ? undefined : v === "active")}>
+            <Select value={urlIsActive === undefined ? "all" : urlIsActive ? "active" : "inactive"} onValueChange={(v) => updateUrl({ isActive: v === "all" ? undefined : v === "active", page: 1 })}>
               <SelectTrigger className="h-11 w-[180px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
@@ -324,6 +313,35 @@ export function CouponsMain() {
                 <SelectItem value="all">Tất cả trạng thái</SelectItem>
                 <SelectItem value="active">Đang hiệu lực</SelectItem>
                 <SelectItem value="inactive">Tạm tắt</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={urlSortBy}
+              onValueChange={(v) => updateUrl({ sortBy: v, page: 1 })}
+            >
+              <SelectTrigger className="h-11 w-[180px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+                <SelectValue placeholder="Sắp xếp theo" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                <SelectItem value="createdAt">Ngày tạo</SelectItem>
+                <SelectItem value="updatedAt">Ngày cập nhật</SelectItem>
+                <SelectItem value="code">Mã giảm giá</SelectItem>
+                <SelectItem value="name">Tên chiến dịch</SelectItem>
+                <SelectItem value="discountValue">Giá trị giảm</SelectItem>
+                <SelectItem value="validFrom">Ngày bắt đầu</SelectItem>
+                <SelectItem value="validTo">Ngày kết thúc</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={urlSortOrder}
+              onValueChange={(v: 'asc' | 'desc') => updateUrl({ sortOrder: v, page: 1 })}
+            >
+              <SelectTrigger className="h-11 w-[150px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+                <SelectValue placeholder="Thứ tự" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                <SelectItem value="desc">Mới nhất</SelectItem>
+                <SelectItem value="asc">Cũ nhất</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -336,16 +354,13 @@ export function CouponsMain() {
             isLoading={isLoading}
             serverSidePagination={true}
             pagination={{
-              page,
+              page: urlPage,
               pages,
               total,
-              limit,
+              limit: urlLimit,
             }}
-            onPageChange={(newPage) => setPage(newPage)}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit)
-              setPage(1)
-            }}
+            onPageChange={(newPage) => updateUrl({ page: newPage })}
+            onLimitChange={(newLimit) => updateUrl({ limit: newLimit, page: 1 })}
             onSelectedRowsChange={(rows) => setSelectedRows(rows)}
           />
         </CardContent>

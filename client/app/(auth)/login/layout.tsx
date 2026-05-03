@@ -4,8 +4,8 @@ import { cookies } from "next/headers";
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: "Login English Mastery",
-  description: "login learning English for English Mastery",
+  title: "Login ActiveLearning",
+  description: "login learning English for ActiveLearning",
   icons: {
     icon: "/images/logo.png",
   }

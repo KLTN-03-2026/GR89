@@ -120,6 +120,22 @@ api.interceptors.response.use(
   (res) => res,
 
   async (error: AxiosError) => {
+    // Hàm helper để chặn crash bằng cách resolve error thành một response hợp lệ
+    const resolveError = (err: AxiosError, customMessage?: string) => {
+      const msg = customMessage || extractErrorMessage(err)
+      const handledError = err as AxiosError & { _handled?: boolean }
+      handledError._handled = true
+      
+      return Promise.resolve({
+        data: { success: false, message: msg },
+        status: err.response?.status || 500,
+        statusText: err.response?.statusText || "Error",
+        headers: err.response?.headers || {},
+        config: err.config || {} as any,
+        request: err.request
+      })
+    }
+
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean
       _skipErrorToast?: boolean
@@ -128,9 +144,7 @@ api.interceptors.response.use(
     if (!originalRequest) {
       const message = extractErrorMessage(error)
       toast.error(message)
-      const handledError = error as AxiosError & { _handled?: boolean }
-      handledError._handled = true
-      return Promise.reject(handledError)
+      return resolveError(error, message)
     }
 
     const status = error.response?.status
@@ -169,9 +183,7 @@ api.interceptors.response.use(
         toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
         window.location.href = "/login"
 
-        const handledError = refreshError as AxiosError & { _handled?: boolean }
-        handledError._handled = true
-        return Promise.reject(handledError)
+        return resolveError(refreshError as AxiosError, "Phiên đăng nhập đã hết hạn")
       }
     }
 
@@ -181,28 +193,21 @@ api.interceptors.response.use(
 
     // Bỏ qua toast nếu request đã đánh dấu skip
     if (originalRequest._skipErrorToast) {
-      const handledError = error as AxiosError & { _handled?: boolean }
-      handledError._handled = true
-      return Promise.reject(handledError)
+      return resolveError(error)
     }
 
     // Không hiển thị toast cho các status đã xử lý riêng
     const skipToastStatuses = [401, 410]
     if (status && skipToastStatuses.includes(status)) {
-      const handledError = error as AxiosError & { _handled?: boolean }
-      handledError._handled = true
-      return Promise.reject(handledError)
+      return resolveError(error)
     }
 
     // Trích xuất và hiển thị message lỗi
     const message = extractErrorMessage(error)
     toast.error(message)
 
-    // Đánh dấu error đã được xử lý để không log ra console
-    const handledError = error as AxiosError & { _handled?: boolean }
-    handledError._handled = true
-
-    return Promise.reject(handledError)
+    // Trả về resolve thay vì reject để các hàm gọi API không bị văng Exception
+    return resolveError(error, message)
   }
 )
 

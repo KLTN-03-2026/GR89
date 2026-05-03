@@ -1,7 +1,7 @@
 import { WritingHeader } from './WritingHeader'
 import { WritingTopic } from './WritingTopic'
 import { WritingOverview } from '@/libs/apis/api'
-import { writingTopics } from '@/types'
+import { writingTopics } from '../../types'
 
 interface WritingPageProps {
   overview: WritingOverview

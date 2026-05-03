@@ -224,7 +224,7 @@ export async function importWritingData(
 }
 
 export async function importWritingJson(
-  writings: any[],
+  writings: Writing[],
   skipErrors: boolean = false
 ): Promise<ApiResponse<any>> {
   const response = await AuthorizedAxios.post('/writing/import-json', {

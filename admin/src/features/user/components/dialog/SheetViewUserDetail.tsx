@@ -7,23 +7,22 @@ import {
   SheetHeader,
   SheetTitle,
   SheetFooter,
-  SheetDescription,
   SheetClose
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  User as UserIcon, 
-  Mail, 
-  Trophy, 
-  Zap, 
-  Clock, 
-  BookOpen, 
-  FileText, 
-  Eye, 
-  Headphones, 
-  Mic, 
+import {
+  User as UserIcon,
+  Mail,
+  Trophy,
+  Zap,
+  Clock,
+  BookOpen,
+  FileText,
+  Eye,
+  Headphones,
+  Mic,
   PenTool,
   Activity,
   Calendar,
@@ -106,7 +105,7 @@ export function SheetViewUserDetail({ user, isOpen, setIsOpen }: SheetViewUserDe
                 <TrendingUp className="w-4 h-4" />
                 Tổng Quan Tiến Độ
               </div>
-              
+
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 rounded-[2rem] border border-gray-100">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-500 opacity-20" />
@@ -177,7 +176,7 @@ export function SheetViewUserDetail({ user, isOpen, setIsOpen }: SheetViewUserDe
                 <Activity className="w-4 h-4" />
                 Thông Tin Hệ Thống
               </div>
-              
+
               <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -193,7 +192,7 @@ export function SheetViewUserDetail({ user, isOpen, setIsOpen }: SheetViewUserDe
                     <Clock className="w-3 h-3" /> Đăng nhập cuối
                   </div>
                   <div className="text-xs font-bold text-slate-700">
-                    {user.lastLogin ? format(new Date(user.lastLogin), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'Chưa từng đăng nhập'}
+                    {user.lastActiveDate ? format(new Date(user.lastActiveDate), 'dd/MM/yyyy HH:mm', { locale: vi }) : 'Chưa từng đăng nhập'}
                   </div>
                 </div>
               </div>
@@ -206,8 +205,8 @@ export function SheetViewUserDetail({ user, isOpen, setIsOpen }: SheetViewUserDe
         <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
           <div className="flex items-center justify-end w-full">
             <SheetClose asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-12 px-10 rounded-2xl border-gray-200 font-black text-gray-600 hover:bg-white transition-all active:scale-95"
               >
                 Đóng Cửa Sổ

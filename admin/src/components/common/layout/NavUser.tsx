@@ -22,22 +22,11 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-// import { useAuth } from "@/libs/contexts/AuthContext"
+import { useAuth } from "@/context/AuthContext"
 
 export function NavUser() {
   const { isMobile } = useSidebar()
-  // const { logout, user } = useAuth()
-  const user = {
-    avatar: {
-      url: "https://github.com/shadcn.png",
-    },
-    fullName: "John Doe",
-    email: "john.doe@example.com",
-  }
-
-  const logout = () => {
-    console.log("logout")
-  }
+  const { logout, user } = useAuth()
 
   const handleLogout = async () => {
     logout()
@@ -70,7 +59,7 @@ export function NavUser() {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale bg-gray-400">
-                <AvatarImage src={user.avatar.url} alt={user.fullName} />
+                <AvatarImage src={user.avatar} alt={user.fullName} />
                 <AvatarFallback className="rounded-lg">
                   {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
                 </AvatarFallback>
@@ -93,7 +82,7 @@ export function NavUser() {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg bg-gray-400">
-                  <AvatarImage src={user.avatar.url} alt={user.fullName} />
+                  <AvatarImage src={user.avatar} alt={user.fullName} />
                   <AvatarFallback className="rounded-lg">
                     {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>

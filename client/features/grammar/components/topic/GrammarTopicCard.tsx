@@ -67,7 +67,7 @@ export default function GrammarTopicCard({ topic }: Props) {
       <EnhancedPopover
         href={`/study/grammar/${topic._id}`}
         skill="grammar"
-        isCompleted={topic.progress === 100}
+        isCompleted={topic.isResult}
         resultId={topic._id}
       />
     </Popover>

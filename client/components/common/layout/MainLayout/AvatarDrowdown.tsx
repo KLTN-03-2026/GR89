@@ -7,18 +7,18 @@ import { useEffect, useState } from 'react'
 
 export default function AvatarDrowdown() {
   const { user, logout } = useAuth()
-  const defaultAvatar = user?.avatar?.url || "/images/avatar-default.jpg"
+  const defaultAvatar = user?.avatar || "/images/avatar-default.jpg"
   const [avatarError, setAvatarError] = useState(false)
 
   useEffect(() => {
     setAvatarError(false)
-  }, [user?.avatar?.url])
+  }, [user?.avatar])
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="w-10 h-10 cursor-pointer bg-gray-400">
-          <AvatarImage src={avatarError ? defaultAvatar : (user?.avatar?.url || defaultAvatar)} alt="avatar" width={40} height={40} onError={() => setAvatarError(true)} />
+          <AvatarImage src={avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)} alt="avatar" width={40} height={40} onError={() => setAvatarError(true)} />
           <AvatarFallback>CN</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -27,7 +27,7 @@ export default function AvatarDrowdown() {
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
             <Avatar className="h-8 w-8 rounded-lg bg-gray-400">
               <AvatarImage
-                src={avatarError ? defaultAvatar : (user?.avatar?.url || defaultAvatar)}
+                src={avatarError ? defaultAvatar : (user?.avatar || defaultAvatar)}
                 alt={user?.fullName}
                 onError={() => setAvatarError(true)}
               />
@@ -38,7 +38,7 @@ export default function AvatarDrowdown() {
             <div className="grid flex-1 text-left text-sm leading-tight">
               <div className="flex items-center gap-2">
                 <span className="truncate font-medium">{user?.fullName}</span>
-                {user?.isVip && (
+                {user?.vipStartDate && user?.vipExpireDate && user?.vipExpireDate > new Date() && (
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-sm">
                     <Crown className="w-2.5 h-2.5" />
                     VIP

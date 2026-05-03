@@ -65,7 +65,7 @@ export default function CardListeningTopic({ topic }: Props) {
       </PopoverTrigger>
 
       <EnhancedPopover
-        href={`/skills/listening/quiz/${topic._id}`}
+        href={`/skills/listening/${topic._id}`}
         skill="listening"
         isCompleted={topic.isResult}
         resultId={topic._id}

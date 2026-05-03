@@ -22,7 +22,7 @@ export default function LessonIpa({ video, image, description, sound }: props) {
         </CardContent>
       </Card>
 
-      <Card className="xl:col-span-4 border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+      <Card className="xl:col-span-4 border-0 shadow-none rounded-2xl overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg md:text-xl font-semibold text-slate-800">
             Mô tả cách phát âm

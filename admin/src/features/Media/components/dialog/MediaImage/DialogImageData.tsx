@@ -87,6 +87,15 @@ export function DialogImageData({ setImages, setSelectedIds, setPreview, preview
                   </Button>
                 </div>
               </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground">ID</div>
+                <div className="flex items-center gap-2">
+                  <span className="truncate max-w-[360px]">{preview._id}</span>
+                  <Button variant="outline" size="icon" onClick={() => copyToClipboard(preview._id, 'ID')}>
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <div className="text-xs text-muted-foreground">Định dạng</div>

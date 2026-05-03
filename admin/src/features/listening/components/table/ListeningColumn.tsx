@@ -8,6 +8,7 @@ import { useState } from "react"
 import { Listening } from "@/features/listening/types"
 import ActionsCell from "./ActionsCell"
 import { CreatorBadge } from "@/components/common/shared/CreatorInfo"
+import { DialogTitle } from "@radix-ui/react-dialog"
 
 function AudioPreview({ audioUrl, title }: { audioUrl: string; title: string }) {
   const [open, setOpen] = useState(false)
@@ -25,7 +26,7 @@ function AudioPreview({ audioUrl, title }: { audioUrl: string; title: string }) 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-[600px] w-[90vw]">
           <div className="space-y-3">
-            <div className="font-medium">{title}</div>
+            <DialogTitle className="font-medium">{title}</DialogTitle>
             <audio controls className="w-full">
               <source src={audioUrl} />
               Trình duyệt của bạn không hỗ trợ audio.

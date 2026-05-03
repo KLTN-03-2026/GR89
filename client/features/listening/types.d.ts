@@ -1,9 +1,7 @@
+import { IQuiz } from "../quizz";
+
 export interface IListening {
-  quiz?: {
-    question: string
-    options: string[]
-    answer: string
-  }[]
+  quizzes: IQuiz[]
   _id: string;
   title: string;
   description: string;
@@ -18,19 +16,21 @@ export interface IListening {
   isResult: boolean
 }
 
+export interface IDiffPart {
+  value: string
+  added?: boolean
+  removed?: boolean
+}
+
 export interface IListeningProgress {
   progress: number
   point: number
   totalQuestions?: number
-  quizPoint?: number
-  quizTotal?: number
+  quizPoint: number
+  quizTotal: number
   quizProgress?: number
   time: number
   date: Date
-  result: {
-    index: number
-    text: string
-    isCorrect: boolean
-  }[]
+  result: IDiffPart[]
   listeningId: IListening
 }

@@ -6,7 +6,6 @@ import { ProgessBar } from "./ProgessBar"
 import { IQuizResultData, IQuizResult, IQuiz } from "@/features/quizz/types"
 import { doGrammarQuiz, doReadingQuiz, doVocabularyQuiz } from '@/features/quizz/services/quizzApi'
 import { HeaderQuizzLayout } from "@/components/common/layout"
-import { notifyStreakIncrease } from "@/libs/streakToast"
 import { ContentStateDisplay } from "@/components/common/ContentStateDisplay"
 import { useStudySession } from "@/libs/hooks/useStudySession"
 import AlertDialogSubmit from "./AlertDialogSubmit"
@@ -61,15 +60,12 @@ export function Quizz({ _id, type, quizzes }: IQuizzCardProps) {
     switch (type) {
       case 'vocabulary':
         await doVocabularyQuiz(_id, quizResults, studySession)
-        await notifyStreakIncrease()
         break
       case 'grammar':
         await doGrammarQuiz(_id, quizResults, studySession)
-        await notifyStreakIncrease()
         break
       case 'reading':
         await doReadingQuiz(_id, quizResults, studySession)
-        await notifyStreakIncrease()
         break
     }
   }

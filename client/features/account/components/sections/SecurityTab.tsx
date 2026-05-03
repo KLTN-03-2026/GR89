@@ -28,19 +28,18 @@ export default function SecurityTab() {
   const handleSave = async () => {
     if (!canSubmit) return
     setLoading(true)
-    try {
-      const res = await changeMyPassword({ oldPassword: current, newPassword: nextPwd })
-      if (res.success) {
-        toast.success('Đổi mật khẩu thành công')
-        setCurrent('')
-        setNextPwd('')
-        setConfirm('')
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Đổi mật khẩu thất bại')
-    } finally {
-      setLoading(false)
-    }
+    await changeMyPassword({ oldPassword: current, newPassword: nextPwd })
+      .then(res => {
+        if (res.success) {
+          toast.success('Đổi mật khẩu thành công')
+          setCurrent('')
+          setNextPwd('')
+          setConfirm('')
+        }
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   return (

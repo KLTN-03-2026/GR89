@@ -33,4 +33,3 @@ export const extractVimeoId = (url: string): string | null => {
   return match && match[1] ? match[1] : null
 }
 
-

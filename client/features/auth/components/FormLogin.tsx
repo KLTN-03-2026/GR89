@@ -12,8 +12,6 @@ import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { useAuth } from "@/libs/contexts/AuthContext";
 import FacebookLogin from '@greatsumini/react-facebook-login';
 
-
-
 export function FormLogin() {
   const { login, isLoading, loginGoogle } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
@@ -21,8 +19,6 @@ export function FormLogin() {
     email: '',
     password: ''
   })
-
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

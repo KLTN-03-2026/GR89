@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Sheet,
   SheetContent,
@@ -9,7 +9,6 @@ import {
   SheetTrigger,
   SheetFooter,
   SheetDescription,
-  SheetClose
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,18 +18,17 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { 
-  Plus, 
-  Ticket, 
-  Tag, 
-  FileText, 
-  BadgePercent, 
-  CalendarDays, 
-  Clock, 
-  Briefcase, 
-  CheckCircle2, 
-  Save, 
-  X,
+import {
+  Plus,
+  Ticket,
+  Tag,
+  FileText,
+  BadgePercent,
+  CalendarDays,
+  Clock,
+  Briefcase,
+  CheckCircle2,
+  Save,
   Loader2
 } from "lucide-react"
 import { createCoupon, Plan, Coupon } from "@/lib/apis/api"
@@ -68,40 +66,39 @@ export function SheetAddCoupon({ plans, callback }: SheetAddCouponProps) {
     }
 
     setLoading(true)
-    try {
-      const couponData = {
-        ...draft,
-        applicablePlans: selectedPlanIds.length > 0 ? selectedPlanIds : [],
-        validFrom: new Date(draft.validFrom!).toISOString(),
-        validTo: new Date(draft.validTo!).toISOString(),
-      }
-
-      await createCoupon(couponData as any)
-      toast.success('Tạo mã giảm giá thành công')
-      setOpen(false)
-      callback()
-      // Reset form
-      setDraft({
-        code: "",
-        name: "",
-        description: "",
-        discountType: "percentage",
-        discountValue: 0,
-        minPurchaseAmount: undefined,
-        maxDiscountAmount: undefined,
-        validFrom: new Date().toISOString().split('T')[0],
-        validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        usageLimit: undefined,
-        isActive: true,
-        applicablePlans: [],
-        isFirstTimeOnly: false,
-      })
-      setSelectedPlanIds([])
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể tạo mã giảm giá')
-    } finally {
-      setLoading(false)
+    const couponData = {
+      ...draft,
+      applicablePlans: selectedPlanIds.length > 0 ? selectedPlanIds : [],
+      validFrom: new Date(draft.validFrom!).toISOString(),
+      validTo: new Date(draft.validTo!).toISOString(),
     }
+
+    await createCoupon(couponData as Coupon)
+      .then(() => {
+        toast.success('Tạo mã giảm giá thành công')
+        setOpen(false)
+        callback()
+        // Reset form
+        setDraft({
+          code: "",
+          name: "",
+          description: "",
+          discountType: "percentage",
+          discountValue: 0,
+          minPurchaseAmount: undefined,
+          maxDiscountAmount: undefined,
+          validFrom: new Date().toISOString().split('T')[0],
+          validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          usageLimit: undefined,
+          isActive: true,
+          applicablePlans: [],
+          isFirstTimeOnly: false,
+        })
+        setSelectedPlanIds([])
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   return (
@@ -137,7 +134,7 @@ export function SheetAddCoupon({ plans, callback }: SheetAddCouponProps) {
                 <Tag className="w-4 h-4" />
                 Thông Tin Định Danh
               </div>
-              
+
               <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
@@ -150,7 +147,7 @@ export function SheetAddCoupon({ plans, callback }: SheetAddCouponProps) {
                     className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-rose-500 font-black px-4 shadow-sm uppercase"
                   />
                 </div>
-                
+
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tên Chiến Dịch <span className="text-rose-500">*</span>
@@ -189,7 +186,7 @@ export function SheetAddCoupon({ plans, callback }: SheetAddCouponProps) {
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1">Loại Giảm Giá</Label>
                   <Select
                     value={draft.discountType}
-                    onValueChange={(v: any) => setDraft({ ...draft, discountType: v })}
+                    onValueChange={(v: 'percentage' | 'fixed') => setDraft({ ...draft, discountType: v })}
                   >
                     <SelectTrigger className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-blue-500 font-bold px-4 shadow-sm">
                       <SelectValue />
@@ -321,7 +318,7 @@ export function SheetAddCoupon({ plans, callback }: SheetAddCouponProps) {
                 <Briefcase className="w-4 h-4" />
                 Áp Dụng Cho Gói
               </div>
-              
+
               <div className="space-y-4 bg-indigo-50/30 p-6 rounded-[2rem] border border-indigo-100/50">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Chọn Gói Dịch Vụ (Mặc định = Tất cả)</Label>
                 <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
@@ -383,16 +380,16 @@ export function SheetAddCoupon({ plans, callback }: SheetAddCouponProps) {
 
         <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
           <div className="flex items-center justify-end gap-4 w-full">
-            <Button 
-              variant="outline" 
-              onClick={() => setOpen(false)} 
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
               className="h-12 px-8 rounded-2xl border-gray-200 font-bold text-gray-600 hover:bg-white transition-all active:scale-95"
             >
               Hủy Bỏ
             </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={loading} 
+            <Button
+              onClick={handleSave}
+              disabled={loading}
               className="h-12 px-10 rounded-2xl bg-rose-600 hover:bg-rose-700 shadow-xl shadow-rose-200 font-black transition-all active:scale-95"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5 mr-2" />}

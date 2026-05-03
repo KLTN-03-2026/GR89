@@ -180,6 +180,17 @@ export class GrammarController {
     });
   });
 
+  // (USER) Lấy kết quả bài kiểm tra ngữ pháp
+  static getGrammarQuizResult = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const result = await GrammarService.getGrammarResult(id, req.user?._id as string);
+    res.status(200).json({
+      success: true,
+      message: "Lấy kết quả bài kiểm tra ngữ pháp thành công",
+      data: result,
+    });
+  });
+
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
   // (ADMIN) Lấy chi tiết chủ đề ngữ pháp theo ID

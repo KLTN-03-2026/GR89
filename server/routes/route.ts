@@ -19,6 +19,9 @@ import { couponRoutes } from './coupon.routes'
 import { chatbotRoutes } from './chatbot.routes'
 import { roadmapRoutes } from './roadmap.routes'
 import { reportRoutes } from './report.routes'
+import { dailySuggestionRoutes } from './dailySuggestion.routes'
+import { globalDocumentRoutes } from './globalDocument.routes'
+import { centerClassRoutes } from './centerClass.routes'
 
 const router = express.Router()
 
@@ -43,12 +46,15 @@ router.use('/coupon', couponRoutes)
 router.use('/chatbot', chatbotRoutes)
 router.use('/roadmap', roadmapRoutes)
 router.use('/report', reportRoutes)
+router.use('/daily-suggestion', dailySuggestionRoutes)
+router.use('/global-documents', globalDocumentRoutes)
+router.use('/center-classes', centerClassRoutes)
 
 // ✅ ROOT ENDPOINT
 router.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Chào mừng đến với English Master API! 🎓',
+    message: 'Chào mừng đến với ActiveLearning API! 🎓',
     documentation: req.protocol + '://' + req.get('host') + '/api',
     health: req.protocol + '://' + req.get('host') + '/health',
   })

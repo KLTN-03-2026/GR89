@@ -16,7 +16,7 @@ const toneClasses: Record<Tone, { iconWrap: string; icon: string; badge: string 
 interface StatsCardProps {
   title: string;
   value: string | number;
-  change: {
+  change?: {
     value: string;
     isPositive: boolean;
   };
@@ -25,7 +25,7 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ title, value, change, icon: Icon, tone }: StatsCardProps) {
-  const resolvedTone = tone ?? (change.isPositive ? "emerald" : "rose");
+  const resolvedTone = tone ?? (change?.isPositive ? "emerald" : "rose");
   const t = toneClasses[resolvedTone];
   return (
     <Card className="rounded-[2rem] border-none bg-white shadow-sm hover:shadow-md transition-all p-6">
@@ -34,7 +34,7 @@ export function StatsCard({ title, value, change, icon: Icon, tone }: StatsCardP
           <Icon className={`w-6 h-6 ${t.icon}`} />
         </div>
         <Badge className={`${t.badge} border-none font-bold uppercase tracking-tighter`}>
-          {change.value}
+          {change?.value || ""}
         </Badge>
       </div>
       <div className="text-3xl font-black text-gray-900">{value}</div>

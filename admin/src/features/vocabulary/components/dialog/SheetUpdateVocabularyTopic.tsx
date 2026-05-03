@@ -10,19 +10,17 @@ import {
   SheetClose
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Book, 
-  Tag, 
-  Layers, 
-  Image as ImageIcon, 
-  Trash2, 
-  Save, 
-  X,
+import {
+  Book,
+  Tag,
+  Layers,
+  Image as ImageIcon,
+  Trash2,
+  Save,
   Loader2,
   Sparkles,
   History,
@@ -63,31 +61,29 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
     defaultValues: {
       name: topic.name,
       image: topic.image?._id || "",
-      level: topic.level as any
+      level: topic.level
     }
   })
 
-  // Reset form when topic changes
   useEffect(() => {
     form.reset({
       name: topic.name,
       image: topic.image?._id || "",
-      level: topic.level as any
+      level: topic.level
     })
     setImageUrl(topic.image?.url || "")
   }, [topic, form])
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
-    try {
-      await updateVocabularyTopic(topic._id, data as any)
-      toast.success('Đã cập nhật chủ đề ' + data.name)
-      callback()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể cập nhật chủ đề')
-    } finally {
-      setLoading(false)
-    }
+    await updateVocabularyTopic(topic._id, data)
+      .then(() => {
+        toast.success('Đã cập nhật chủ đề ' + data.name)
+        callback()
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   return (
@@ -98,15 +94,15 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
             <Book className="w-6 h-6" />
           </div>
           <div>
-            <SheetTitle className="text-2xl font-black text-gray-900 tracking-tight">Cập Nhật Chủ Đề</SheetTitle>
-            <SheetDescription className="text-gray-500 font-medium mt-1">
+            <SheetTitle className="text-2xl font-black text-zinc-900 tracking-tight">Cập Nhật Chủ Đề</SheetTitle>
+            <SheetDescription className="text-zinc-500 font-medium mt-1">
               Chỉnh sửa thông tin cho: <span className="text-zinc-900 font-bold">{topic.name}</span>
             </SheetDescription>
           </div>
         </div>
       </SheetHeader>
 
-      <Separator className="bg-gray-100" />
+      <Separator className="bg-zinc-100" />
 
       <ScrollArea className="flex-1 min-h-0">
         <Form {...form}>
@@ -117,20 +113,20 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                 <Tag className="w-4 h-4" />
                 Thông Tin Cơ Bản
               </div>
-              
-              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+
+              <div className="grid grid-cols-1 gap-6 bg-zinc-50/50 p-6 rounded-[2rem] border border-zinc-100 shadow-sm">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem className="space-y-2.5">
-                      <FormLabel className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                        Tên Chủ Đề <span className="text-rose-500">*</span>
+                      <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                        Tên Chủ Đề <span className="text-zinc-400">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
                           placeholder="VD: Food & Drinks, Travel, Technology..."
-                          className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm"
+                          className="h-12 bg-white border-zinc-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm"
                           {...field}
                         />
                       </FormControl>
@@ -144,16 +140,16 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                   name="level"
                   render={({ field }) => (
                     <FormItem className="space-y-2.5">
-                      <FormLabel className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5" /> Trình Độ <span className="text-rose-500">*</span>
+                      <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5" /> Trình Độ <span className="text-zinc-400">*</span>
                       </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm">
+                          <SelectTrigger className="h-12 bg-white border-zinc-200 rounded-2xl focus:ring-zinc-900 font-bold px-4 shadow-sm">
                             <SelectValue placeholder="Chọn trình độ" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
+                        <SelectContent className="rounded-2xl border-zinc-100 shadow-xl">
                           {["A1", "A2", "B1", "B2", "C1", "C2"].map((lvl) => (
                             <SelectItem key={lvl} value={lvl} className="rounded-xl font-bold">{lvl}</SelectItem>
                           ))}
@@ -180,8 +176,8 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                   render={() => (
                     <FormItem className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <FormLabel className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                          Ảnh Chủ Đề <span className="text-rose-500">*</span>
+                        <FormLabel className="text-xs font-black text-zinc-500 uppercase ml-1 flex items-center gap-1.5">
+                          Ảnh Chủ Đề <span className="text-zinc-400">*</span>
                         </FormLabel>
                         {imageUrl && (
                           <Button
@@ -192,7 +188,7 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                               setImageUrl("")
                               form.setValue("image", "")
                             }}
-                            className="h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl font-bold text-xs"
+                            className="h-8 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-xl font-bold text-xs"
                           >
                             <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                             Gỡ ảnh
@@ -250,7 +246,7 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
                 <History className="w-4 h-4" />
                 Lịch Sử Chỉnh Sửa
               </div>
-              
+
               <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -283,18 +279,18 @@ export function SheetUpdateVocabularyTopic({ topic, callback }: SheetUpdateVocab
       <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
         <div className="flex items-center justify-end gap-4 w-full">
           <SheetClose asChild>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-12 px-8 rounded-2xl border-gray-200 font-bold text-gray-600 hover:bg-white transition-all active:scale-95"
               disabled={loading}
             >
               Hủy Bỏ
             </Button>
           </SheetClose>
-          <Button 
+          <Button
             type="submit"
             form="form-update-vocabulary-topic"
-            disabled={loading} 
+            disabled={loading}
             className="h-12 px-10 rounded-2xl bg-zinc-900 hover:bg-zinc-800 shadow-xl shadow-zinc-200 font-black transition-all active:scale-95"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5 mr-2" />}

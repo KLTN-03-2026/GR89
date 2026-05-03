@@ -88,7 +88,16 @@ export class EntertainmentService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Lấy thống kê tổng quan giải trí
-  static async getOverviewStats(): Promise<any> {
+  static async getOverviewStats(type?: 'movie' | 'music' | 'podcast'): Promise<any> {
+    const query: any = {}
+    if (type) {
+      if (type === 'movie') {
+        query.type = { $in: ['movie', 'series'] }
+      } else {
+        query.type = type
+      }
+    }
+
     const [
       totalItems,
       activeItems,
@@ -100,15 +109,15 @@ export class EntertainmentService {
       likedCount,
       watchedCount
     ] = await Promise.all([
-      Entertainment.countDocuments(),
-      Entertainment.countDocuments({ status: true }),
-      Entertainment.countDocuments({ isVipRequired: true }),
-      Entertainment.countDocuments({ type: 'movie' }),
+      Entertainment.countDocuments(query),
+      Entertainment.countDocuments({ ...query, status: true }),
+      Entertainment.countDocuments({ ...query, isVipRequired: true }),
+      Entertainment.countDocuments({ type: { $in: ['movie', 'series'] } }),
       Entertainment.countDocuments({ type: 'music' }),
       Entertainment.countDocuments({ type: 'podcast' }),
-      EntertainmentInteraction.countDocuments(),
-      EntertainmentInteraction.countDocuments({ liked: true }),
-      EntertainmentInteraction.countDocuments({ watched: true })
+      EntertainmentInteraction.countDocuments(type ? { 'entertainmentId': { $in: await Entertainment.find(query).distinct('_id') } } : {}),
+      EntertainmentInteraction.countDocuments(type ? { 'entertainmentId': { $in: await Entertainment.find(query).distinct('_id') }, liked: true } : { liked: true }),
+      EntertainmentInteraction.countDocuments(type ? { 'entertainmentId': { $in: await Entertainment.find(query).distinct('_id') }, watched: true } : { watched: true })
     ])
 
     return {

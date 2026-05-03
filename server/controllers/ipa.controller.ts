@@ -53,6 +53,7 @@ export class IpaController {
       createdBy,
       isActive
     } = req.query
+
     const result = await IpaService.getAllIPAPaginated({
       page: Number(page),
       limit: Number(limit),
@@ -186,6 +187,20 @@ export class IpaController {
     })
   })
 
+  // (USER) Lấy thông tin chi tiết IPA theo ID
+  static getIpaSound = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { sound } = req.params
+    if (!sound) {
+      return next(new ErrorHandler('Vui lòng cung cấp thông tin IPA', 400))
+    }
+    const ipa = await IpaService.getIpaSound(sound)
+    res.status(200).json({
+      success: true,
+      message: 'Lấy thông tin chi tiết IPA thành công',
+      data: ipa
+    })
+  })
+
   // (ADMIN) Lấy thống kê tổng quan về IPA
   static getOverviewStats = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const stats = await IpaService.getOverviewStats()
@@ -226,11 +241,12 @@ export class IpaController {
   // (ADMIN) Cập nhật IPA
   static updateIpa = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
-    const { sound, soundType, image, video, description, examples } = req.body
-    if (!sound || !soundType || !image || !description || !examples) {
+    const { sound, soundType, image, video, description } = req.body
+
+    if (!sound || !soundType || !image || !description) {
       return next(new ErrorHandler('Vui lòng nhập đầy đủ thông tin', 400))
     }
-    const updatedIpa = await IpaService.updateIpa(id, { sound, soundType, image, video, description, examples, updatedBy: req.user?._id as string } as unknown as IIpa)
+    const updatedIpa = await IpaService.updateIpa(id, { sound, soundType, image, video, description, updatedBy: req.user?._id as string } as unknown as IIpa)
     res.status(200).json({
       success: true,
       message: 'Cập nhật IPA thành công',

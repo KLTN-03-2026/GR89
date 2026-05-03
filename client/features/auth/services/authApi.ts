@@ -27,7 +27,7 @@ export async function login(credentials: LoginRequest): Promise<ApiResponse<User
 }
 
 export async function logout(): Promise<ApiResponse> {
-  const response = await authorizedAxios.post<ApiResponse>('/auth/logout', { role: 'user' })
+  const response = await authorizedAxios.post<ApiResponse>('/auth/logout')
   return response.data
 }
 

@@ -8,6 +8,7 @@ import type { SheetImportOnImportPayload, SheetImportResult } from '@/components
 import { importVocabularyJson } from '../../services/api'
 import { buildExcelTemplateWorkbook, buildJsonTemplateData } from './templates'
 import { parseExcelToVocabularyJson, validateVocabularyImportJson } from './validateVocabularyImport'
+import { VocabularyTopic } from '../../types'
 
 export function VocabularySheetImport({ callback }: { callback?: () => void }) {
   return (
@@ -43,7 +44,7 @@ export function VocabularySheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadExcel={parseExcelToVocabularyJson}
       defaultSkipErrors={true}
       onImport={async (payload: SheetImportOnImportPayload): Promise<SheetImportResult> => {
-        const res = await importVocabularyJson(payload.jsonRoot, payload.skipErrors)
+        const res = await importVocabularyJson(payload.jsonRoot as VocabularyTopic[], payload.skipErrors)
 
         type ImportResponse = {
           success: boolean

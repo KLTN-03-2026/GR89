@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Eye, FileText, Film, Flame, Headphones, LayoutDashboardIcon, LucideIcon, Map, Mic, Music, PenTool, PlayCircle, Radio, Sparkles, Target, Trophy, Users, Volume2, Zap } from "lucide-react";
+import { Baby, BarChart3, BookOpen, Briefcase, Eye, FileText, Film, Flame, GraduationCap, Headphones, Layers, LayoutDashboardIcon, LucideIcon, Map, Mic, Music, PenTool, PlayCircle, Radio, Rocket, Sparkles, Target, Trophy, Users, Volume2, Zap } from "lucide-react";
 
 export interface ISidebarRoute {
   title: string;
@@ -30,6 +30,9 @@ const ROUTES_PATH = {
   MOVIE: '/entertainment/movies',
   MUSIC: '/entertainment/musics',
   PODCAST: '/entertainment/podcasts',
+  CATELOGY_KIDS: '/catelogy/kids',
+  CATELOGY_TEENAGER: '/catelogy/teenager',
+  CATELOGY_ADULT: '/catelogy/adult',
   PROFILE: '/profile',
   SETTINGS: '/settings',
 }
@@ -47,7 +50,10 @@ const ROUTES_NAME = {
   '/skills/writing': "Luyện viết",
   '/entertainment/movies': "Phim & Video",
   '/entertainment/music': "Âm nhạc",
-  '/entertainment/postcard': "Postcard",
+  '/entertainment/podcasts': "Podcast",
+  '/catelogies/kids': "Danh mục trẻ em",
+  '/catelogies/teenager': "Danh mục thiếu niên",
+  '/catelogies/adult': "Danh mục người lớn",
   '/profile': "Hồ sơ",
   '/settings': "Cài đặt",
 }
@@ -154,6 +160,30 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
         gradient: "from-teal-500 to-cyan-500",
       },
     ],
+  },
+  {
+    title: "catelogies",
+    icon: Layers,
+    items: [
+      {
+        title: "Danh mục trẻ em",
+        url: ROUTES_PATH.CATELOGY_KIDS,
+        icon: Baby,
+        gradient: "from-amber-400 to-orange-500",
+      },
+      {
+        title: "Danh mục thiếu niên",
+        url: ROUTES_PATH.CATELOGY_TEENAGER,
+        icon: GraduationCap,
+        gradient: "from-sky-400 to-indigo-600",
+      },
+      {
+        title: "Danh mục người lớn",
+        url: ROUTES_PATH.CATELOGY_ADULT,
+        icon: Briefcase,
+        gradient: "from-red-400 to-red-600",
+      }
+    ],
   }
 ]
 
@@ -163,6 +193,8 @@ export interface IQuickAction {
   Icon: LucideIcon;
   color: string;
   href: string;
+  progress?: number;
+  isCompleted?: boolean;
 }
 const QUICK_ACTIONS: IQuickAction[] = [
   {
@@ -171,6 +203,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: PlayCircle,
     color: "from-green-500 to-emerald-500",
     href: ROUTES_PATH.ROADMAP,
+    isCompleted: false,
   },
   {
     title: "Luyện kỹ năng",
@@ -178,6 +211,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: Target,
     color: "from-blue-500 to-cyan-500",
     href: ROUTES_PATH.LISTENING,
+    isCompleted: false,
   },
   {
     title: "Học từ vựng",
@@ -185,6 +219,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: BarChart3,
     color: "from-purple-500 to-pink-500",
     href: ROUTES_PATH.VOCABULARY,
+    isCompleted: false,
   },
   {
     title: "Giải trí",
@@ -192,6 +227,7 @@ const QUICK_ACTIONS: IQuickAction[] = [
     Icon: Users,
     color: "from-orange-500 to-red-500",
     href: ROUTES_PATH.MOVIE,
+    isCompleted: false,
   },
 ]
 

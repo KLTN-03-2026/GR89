@@ -18,6 +18,7 @@ router.post('/delete-many', authenticateTokenAdmin, requireRole(['admin', 'conte
 
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 router.get('/user', authenticateTokenUser, IpaController.getIpaByUser)
+router.get('/user/sound/:sound', authenticateTokenUser, IpaController.getIpaSound)
 router.get('/user/:id', authenticateTokenUser, checkVipContentUser('ipa'), IpaController.getIpaById)
 router.post('/assess-pronunciation', authenticateTokenUser, uploadMemory.single('audio'), handleUploadError, IpaController.assessPronunciationIpa)
 router.post('/users/save-highest-score/:lessonId', authenticateTokenUser, IpaController.saveHighestScore)

@@ -25,24 +25,36 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
-
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import SheetAddUser from "../../dialog/SheetAddUser"
 
 export function UserMain() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const rawSortBy = searchParams.get('sortBy')
+  const rawSortOrder = searchParams.get('sortOrder')
+  const rawIsActive = searchParams.get('isActive')
+  const rawRoleFilter = searchParams.get('roleFilter')
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = [5, 10, 20, 50].includes(Number(searchParams.get('limit'))) ? Number(searchParams.get('limit')) : 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
+  const urlSortBy = ['fullName', 'email', 'createdAt'].includes(rawSortBy || '') ? (rawSortBy as 'fullName' | 'email' | 'createdAt') : 'createdAt'
+  const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'desc'
+  const urlRoleFilter = ['all', 'user', 'content'].includes(rawRoleFilter || '') ? rawRoleFilter || 'all' : 'all'
+
   const [isLoading, setIsLoading] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [refresh, setRefresh] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [searchTerm, setSearchTerm] = useState(urlSearch)
   const debouncedSearch = useDebounce(searchTerm, 500)
-  const [roleFilter, setRoleFilter] = useState("all")
-  const [sortBy, setSortBy] = useState<'fullName' | 'email' | 'createdAt'>('createdAt')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
-  const [isActive, setIsActive] = useState<boolean | undefined>(undefined)
   const [openAdd, setOpenAdd] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
   // Pagination states
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
 
@@ -58,7 +70,6 @@ export function UserMain() {
         isActive: true
       })
 
-      // Fetch inactive users count
       const inactiveResponse = await getAllUsersPaginated({
         page: 1,
         limit: 1,
@@ -74,100 +85,82 @@ export function UserMain() {
     }
   }, [])
 
-  const fetchUsers = useCallback(async (pageNum: number = page, search: string = debouncedSearch, pageSize: number = limit, active?: boolean, role?: string, sortField?: string, sortDir?: string) => {
-    setIsLoading(true)
-    try {
-      const params: UserQueryParams = {
-        page: pageNum,
-        limit: pageSize,
-        search: search || undefined,
-        isActive: active,
-        role: role !== 'all' ? role : undefined,
-        sortBy: sortField as 'fullName' | 'email' | 'createdAt',
-        sortOrder: sortDir as 'asc' | 'desc'
-      }
-
-      const response = await getAllUsersPaginated(params)
-
-      if (response.success) {
-        setUsers(response.data || [])
-        setPage(response.pagination?.page || pageNum)
-        setLimit(response.pagination?.limit || pageSize)
-        setTotal(response.pagination?.total || 0)
-        setPages(response.pagination?.pages || 0)
-
-        // Calculate stats from total and filtered counts
-        // We need to fetch stats separately for accurate counts
-        fetchStats()
-      } else {
-        toast.error('Không thể tải danh sách người dùng')
-        setUsers([])
-        setTotal(0)
-        setPages(0)
-      }
-    } catch (error: unknown) {
-      console.error('Error fetching users:', error)
-      const errorMessage = error instanceof Error && 'response' in error
-        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Có lỗi xảy ra khi tải dữ liệu'
-        : 'Có lỗi xảy ra khi tải dữ liệu'
-      toast.error(errorMessage)
-      setUsers([])
-      setTotal(0)
-      setPages(0)
-    } finally {
-      setIsLoading(false)
+  useEffect(() => {
+    if (urlSearch !== debouncedSearch) {
+      setSearchTerm(urlSearch)
     }
-  }, [page, debouncedSearch, limit, fetchStats])
+  }, [urlSearch, debouncedSearch])
 
-  // Effect for debounced search - reset to page 1
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '' || (key === 'roleFilter' && value === 'all')) {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
   useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch])
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
 
-  // Single effect for all changes
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true)
+    const params: UserQueryParams = {
+      page: urlPage,
+      limit: urlLimit,
+      search: urlSearch || undefined,
+      isActive: urlIsActive,
+      role: urlRoleFilter !== 'all' ? urlRoleFilter : undefined,
+      sortBy: urlSortBy,
+      sortOrder: urlSortOrder
+    }
+
+    await getAllUsersPaginated(params)
+      .then(res => {
+        setUsers(res.data || [])
+        setTotal(res.pagination?.total || 0)
+        setPages(res.pagination?.pages || 0)
+        fetchStats()
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+  }, [urlPage, urlSearch, urlLimit, urlIsActive, urlRoleFilter, urlSortBy, urlSortOrder, fetchStats])
+
   useEffect(() => {
-    fetchUsers(page, debouncedSearch, limit, isActive, roleFilter, sortBy, sortOrder)
-  }, [page, limit, isActive, roleFilter, sortBy, sortOrder, refresh, fetchUsers, debouncedSearch])
+    fetchUsers()
+  }, [fetchUsers, refresh])
 
-  // Handler functions
   const handleStatusFilter = (value: string) => {
     const newIsActive = value === 'all' ? undefined : value === 'active' ? true : false
-    setIsActive(newIsActive)
-    setPage(1) // Reset to first page when filtering
+    updateUrl({ isActive: newIsActive, page: 1 })
   }
 
   const handleRoleFilter = (value: string) => {
-    setRoleFilter(value)
-    setPage(1) // Reset to first page when filtering
+    updateUrl({ roleFilter: value, page: 1 })
   }
 
   const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(field as 'fullName' | 'email' | 'createdAt')
-      setSortOrder('desc')
-    }
-    setPage(1) // Reset to first page when sorting
+    updateUrl({ sortBy: field, page: 1 })
   }
 
   const handlePageSizeChange = (newLimit: number) => {
-    setLimit(newLimit)
-    setPage(1) // Reset to first page when changing page size
+    updateUrl({ limit: newLimit, page: 1 })
   }
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage)
+    updateUrl({ page: newPage })
   }
 
   const clearAllFilters = () => {
     setSearchTerm('')
-    setRoleFilter('all')
-    setIsActive(undefined)
-    setSortBy('createdAt')
-    setSortOrder('desc')
-    setPage(1)
-    setLimit(10)
+    router.push(pathname, { scroll: false })
   }
 
   const kpiStats = [
@@ -219,125 +212,13 @@ export function UserMain() {
 
       <StatsGrid stats={kpiStats} columns={3} />
 
-      <Sheet open={openAdd} onOpenChange={setOpenAdd}>
-        <SheetContent className="h-full sm:max-w-xl flex flex-col p-0 border-l shadow-2xl overflow-hidden">
-          <SheetHeader className="p-8 pb-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-rose-50 rounded-2xl text-rose-600 shadow-inner">
-                <UserPlus className="w-6 h-6" />
-              </div>
-              <div>
-                <SheetTitle className="text-2xl font-black text-gray-900 tracking-tight">Thêm Nhân Viên</SheetTitle>
-                <SheetDescription className="text-gray-500 font-medium mt-1">
-                  Chỉ tạo tài khoản với vai trò `&quot;`Quản lý nội dung`&quot;` (Content Manager).
-                </SheetDescription>
-              </div>
-            </div>
-          </SheetHeader>
-
-          <Separator className="bg-gray-100" />
-
-          <ScrollArea className="flex-1 min-h-0">
-            <form
-              id="form-add-user"
-              className="p-8 space-y-8"
-              onSubmit={async (e) => {
-                e.preventDefault()
-                const form = e.target as HTMLFormElement
-                const formData = new FormData(form)
-                const email = (formData.get('email') as string).trim()
-                const fullName = (formData.get('fullname') as string).trim()
-                const password = (formData.get('password') as string).trim()
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-                if (!emailRegex.test(email)) {
-                  toast.error('Email không hợp lệ')
-                  form.querySelector<HTMLInputElement>('#email')?.focus()
-                  return
-                }
-
-                setIsLoading(true)
-                try {
-                  const response = await createUser({ fullName, email, password, role: 'content' })
-                  if (response.success) {
-                    toast.success('Tạo tài khoản thành công')
-                    setRefresh(!refresh)
-                    setOpenAdd(false)
-                    form.reset()
-                  } else {
-                    toast.error(response.message || 'Có lỗi xảy ra')
-                  }
-                } finally {
-                  setIsLoading(false)
-                }
-              }}
-            >
-              <section className="space-y-6">
-                <div className="flex items-center gap-2.5 text-rose-600 font-black uppercase text-[11px] tracking-[0.2em]">
-                  <Info className="w-4 h-4" />
-                  Thông Tin Tài Khoản
-                </div>
-
-                <div className="grid gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
-                  <div className="space-y-2.5">
-                    <Label className="text-xs font-black text-gray-500 uppercase ml-1">Họ và Tên *</Label>
-                    <div className="relative group">
-                      <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input id="fullname" name="fullname" placeholder="Nguyễn Văn A" required className="h-12 pl-10 bg-white border-gray-200 rounded-2xl focus:ring-rose-500 font-bold px-4 shadow-sm" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <Label className="text-xs font-black text-gray-500 uppercase ml-1">Email Đăng Nhập *</Label>
-                    <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input id="email" name="email" type="email" placeholder="user@example.com" required className="h-12 pl-10 bg-white border-gray-200 rounded-2xl focus:ring-rose-500 font-bold px-4 shadow-sm" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <Label className="text-xs font-black text-gray-500 uppercase ml-1">Mật Khẩu Khởi Tạo *</Label>
-                    <div className="relative group">
-                      <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <Input id="password" name="password" type="password" placeholder="••••••••" required className="h-12 pl-10 bg-white border-gray-200 rounded-2xl focus:ring-rose-500 font-bold px-4 shadow-sm" />
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              <section className="space-y-6">
-                <div className="flex items-center gap-2.5 text-amber-600 font-black uppercase text-[11px] tracking-[0.2em]">
-                  <Shield className="w-4 h-4" />
-                  Phân Quyền Hệ Thống
-                </div>
-
-                <div className="bg-amber-50/30 p-6 rounded-[2rem] border border-amber-100/50 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-black text-gray-900">Quản lý nội dung</p>
-                    <p className="text-[11px] text-amber-700 font-bold opacity-70 uppercase tracking-tighter mt-0.5">Content Manager Role</p>
-                  </div>
-                  <div className="bg-amber-100 text-amber-700 p-2 rounded-xl shadow-inner">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                </div>
-              </section>
-            </form>
-          </ScrollArea>
-
-          <Separator className="bg-gray-100" />
-
-          <SheetFooter className="p-8 bg-gray-50/80 backdrop-blur-sm border-t border-gray-100">
-            <div className="flex items-center justify-end gap-4 w-full">
-              <Button variant="outline" onClick={() => setOpenAdd(false)} className="h-12 px-8 rounded-2xl border-gray-200 font-bold text-gray-600 active:scale-95 transition-all">
-                Hủy Bỏ
-              </Button>
-              <Button type="submit" form="form-add-user" disabled={isLoading} className="h-12 px-10 rounded-2xl bg-rose-600 hover:bg-rose-700 shadow-xl shadow-rose-200 font-black active:scale-95 transition-all">
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Tạo Tài Khoản'}
-              </Button>
-            </div>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      <SheetAddUser
+        openAdd={openAdd}
+        setOpenAdd={setOpenAdd}
+        callback={fetchUsers}
+        isLoading={isLoading}
+        setIsLoading={setIsLoading}
+      />
 
       {/* Filters Card */}
       <Card className="rounded-[2.5rem] border-none bg-white shadow-sm overflow-hidden">
@@ -360,8 +241,8 @@ export function UserMain() {
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Bộ lọc
-                {(isActive !== undefined || roleFilter !== 'all') && (
-                  <Badge className="ml-2 bg-rose-600">{[isActive !== undefined, roleFilter !== 'all'].filter(Boolean).length}</Badge>
+                {(urlIsActive !== undefined || urlRoleFilter !== 'all') && (
+                  <Badge className="ml-2 bg-rose-600">{[urlIsActive !== undefined, urlRoleFilter !== 'all'].filter(Boolean).length}</Badge>
                 )}
               </Button>
               <Button
@@ -379,7 +260,7 @@ export function UserMain() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-8 border-t border-gray-50 animate-in fade-in slide-in-from-top-4 duration-300">
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Vai trò</Label>
-                <Select value={roleFilter} onValueChange={handleRoleFilter}>
+                <Select value={urlRoleFilter} onValueChange={handleRoleFilter}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -393,7 +274,7 @@ export function UserMain() {
 
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Trạng thái</Label>
-                <Select value={isActive === undefined ? 'all' : isActive ? 'active' : 'inactive'} onValueChange={handleStatusFilter}>
+                <Select value={urlIsActive === undefined ? 'all' : urlIsActive ? 'active' : 'inactive'} onValueChange={handleStatusFilter}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -407,7 +288,7 @@ export function UserMain() {
 
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Sắp xếp</Label>
-                <Select value={sortBy} onValueChange={(value) => handleSort(value)}>
+                <Select value={urlSortBy} onValueChange={(value) => handleSort(value)}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -421,7 +302,7 @@ export function UserMain() {
 
               <div className="space-y-2.5">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Thứ tự</Label>
-                <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}>
+                <Select value={urlSortOrder} onValueChange={(value) => updateUrl({ sortOrder: value, page: 1 })}>
                   <SelectTrigger className="h-11 rounded-xl bg-gray-50/50 border-gray-200 font-bold">
                     <SelectValue />
                   </SelectTrigger>
@@ -437,7 +318,7 @@ export function UserMain() {
           <div className="flex items-center justify-between pt-8 border-t border-gray-50">
             <div className="flex items-center gap-4">
               <span className="text-sm font-black text-gray-400 uppercase tracking-tighter">Hiển thị</span>
-              <Select value={limit.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              <Select value={urlLimit.toString()} onValueChange={(value) => handlePageSizeChange(Number(value))}>
                 <SelectTrigger className="w-20 h-9 rounded-lg bg-gray-50 border-gray-200 font-bold">
                   <SelectValue />
                 </SelectTrigger>
@@ -465,8 +346,8 @@ export function UserMain() {
             isLoading={isLoading}
             serverSidePagination={true}
             pagination={{
-              page: page || 1,
-              limit: limit || 10,
+              page: urlPage,
+              limit: urlLimit,
               total: total || 0,
               pages: pages || 0
             }}

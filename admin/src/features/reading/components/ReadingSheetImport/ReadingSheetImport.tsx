@@ -7,6 +7,7 @@ import { parseExcelToReadingJson, validateReadingImportJson } from './validateRe
 import * as XLSX from 'xlsx'
 import { toast } from 'react-toastify'
 import { SheetImportOnImportPayload } from '@/components/common/sheetImport/types'
+import { Reading } from '../../types'
 
 export function ReadingSheetImport({ callback }: { callback?: () => void }) {
   return (
@@ -40,7 +41,7 @@ export function ReadingSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadJson={validateReadingImportJson}
       validateAfterReadExcel={parseExcelToReadingJson}
       onImport={async (payload: SheetImportOnImportPayload) => {
-        const res = await importReadingJson(payload.jsonRoot, payload.skipErrors)
+        const res = await importReadingJson(payload.jsonRoot as Reading[], payload.skipErrors)
 
         type ImportResponse = {
           success: boolean

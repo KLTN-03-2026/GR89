@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "English Mastery",
-  description: "learning English for English Mastery",
+  title: "ActiveLearning",
+  description: "learning English for ActiveLearning",
   icons: {
     icon: "/images/logo.png",
   }
@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body suppressHydrationWarning className={`${inter.variable} font-sans antialiased`}>
         <GoogleOAuthProvider clientId={process.env.GOOGLE_API_CLIENT_ID || ''}>
           <AuthProvider>
             <AOSProvider>

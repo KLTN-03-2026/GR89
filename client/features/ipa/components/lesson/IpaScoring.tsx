@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Mic, MicOff } from 'lucide-react'
+import { Mic, Square, Loader2 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { IIpaScoringResult } from '@/features/ipa/types'
 import { assessIpaPronunciation } from '@/features/ipa/services/ipaApi'
@@ -105,29 +105,29 @@ export default function IpaScoring({
       <button
         onClick={() => (isRecording ? stopRecording() : startRecording())}
         disabled={isAssessing}
-        className={`relative inline-flex items-center justify-center rounded-full border-2 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 shadow-lg ${isRecording
-          ? 'bg-gradient-to-br from-red-500 to-red-600 border-red-600 text-white focus:ring-red-300 shadow-red-500/50 scale-105'
-          : isAssessing
-            ? 'bg-gradient-to-br from-blue-500 to-blue-600 border-blue-600 text-white focus:ring-blue-300 shadow-blue-500/50'
-            : 'bg-gradient-to-br from-white to-gray-50 border-gray-300 text-gray-700 hover:from-gray-50 hover:to-white hover:border-gray-400 focus:ring-blue-300 shadow-gray-900/10 hover:shadow-lg hover:scale-105'
-          }`}
+        className={`relative inline-flex items-center justify-center rounded-full transition-transform duration-300 focus:outline-none shadow-xl shrink-0 active:scale-95 ${
+          isAssessing
+            ? 'bg-slate-400 shadow-slate-200 cursor-not-allowed'
+            : isRecording
+              ? 'bg-red-600 hover:bg-red-700 shadow-red-200/50'
+              : 'bg-rose-500 hover:bg-rose-600 shadow-rose-200 hover:-translate-y-1'
+        }`}
         style={{ width: 120, height: 120 }}
         aria-label={isRecording ? 'Dừng ghi âm' : 'Bắt đầu ghi âm'}
       >
         {isRecording && (
           <>
-            <span className="absolute inset-0 rounded-full animate-ping bg-red-400/40" style={{ animationDuration: '1s' }} />
+            <span className="absolute inset-0 rounded-full animate-ping bg-red-400/40" style={{ animationDuration: '1.5s' }} />
             <span className="absolute inset-0 rounded-full animate-pulse bg-red-400/20" style={{ animationDuration: '2s' }} />
           </>
         )}
-        <span className="absolute inset-1 rounded-full bg-black/5" />
-        <span className="relative z-10">
+        <span className="relative z-10 flex items-center justify-center">
           {isAssessing ? (
-            <span className="animate-spin rounded-full h-8 w-8 border-[3px] border-white border-t-transparent" />
+            <Loader2 className="w-12 h-12 text-white animate-spin" />
           ) : isRecording ? (
-            <MicOff className="w-10 h-10" />
+            <Square className="w-10 h-10 text-white fill-white animate-pulse" />
           ) : (
-            <Mic className="w-10 h-10" />
+            <Mic className="w-14 h-14 text-white" />
           )}
         </span>
       </button>

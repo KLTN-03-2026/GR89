@@ -461,9 +461,6 @@ export class ReadingService {
       isCompleted: true, // Chỉ cần có làm là tính hoàn thành
       studyTime: studyTimeSeconds,
       resultId, // Lưu ID vào Progress/History
-      correctAnswers: correctCount,
-      totalQuestions: quizResults.length,
-      weakPoints
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài

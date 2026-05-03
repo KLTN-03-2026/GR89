@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import XLSX from 'xlsx'
 import { StreakService } from "./streak.service";
 import { User } from "../models/user.model";
+import { writingUserModel } from "../models/writingUser.model";
 
 const countWords = (text: string) => {
   if (!text) return 0
@@ -302,12 +303,8 @@ export class WritingService {
 
   /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
-  static async getAllWritingByUser(userId: string): Promise<IWriting[]> {
-    return this.getWritingListByUser(userId)
-  }
-
   // (USER) Lấy danh sách bài viết kèm tiến độ của người dùng
-  static async getWritingListByUser(userId: string): Promise<IWriting[]> {
+  static async getAllWritingByUser(userId: string): Promise<IWriting[]> {
     const writings = await writingModel.find({ isActive: true }).sort({ orderIndex: 1 });
 
     // Lấy bản ghi tốt nhất từ StudyHistory
@@ -323,7 +320,7 @@ export class WritingService {
       const writingObj = writing.toObject()
       return {
         ...writingObj,
-        isCompleted: p?.status === 'passed',
+        isCompleted: p && p?.resultId && p?.resultId.length > 0,
         isActive: true,
         progress: p?.progress || 0,
         point: p?.progress || 0,
@@ -365,57 +362,96 @@ export class WritingService {
     }
 
     const systemPrompt = `
-      You are an experienced English researcher with 20 years of expertise and also a top-level English teacher.
-      Your task is to evaluate students' essays and return ONLY valid JSON.
-      All feedback, comments, and suggestions must be written in VIETNAMESE language.
-      Do not include explanations outside of the JSON.
+      You are a senior English writing assessor with 20 years of teaching experience.
+      Evaluate the student's essay and return ONLY valid JSON (no markdown, no extra explanation).
+
+      Sử dụng ngôn ngữ không phải tiếng Anh thì dù có như nào cũng 0 điểm
+      HARD VALIDATION STEP (must run before any scoring):
+      1) Detect the primary language of the student's submission.
+      2) If the primary language is NOT English, STOP normal evaluation and return a penalty result:
+         - rubricContent.point = 0
+         - rubricStructure.point = 0
+         - rubricGrammar.point = 0
+         - rubricVocabulary.point = 0
+         - revisedContent = ""
+         - overallFeedback explains that only English submissions are accepted
+         - suggested contains 1-3 Vietnamese suggestions to rewrite in English
+      3) Only if the submission is primarily English, continue with normal scoring.
+
+      Evaluate the essay using 4 criteria: Content, Structure, Grammar, and Vocabulary.
+      Before scoring, check whether the essay is on-topic.
+      The essay content must be English-only for valid scoring. If another language is the main language, all rubric scores must be 0.
+      If the essay is off-topic, assign very low scores and clearly explain the reason in the feedback.
+
+      Detailed scoring criteria for each rubric (0-25 scale):
+      - Content (rubricContent): Relevance to the prompt, idea development, argument quality, supporting examples, and depth of analysis.
+      - Structure (rubricStructure): Introduction-body-conclusion organization, paragraph cohesion, coherence, and logical transitions.
+      - Grammar (rubricGrammar): Grammatical accuracy, sentence variety, punctuation, and error severity affecting meaning.
+      - Vocabulary (rubricVocabulary): Lexical range, word choice in context, collocations, and spelling accuracy.
+
+      Suggested performance bands:
+      - 0-5: Very weak
+      - 6-10: Weak
+      - 11-15: Average
+      - 16-20: Good
+      - 21-25: Very good/Excellent
+
+      The response must strictly follow this JSON format:
+      {
+        "revisedContent": "string (A revised English-only version that is clearer, more academic, and has a length between ${writing.minWords}-${writing.maxWords} words)",
+        "rubricContent": { "point": number (0-25), "feedback": ["string"] (0-5 items, Vietnamese feedback about CONTENT with clear evidence, 0đ nếu bài viết không phải tiếng ANh) },
+        "rubricStructure": { "point": number (0-25), "feedback": ["string"] (0-5 items, Vietnamese feedback about STRUCTURE with clear evidence, 0đ nếu bài viết không phải tiếng ANh) },
+        "rubricGrammar": { "point": number (0-25), "feedback": ["string"] (0-5 items, Vietnamese feedback about GRAMMAR with clear evidence, 0đ nếu bài viết không phải tiếng ANh) },
+        "rubricVocabulary": { "point": number (0-25), "feedback": ["string"] (0-5 items, Vietnamese feedback about VOCABULARY with clear evidence, 0đ nếu bài viết không phải tiếng ANh) },
+        "overallFeedback": "string (overall feedback in Vietnamese; if non-English submission, must clearly state this violation)",
+        "suggested": ["string"] (0-5 items, Vietnamese suggestions for improvement; if non-English submission, focus on rewriting in English)
+      }
       `;
 
     const userPrompt = `
-      Topic: ${writing.description}
-      Essay: ${content}
-      
-      Essay Requirements:
+      Đây là đề bài:
+      - Title: ${writing.title}
+      - Description: ${writing.description}
       - Minimum words: ${writing.minWords}
       - Maximum words: ${writing.maxWords}
       - Duration: ${writing.duration} minutes
       - Suggested vocabulary: ${writing.suggestedVocabulary.join(', ')}
       - Suggested structure: ${writing.suggestedStructure.map(s => `${s.step}. ${s.title}: ${s.description}`).join(' | ')}
-
-      Requirements:
-      1. Return the result strictly in this JSON format:
-      {
-        "content": "string",
-        "revisedContent": "string",
-        "rubricContent": { "point": number, "feedback": ["string"] },
-        "rubricStructure": { "point": number, "feedback": ["string"] },
-        "rubricGrammar": { "point": number, "feedback": ["string"] },
-        "rubricVocabulary": { "point": number, "feedback": ["string"] },
-        "overallFeedback": "string",
-        "suggested": ["string"]
-      }
+      Bài viết của tôi: ${content}
+      Đầu tiên hãy kiểm tra bài viết ${content} có phải tiếng Anh hay không, nếu không phải tiếng Anh (Bất kì ngôn ngữ nào khác) thì trả về 0 điểm
+            Hãy chấm điểm
       `;
 
-    const result = await AIProvider.evaluateEssay<IAIWritingResult>(systemPrompt, userPrompt)
-    const pointResult = (result.rubricContent.point + result.rubricStructure.point + result.rubricGrammar.point + result.rubricVocabulary.point) / 4
+    const resultAI = await AIProvider.evaluateEssay<IAIWritingResult>(systemPrompt, userPrompt)
+    const pointResult = (resultAI.rubricContent.point + resultAI.rubricStructure.point + resultAI.rubricGrammar.point + resultAI.rubricVocabulary.point)
+    const result = {
+      ...resultAI,
+      content: content,
+    }
+
+    const newWritingUser = await writingUserModel.create({
+      writing: writingId,
+      user: userId,
+      content: content,
+      revisedContent: resultAI.revisedContent,
+      rubricContent: resultAI.rubricContent,
+      rubricStructure: resultAI.rubricStructure,
+      rubricGrammar: resultAI.rubricGrammar,
+      rubricVocabulary: resultAI.rubricVocabulary,
+      overallFeedback: resultAI.overallFeedback,
+      suggested: resultAI.suggested,
+    })
 
     // Lưu qua StudyService
-    const history = await StudyService.saveStudyResult({
+    await StudyService.saveStudyResult({
       userId,
       lessonId: writingId,
       category: 'writing',
-      level: (writing as any).level || 'A1',
+      level: writing.level || 'A1',
       progress: pointResult,
-      point: pointResult,
-      isCompleted: true, // Chỉ cần có làm là tính hoàn thành
       studyTime: studyTimeSeconds,
-      resultData: result,
-      correctAnswers: 1,
-      totalQuestions: 1
+      resultId: [newWritingUser._id],
     })
-
-    // Luôn cập nhật streak khi có tham gia làm bài
-    await StreakService.updateStreak(userId)
 
     return result
   }
@@ -428,19 +464,11 @@ export class WritingService {
       category: 'writing'
     }).sort({ progress: -1, createdAt: -1 })
 
-    if (!history) throw new ErrorHandler('Kết quả bài viết không tồn tại', 404)
+    if (!history || !history.resultId || history.resultId.length === 0) throw new ErrorHandler('Kết quả bài viết không tồn tại', 404)
 
-    // Load detailed result from WritingUser if exists
-    let detailedResult = null;
-    if (history.resultId && history.resultId.length > 0) {
-      const WritingUser = mongoose.model('WritingUser');
-      detailedResult = await WritingUser.findById(history.resultId[0]).lean();
-    }
+    const resultData = await writingUserModel.findById(history.resultId[0]).lean();
 
-    return {
-      ...history.toObject(),
-      result: detailedResult
-    }
+    return resultData
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

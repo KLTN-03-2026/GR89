@@ -36,7 +36,8 @@ export class EntertainmentController {
 
   // (ADMIN) Lấy thống kê tổng quan giải trí
   static getOverviewStats = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const stats = await EntertainmentService.getOverviewStats()
+    const type = req.query.type as 'movie' | 'music' | 'podcast'
+    const stats = await EntertainmentService.getOverviewStats(type)
     res.status(200).json({ success: true, message: 'Lấy thống kê tổng quan giải trí thành công', data: stats })
   })
 
@@ -236,6 +237,7 @@ export class EntertainmentController {
   static update = CatchAsyncError(async (req: Request, res: Response) => {
     const { id } = req.params
     const data = await EntertainmentService.update(id, req.body)
+
     await EntertainmentController.logAdminAction(req, {
       action: 'update',
       resourceType: 'entertainment',

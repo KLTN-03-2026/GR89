@@ -1,5 +1,6 @@
 'use client'
 
+import React, { useEffect } from 'react'
 import { ChevronLeft, ChevronRight, HelpCircle, CheckCircle2, AlertCircle, RefreshCcw, Send } from 'lucide-react'
 import type { PracticeQuestion, PracticeStatus } from '@/features/grammar/types'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -31,6 +32,13 @@ export function PracticeStage({
   onComplete
 }: PracticeStageProps) {
 
+  // Tự động điền câu hỏi vào input nếu là dạng Correct Sentence
+  useEffect(() => {
+    if (question.type === 'Correct Sentence' && !answer && status === 'idle') {
+      onAnswerChange(question.question)
+    }
+  }, [question, index]) // Chạy lại khi chuyển câu
+
   // 🔹 derive state
   const isFirst = index === 0
   const isLast = index === total - 1
@@ -46,11 +54,21 @@ export function PracticeStage({
 
   // 🔹 check logic
   const handleCheck = () => {
-    const userAnswer = answer.trim().toLowerCase()
+    const normalizeString = (str: string) => {
+      return str
+        .trim() // Xóa khoảng trắng 2 đầu
+        .toLowerCase() // Chuyển về chữ thường
+        .replace(/[.,?!]+$/, '') // Xóa dấu câu ở CUỐI câu
+        .replace(/\s+/g, ' ') // Đưa nhiều khoảng trắng liên tiếp về 1 khoảng trắng
+    }
+
+    const normalizedUserAnswer = normalizeString(answer)
+    const normalizedCorrectAnswer = normalizeString(question.answer)
+
     let isCorrect = false
 
     if (question.type === 'Fill in the blank' || question.type === 'Correct Sentence') {
-      isCorrect = userAnswer === question.answer.trim().toLowerCase()
+      isCorrect = normalizedUserAnswer === normalizedCorrectAnswer
     } else {
       isCorrect = answer === question.answer
     }

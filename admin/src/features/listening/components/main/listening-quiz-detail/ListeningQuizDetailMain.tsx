@@ -1,39 +1,42 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DataTable, PageHeader } from '@/components/common'
-import { getListeningById, getListeningQuizzes, type ListeningQuizDoc } from '@/features/listening/services/api'
+import { useRouter } from 'next/navigation'
+import { getListeningQuizzes, type ListeningQuizDoc } from '@/features/listening/services/api'
 import type { Listening } from '@/features/listening/types'
 import { columnsListeningQuizDetail, type ListeningQuizRow } from '../../table/listening-quiz-detail/Columns'
 import { SheetListeningQuiz } from '@/features/listening/components/dialog/SheetListeningQuiz'
 import { ArrowLeft, ListChecks, Plus } from 'lucide-react'
 
-export function ListeningQuizDetailMain({ _id }: { _id: string }) {
-  const [listening, setListening] = useState<Listening | null>(null)
-  const [quizzes, setQuizzes] = useState<ListeningQuizDoc[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refresh, setRefresh] = useState(0)
+interface ListeningQuizDetailMainProps {
+  _id: string
+  initialListening: Listening
+  initialQuizzes: ListeningQuizDoc[]
+}
+
+export function ListeningQuizDetailMain({ _id, initialListening, initialQuizzes }: ListeningQuizDetailMainProps) {
+  const router = useRouter()
+  const [listening, setListening] = useState<Listening | null>(initialListening)
+  const [quizzes, setQuizzes] = useState<ListeningQuizDoc[]>(initialQuizzes)
+  const [loading, setLoading] = useState(false)
   const [openAdd, setOpenAdd] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
-    Promise.all([getListeningById(_id), getListeningQuizzes(_id)])
-      .then(([lRes, qRes]) => {
-        if (cancelled) return
-        setListening(lRes.data ?? null)
-        setQuizzes(qRes.data ?? [])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [_id, refresh])
+  // Syncing state with props
+  const [prevListening, setPrevListening] = useState(initialListening)
+  if (initialListening !== prevListening) {
+    setListening(initialListening)
+    setPrevListening(initialListening)
+  }
+
+  const [prevQuizzes, setPrevQuizzes] = useState(initialQuizzes)
+  if (initialQuizzes !== prevQuizzes) {
+    setQuizzes(initialQuizzes)
+    setPrevQuizzes(initialQuizzes)
+  }
 
   const rows: ListeningQuizRow[] = (quizzes || []).map((q, _index) => ({ ...q, _index }))
 
@@ -69,7 +72,7 @@ export function ListeningQuizDetailMain({ _id }: { _id: string }) {
             <p className="text-sm text-muted-foreground text-center py-8">Không tìm thấy bài nghe.</p>
           ) : (
             <DataTable
-              columns={columnsListeningQuizDetail(_id, () => setRefresh((n) => n + 1))}
+              columns={columnsListeningQuizDetail(_id, () => router.refresh())}
               data={rows}
               isLoading={loading}
               columnNameSearch="question"
@@ -84,7 +87,7 @@ export function ListeningQuizDetailMain({ _id }: { _id: string }) {
           listeningId={_id}
           open={openAdd}
           onOpenChange={setOpenAdd}
-          onSuccess={() => setRefresh((n) => n + 1)}
+          onSuccess={() => router.refresh()}
           mode="add"
         />
       )}

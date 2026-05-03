@@ -30,7 +30,6 @@ const quizSchema = new Schema<IQuiz>({
   },
   explanation: {
     type: String,
-    required: [true, 'Vui lòng nhập giải thích'],
     trim: true,
   }
 })

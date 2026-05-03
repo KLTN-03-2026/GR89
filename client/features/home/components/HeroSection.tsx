@@ -1,18 +1,45 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Play, Sparkles, Star } from 'lucide-react'
+import { ArrowRight, Play, Sparkles, Star, Quote } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+
+const QUOTES = [
+  {
+    text: "The only way to do great work is to love what you do.",
+    author: "Steve Jobs",
+  },
+  {
+    text: "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    author: "Winston Churchill",
+  },
+  {
+    text: "Learning another language is not only learning different words for the same things, but learning another way to think about things.",
+    author: "Flora Lewis",
+  },
+  {
+    text: "The limits of my language mean the limits of my world.",
+    author: "Ludwig Wittgenstein",
+  }
+]
 
 export function HeroSection() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentQuote, setCurrentQuote] = useState(0)
 
   useEffect(() => {
     const userData = typeof window !== 'undefined' ? localStorage.getItem('userData') : null
     const token = userData ? JSON.parse(userData).accessToken : null
     setIsAuthenticated(!!token)
+
+    const timer = setInterval(() => {
+      setCurrentQuote((prev) => (prev + 1) % QUOTES.length)
+    }, 10000)
+
+    return () => clearInterval(timer)
   }, [])
 
   const handleGetStarted = () => {
@@ -108,8 +135,8 @@ export function HeroSection() {
           </div>
 
           {/* Right Image/Illustration */}
-          <div className="relative lg:h-[600px] flex items-center justify-center">
-            <div className="relative w-full max-w-lg">
+          <div className="relative lg:h-[600px] flex flex-col items-center justify-center gap-8">
+            <div className="relative w-full max-w-lg mt-8 lg:mt-0">
               {/* Main Dashboard Image */}
               <div className="relative bg-white rounded-2xl shadow-2xl p-4 transform hover:scale-105 transition-transform duration-300">
                 <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl flex items-center justify-center">
@@ -144,6 +171,44 @@ export function HeroSection() {
                 </div>
               </div>
             </div>
+
+            {/* Motivational Quote placed below the dashboard image */}
+            <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 w-full max-w-lg mt-4 lg:mt-12 z-10">
+              <Quote className="absolute top-4 left-4 w-8 h-8 text-white/20" />
+              <div className="relative z-10 pl-6">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentQuote}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.5 }}
+                    className="min-h-[70px] flex flex-col justify-center"
+                  >
+                    <p className="text-base font-medium text-white italic leading-relaxed">
+                      "{QUOTES[currentQuote].text}"
+                    </p>
+                    <p className="mt-2 text-sm text-yellow-300 font-semibold">
+                      — {QUOTES[currentQuote].author}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Quote Navigation Dots */}
+                <div className="flex gap-2 mt-4">
+                  {QUOTES.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentQuote(idx)}
+                      className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === currentQuote ? 'bg-white w-4' : 'bg-white/30 hover:bg-white/50'
+                        }`}
+                      aria-label={`Go to quote ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

@@ -53,6 +53,7 @@ export type FileSubmit = {
 }
 
 export type SheetImportOnImportPayload = FileSubmit & {
+  jsonRoot: unknown[],
   file: File | null
 }
 

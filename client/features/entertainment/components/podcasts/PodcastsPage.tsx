@@ -2,8 +2,8 @@
 import { useMemo } from "react"
 import { WelcomeSection } from "@/components/common/WelcomeSection"
 import { Podcasts } from "./Podcasts"
-import { IStreakCardProps, IWelcomeContentProps, IButton, IDescription, IStatsOverview } from "@/types"
-import { Clock, Play, Mic, Radio, Target } from "lucide-react"
+import { IStreakCardProps, IWelcomeContentProps, IDescription, IStatsOverview } from "@/types"
+import { Clock, Mic, Radio, Target } from "lucide-react"
 import type { EntertainmentStatsEntry, EntertainmentItem } from '@/features/entertainment'
 import { formatStudyTime } from "@/libs/utils/formatStudyTime"
 
@@ -17,11 +17,6 @@ export function PodcastsPage({ podcastStats, items }: PodcastsPageProps) {
   const listenedEpisodes = podcastStats?.viewedCount ?? 0
   const completion = totalEpisodes > 0 ? Math.round((listenedEpisodes / totalEpisodes) * 100) : 0
   const listenTime = formatStudyTime(podcastStats?.totalWatchTime)
-
-  const buttons: IButton[] = [
-    { type: 'default', text: 'Nghe podcast mới', icon: Play },
-    { type: 'outline', text: 'Xem lại podcast yêu thích', icon: Radio }
-  ]
 
   const descriptions: IDescription[] = [
     {
@@ -47,7 +42,6 @@ export function PodcastsPage({ podcastStats, items }: PodcastsPageProps) {
     badge: " Khám phá",
     badge2: totalEpisodes > 0 ? `🎧 ${listenedEpisodes}/${totalEpisodes} tập` : "Chưa có dữ liệu",
     descriptions,
-    buttons,
     background: "from-emerald-500 via-green-500 to-teal-200"
   }
 

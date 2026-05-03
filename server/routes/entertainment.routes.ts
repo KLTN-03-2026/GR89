@@ -1,7 +1,6 @@
 import express from 'express'
 import { authenticateTokenAdmin, authenticateTokenUser, requireRole } from '../middleware/auth.middleware'
 import { EntertainmentController } from '../controllers/entertainment.controller'
-import { uploadDocument } from '../middleware/upload.middleware'
 import { checkVipContentUser } from '../middleware/content.middleware'
 
 const router = express.Router()

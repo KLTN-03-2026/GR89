@@ -1,6 +1,6 @@
-# English Master API
+# ActiveLearning API
 
-Tài liệu nghiệp vụ và danh mục endpoint cho backend English Master.
+Tài liệu nghiệp vụ và danh mục endpoint cho backend ActiveLearning.
 
 ## Tổng quan backend
 

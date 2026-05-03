@@ -43,7 +43,7 @@ export default function FormCreateVocabularyTopic({ setIsLoading, callback }: Fo
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
-    await createVocabularyTopic(data as any)
+    await createVocabularyTopic(data)
       .then((res) => {
         toast.success('Đã tạo chủ đề ' + res?.data?.name)
       })

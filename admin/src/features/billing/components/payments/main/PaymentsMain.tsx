@@ -3,15 +3,15 @@ import { useEffect, useState, useCallback, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable } from "@/components/common"
 import { columnsPayments, PaymentRow } from "../table/PaymentsColumn"
-import { Download, CheckCircle2, Search, Filter, CreditCard, Banknote, Wallet } from "lucide-react"
+import { CheckCircle2, Search, Filter, CreditCard, Banknote, Wallet } from "lucide-react"
 import {
   getPaymentsPaginated,
   PaymentQueryParams
 } from "@/lib/apis/api"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -26,55 +26,94 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-export function PaymentsMain() {
+interface PaymentsMainProps {
+  initialData: PaymentRow[]
+  pagination: {
+    total: number
+    pages: number
+    page: number
+    limit: number
+  }
+  initialPaidCount: number
+  initialTotalRevenue: number
+}
+
+export function PaymentsMain({
+  initialData,
+  pagination: initialPagination,
+  initialPaidCount,
+  initialTotalRevenue
+}: PaymentsMainProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [payments, setPayments] = useState<PaymentRow[]>([])
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
-  const [paidCount, setPaidCount] = useState(0)
-  const [totalRevenue, setTotalRevenue] = useState(0)
-  const [search, setSearch] = useState("")
-  const [status, setStatus] = useState<string>("all")
-  const [provider, setProvider] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<string>("createdAt")
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [payments, setPayments] = useState<PaymentRow[]>(initialData)
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const urlPage = Math.max(1, Number(searchParams.get('page')) || 1)
+  const urlLimit = Number(searchParams.get('limit')) || 10
+  const urlSearch = searchParams.get('search') || ""
+  const urlStatus = searchParams.get('status') || "all"
+  const urlProvider = searchParams.get('provider') || "all"
+  const urlSortBy = searchParams.get('sortBy') || "createdAt"
+  const urlSortOrder = (searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc'
+
+  const [total, setTotal] = useState(initialPagination.total)
+  const [pages, setPages] = useState(initialPagination.pages)
+  const [paidCount, setPaidCount] = useState(initialPaidCount)
+  const [totalRevenue, setTotalRevenue] = useState(initialTotalRevenue)
+  const [search, setSearch] = useState(urlSearch)
 
   const debouncedSearch = useDebounce(search, 500)
 
+  const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '' || value === 'all') {
+        params.delete(key)
+      } else {
+        params.set(key, String(value))
+      }
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, pathname, router])
+
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch, urlSearch, updateUrl])
+
   const fetchPayments = useCallback(async (params: PaymentQueryParams) => {
     setIsLoading(true)
-    await getPaymentsPaginated(params)
-      .then(res => {
-        setPayments(res.data.map(p => ({
-          ...p,
-          id: p._id,
-          user: typeof p.userId === 'object' ? p.userId.fullName : String(p.userId)
-        })))
-        setPage(res.pagination.page)
-        setLimit(res.pagination.limit)
-        setTotal(res.pagination.total)
-        setPages(res.pagination.pages)
-        setPaidCount(res.paidCount)
-        setTotalRevenue(res.totalRevenue)
-      }).finally(() => {
-        setIsLoading(false)
-      })
+    try {
+      const res = await getPaymentsPaginated(params)
+      setPayments(res.data.map(p => ({
+        ...p,
+        id: p._id,
+        user: typeof p.userId === 'object' ? p.userId.fullName : String(p.userId)
+      })))
+      setTotal(res.pagination.total)
+      setPages(res.pagination.pages)
+      setPaidCount(res.paidCount)
+      setTotalRevenue(res.totalRevenue)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => {
-    const params: PaymentQueryParams = {
-      page,
-      limit,
-      search: debouncedSearch,
-      sortBy,
-      sortOrder,
-      status: status !== "all" ? status as "pending" | "paid" | "failed" | "refunded" | "cancelled" : undefined,
-      provider: provider !== "all" ? provider as "vnpay" | "momo" | "stripe" | "paypal" : undefined,
-    }
-    fetchPayments(params)
-  }, [page, limit, debouncedSearch, sortBy, sortOrder, status, provider, fetchPayments])
+    // Luôn fetch khi URL thay đổi để đồng bộ dữ liệu
+    fetchPayments({
+      page: urlPage,
+      limit: urlLimit,
+      search: urlSearch,
+      sortBy: urlSortBy,
+      sortOrder: urlSortOrder,
+      status: urlStatus !== "all" ? urlStatus as any : undefined,
+      provider: urlProvider !== "all" ? urlProvider as any : undefined,
+    })
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlStatus, urlProvider, fetchPayments])
 
   const formatVnd = useCallback((value: number) => {
     const rounded = Math.round(value || 0)
@@ -120,12 +159,6 @@ export function PaymentsMain() {
           </div>
           <p className="text-gray-500 font-medium">Theo dõi lịch sử thanh toán và doanh thu hệ thống.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all font-bold">
-            <Download className="w-4 h-4 mr-2 text-gray-400" />
-            Báo cáo tài chính
-          </Button>
-        </div>
       </div>
 
       <StatsGrid stats={kpiStats} columns={3} />
@@ -148,7 +181,7 @@ export function PaymentsMain() {
                 className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[200px] transition-all font-medium"
               />
             </div>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={urlStatus} onValueChange={(v) => updateUrl({ status: v, page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
@@ -161,7 +194,7 @@ export function PaymentsMain() {
                 <SelectItem value="cancelled">Đã hủy</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={provider} onValueChange={setProvider}>
+            <Select value={urlProvider} onValueChange={(v) => updateUrl({ provider: v, page: 1 })}>
               <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Cổng thanh toán" />
               </SelectTrigger>
@@ -173,10 +206,7 @@ export function PaymentsMain() {
                 <SelectItem value="paypal">PayPal</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={(value) => {
-              setSortBy(value)
-              setPage(1)
-            }}>
+            <Select value={urlSortBy} onValueChange={(value) => updateUrl({ sortBy: value, page: 1 })}>
               <SelectTrigger className="h-11 w-[170px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Sắp xếp theo" />
               </SelectTrigger>
@@ -187,10 +217,7 @@ export function PaymentsMain() {
                 <SelectItem value="status">Trạng thái</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sortOrder} onValueChange={(value) => {
-              setSortOrder(value as 'asc' | 'desc')
-              setPage(1)
-            }}>
+            <Select value={urlSortOrder} onValueChange={(value) => updateUrl({ sortOrder: value, page: 1 })}>
               <SelectTrigger className="h-11 w-[150px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Thứ tự" />
               </SelectTrigger>
@@ -209,16 +236,13 @@ export function PaymentsMain() {
             isLoading={isLoading}
             serverSidePagination={true}
             pagination={{
-              page,
+              page: urlPage,
               pages,
               total,
-              limit,
+              limit: urlLimit,
             }}
-            onPageChange={(newPage) => setPage(newPage)}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit)
-              setPage(1)
-            }}
+            onPageChange={(newPage) => updateUrl({ page: newPage })}
+            onLimitChange={(newLimit) => updateUrl({ limit: newLimit, page: 1 })}
           />
         </CardContent>
       </Card>

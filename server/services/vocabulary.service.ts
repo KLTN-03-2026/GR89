@@ -575,10 +575,6 @@ export class VocabularyService {
     const point = Math.round(((correctCount / (quizResults.length || 1)) * 100) * 100) / 100
     const progress = point // Với vocab, point chính là progress
 
-    // Lấy tags của các câu sai để làm weakPoints
-    // const incorrectQuizzes = await Quiz.find({ _id: { $in: quizResults.filter(r => !r.isCorrect).map(r => r.quizId) } }).select('tags')
-    const weakPoints = Array.from([])
-
     // Lưu qua StudyService (Unified)
     const history = await StudyService.saveStudyResult({
       userId,
@@ -590,9 +586,6 @@ export class VocabularyService {
       isCompleted: true, // Không cần >= 80, chỉ cần có làm là tính hoàn thành
       studyTime: studyTimeSeconds,
       resultId, // Lưu ID vào Progress/History
-      correctAnswers: correctCount,
-      totalQuestions: quizResults.length,
-      weakPoints
     })
 
     // Luôn cập nhật streak khi có tham gia làm bài
@@ -658,6 +651,7 @@ export class VocabularyService {
       .filter(t => completedTopicIds.has(String(t._id)))
       .reduce((sum, t: any) => sum + (Array.isArray(t.vocabularies) ? t.vocabularies.length : 0), 0)
 
+
     const completedTopics = activeProgresses.filter(p => p.best.status === 'passed').length
     const totalTopics = topics.length
     const learnedProgresses = activeProgresses.filter(p => (p.best.resultId?.length || 0) > 0 || (p.best.progress || 0) > 0 || p.best.status === 'passed')
@@ -667,7 +661,7 @@ export class VocabularyService {
     const totalScore = Math.round(activeProgresses.reduce((s: number, p: any) => s + (p.best.progress || 0), 0) * 100) / 100
     const totalTime = activeProgresses.reduce((sum: number, p: any) => sum + (p.totalTime || 0), 0)
 
-    return { learnedWords, completedTopics, totalTopics, avgScore, totalScore, totalTime }
+    return { learnedWords, completedTopics, totalAvailable: activeProgresses.length, totalTopics, avgScore, totalScore, totalTime }
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/

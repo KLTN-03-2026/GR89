@@ -83,7 +83,6 @@ export default function AdminOverview() {
     {
       title: "Người Dùng",
       value: data.kpis.totalUsers.toLocaleString(),
-      change: `${data.kpis.growth.users >= 0 ? '+' : ''}${data.kpis.growth.users}%`,
       icon: Users,
       colorClass: "text-blue-600",
       bgClass: "bg-blue-50",
@@ -93,7 +92,6 @@ export default function AdminOverview() {
     {
       title: "Doanh Thu",
       value: `${Math.round(data.kpis.totalRevenue || 0).toLocaleString('vi-VN')}đ`,
-      change: `${data.kpis.growth.revenue >= 0 ? '+' : ''}${data.kpis.growth.revenue}%`,
       icon: DollarSign,
       colorClass: "text-emerald-600",
       bgClass: "bg-emerald-50",
@@ -103,7 +101,6 @@ export default function AdminOverview() {
     {
       title: "Nội Dung",
       value: data.kpis.totalLessons.toLocaleString(),
-      change: "Ổn định",
       icon: BookOpen,
       colorClass: "text-indigo-600",
       bgClass: "bg-indigo-50",
@@ -113,7 +110,6 @@ export default function AdminOverview() {
     {
       title: "Lượt Hoàn Thành",
       value: data.kpis.totalCompletedLessons.toLocaleString(),
-      change: "Tăng trưởng",
       icon: CheckCircle,
       colorClass: "text-orange-600",
       bgClass: "bg-orange-50",
@@ -148,20 +144,10 @@ export default function AdminOverview() {
           </div>
           <p className="text-gray-500 font-medium">Hôm nay hệ thống của bạn đang hoạt động rất tốt.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-12 px-6 rounded-xl border-gray-200 bg-white shadow-sm hover:bg-gray-50 transition-all">
-            <Clock className="w-4 h-4 mr-2 text-gray-400" />
-            Lịch sử
-          </Button>
-          <Button className="h-12 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
-            <Plus className="w-4 h-4 mr-2" />
-            Tạo bài học mới
-          </Button>
-        </div>
       </div>
 
       {/* KPI Cards Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-8">
         {kpis.map((card, index) => (
           <Card key={index} className="group relative overflow-hidden rounded-3xl border-none bg-white shadow-sm hover:shadow-xl transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -174,23 +160,15 @@ export default function AdminOverview() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-black text-gray-900">{card.value}</div>
-              <div className="flex items-center mt-3 gap-2">
-                <Badge variant="secondary" className={`px-2 py-0.5 rounded-lg border-none ${card.change.startsWith('+') ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-700"
-                  }`}>
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  {card.change}
-                </Badge>
-                <span className="text-xs font-medium text-gray-400">vs tháng trước</span>
-              </div>
               <p className="text-xs font-medium text-gray-400 mt-4 leading-relaxed">{card.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
         {/* Recent Activity Card */}
-        <Card className="lg:col-span-2 rounded-[2.5rem] border-none bg-white shadow-sm overflow-hidden">
+        <Card className="xl:col-span-3 rounded-[2.5rem] border-none bg-white shadow-sm overflow-hidden">
           <CardHeader className="p-8 border-b border-gray-50 flex flex-row items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-indigo-50 rounded-2xl">
@@ -245,7 +223,7 @@ export default function AdminOverview() {
         </Card>
 
         {/* New Users Sidebar Card */}
-        <Card className="rounded-[2.5rem] border-none bg-white shadow-sm overflow-hidden flex flex-col">
+        <Card className="xl:col-span-2 rounded-[2.5rem] border-none bg-white shadow-sm overflow-hidden flex flex-col">
           <CardHeader className="p-8 border-b border-gray-50">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-emerald-50 rounded-2xl">

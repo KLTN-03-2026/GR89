@@ -1,6 +1,6 @@
-# English Master Client
+# ActiveLearning Client
 
-Ứng dụng học tập dành cho học viên trong hệ sinh thái English Master.
+Ứng dụng học tập dành cho học viên trong hệ sinh thái ActiveLearning.
 
 ## Vai trò trong hệ thống
 

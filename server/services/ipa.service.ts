@@ -256,7 +256,7 @@ export class IpaService {
     const paginateOptions = {
       page,
       limit,
-      sort: { orderIndex: 1 },
+      sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 },
       populate: [
         { path: 'image', select: 'url' },
         { path: 'video', select: 'url' },
@@ -489,6 +489,21 @@ export class IpaService {
     return ipa;
   }
 
+  // (USER) Lấy thông tin chi tiết IPA theo âm
+  static async getIpaSound(sound: string): Promise<IIpa> {
+    const ipa = await Ipa.findOne({ sound: sound })
+      .populate('image', 'url')
+      .populate('video', 'url')
+      .lean()
+
+    if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
+    return {
+      ...ipa,
+      image: (ipa.image as any)?.url || null,
+      video: (ipa.video as any)?.url || null
+    } as unknown as IIpa
+  }
+
   /*============================ QUẢN TRỊ - THAO TÁC ĐƠN LẺ ============================*/
 
   // (ADMIN) Lấy thông tin chi tiết IPA theo ID
@@ -517,9 +532,9 @@ export class IpaService {
 
   // (ADMIN) Cập nhật IPA
   static async updateIpa(id: string, ipa: IIpa): Promise<IIpa> {
-    const updatedIpa = await Ipa.findByIdAndUpdate(id, ipa, { new: true })
+    const updatedIpa = await Ipa.findByIdAndUpdate(id, { ...ipa, updatedBy: new mongoose.Types.ObjectId(ipa.updatedBy) }, { new: true })
     if (!updatedIpa) throw new ErrorHandler('IPA không tồn tại', 404)
-    return updatedIpa
+    return updatedIpa as unknown as IIpa
   }
 
   // (ADMIN) Xóa một IPA
@@ -676,8 +691,7 @@ export class IpaService {
       progress,
       point: progress,
       isCompleted: true, // Chỉ cần có làm là tính hoàn thành
-      studyTime: Math.max(0, studyTimeSeconds),
-      resultData: { score: progress }
+      studyTime: Math.max(0, studyTimeSeconds)
     })
 
     return {

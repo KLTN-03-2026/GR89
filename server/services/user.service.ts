@@ -2,7 +2,18 @@ import { IUser, User, IUserPaginateResult } from "../models/user.model";
 import ErrorHandler from "../utils/ErrorHandler";
 import XLSX from 'xlsx'
 import mongoose from "mongoose";
-import { Plan } from "../models/plan.model";
+import { UserInfo } from "./auth.service";
+import { MediaService } from "./media.service";
+import { StudyHistory } from "../models/studyHistory.model";
+import { VocabularyTopic } from "../models/vocabularyTopic.model";
+import { GrammarTopic } from "../models/grammarTopic.model";
+import { Reading } from "../models/reading.model";
+import { Listening } from "../models/listening.model";
+import { Speaking } from "../models/speaking.model";
+import { writingModel } from "../models/writing.model";
+import { Ipa } from "../models/ipa.model";
+
+type ActivityCategory = 'grammar' | 'vocabulary' | 'reading' | 'listening' | 'speaking' | 'ipa' | 'writing'
 
 export class UserService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -35,7 +46,7 @@ export class UserService {
         user.email,
         user.role,
         user.isActive ? "true" : "false",
-        user.isVip ? "true" : "false",
+        user.vipStartDate && user.vipExpireDate && new Date(user.vipExpireDate) > new Date() ? "true" : "false",
         user.currentLevel || "Beginner",
         String(user.totalPoints || 0),
         String(user.currentStreak || 0),
@@ -99,7 +110,7 @@ export class UserService {
       select: "-password",
       lean: false,
       customLabels: {
-        docs: "users",
+        docs: "docs",
         totalDocs: "total",
         limit: "limit",
         page: "page",
@@ -148,15 +159,26 @@ export class UserService {
 
   // (USER) Lấy thông tin cá nhân của người dùng hiện tại
   static async getMe(userId: string): Promise<IUser> {
-    const user = await User.findById(userId).select("-password").populate("avatar", "url");
+    const user = await User.findById(userId).select("-password");
 
     if (!user) throw new ErrorHandler("Không tìm thấy người dùng", 404);
+
+    let avatarUrl = user.avatar;
+    // Nếu avatar là ObjectId (ID của Media), ta cần lấy URL từ Media
+    if (avatarUrl && mongoose.isValidObjectId(avatarUrl)) {
+      const media = await MediaService.getMediaById(avatarUrl as string);
+      if (media) avatarUrl = media.url;
+    }
 
     return {
       _id: String(user._id),
       fullName: user.fullName,
       email: user.email,
-      avatar: user?.avatar as any,
+      avatar: avatarUrl as any,
+      dateOfBirth: user.dateOfBirth || null,
+      phone: user.phone || "",
+      country: user.country || "",
+      city: user.city || "",
       role: user.role,
       currentLevel: user.currentLevel,
       currentStreak: user.currentStreak,
@@ -164,18 +186,167 @@ export class UserService {
       totalStudyTime: user.totalStudyTime,
       totalPoints: user.totalPoints,
       isActive: user.isActive,
-      isVip: user.isVip,
+      isVip: user.vipStartDate && user.vipExpireDate && user.vipExpireDate > new Date() || false,
       vipPlanId: user.vipPlanId?.toString() || "",
       vipStartDate: user.vipStartDate,
+      vipExpireDate: user.vipExpireDate || null
     } as unknown as IUser;
   }
 
+  // (USER) Lấy hoạt động học gần đây
+  static async getRecentActivities(userId: string, limit: number = 5): Promise<Array<{
+    lessonId: string
+    category: ActivityCategory
+    lessonTitle: string
+    createdAt: Date
+    status: 'passed' | 'failed' | 'in_progress'
+  }>> {
+    const histories = await StudyHistory.find({ userId: new mongoose.Types.ObjectId(userId) })
+      .select('lessonId category createdAt status')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean()
+
+    if (!histories.length) return []
+
+    const groupedIds: Record<ActivityCategory, string[]> = {
+      vocabulary: [],
+      grammar: [],
+      reading: [],
+      listening: [],
+      speaking: [],
+      writing: [],
+      ipa: [],
+    }
+
+    for (const item of histories) {
+      const category = item.category as ActivityCategory
+      groupedIds[category].push(String(item.lessonId))
+    }
+
+    const [vocabulary, grammar, reading, listening, speaking, writing, ipa] = await Promise.all([
+      VocabularyTopic.find({ _id: { $in: groupedIds.vocabulary } }).select('_id name').lean(),
+      GrammarTopic.find({ _id: { $in: groupedIds.grammar } }).select('_id title').lean(),
+      Reading.find({ _id: { $in: groupedIds.reading } }).select('_id title').lean(),
+      Listening.find({ _id: { $in: groupedIds.listening } }).select('_id title').lean(),
+      Speaking.find({ _id: { $in: groupedIds.speaking } }).select('_id title').lean(),
+      writingModel.find({ _id: { $in: groupedIds.writing } }).select('_id title').lean(),
+      Ipa.find({ _id: { $in: groupedIds.ipa } }).select('_id sound').lean(),
+    ])
+
+    const titleMaps = {
+      vocabulary: new Map(vocabulary.map(v => [String(v._id), v.name])),
+      grammar: new Map(grammar.map(g => [String(g._id), g.title])),
+      reading: new Map(reading.map(r => [String(r._id), r.title])),
+      listening: new Map(listening.map(l => [String(l._id), l.title])),
+      speaking: new Map(speaking.map(s => [String(s._id), s.title])),
+      writing: new Map(writing.map(w => [String(w._id), w.title])),
+      ipa: new Map(ipa.map(i => [String(i._id), i.sound])),
+    } as const
+
+    return histories.map(item => {
+      const category = item.category as ActivityCategory
+      const lessonId = String(item.lessonId)
+      const lessonTitle = titleMaps[category].get(lessonId) || 'Bài học'
+      return {
+        lessonId,
+        category,
+        lessonTitle,
+        createdAt: item.createdAt as Date,
+        status: item.status as 'passed' | 'failed' | 'in_progress'
+      }
+    })
+  }
+
+  /** (ADMIN) Lịch sử học tập chi tiết từ StudyHistory — dùng trang quản trị điểm người dùng */
+  static async getAdminStudyHistory(
+    userId: string,
+    limit: number = 50
+  ): Promise<
+    Array<{
+      lessonId: string
+      category: ActivityCategory
+      lessonTitle: string
+      status: 'passed' | 'failed' | 'in_progress'
+      progress: number
+      duration: number
+      level: string
+      createdAt: Date
+    }>
+  > {
+    const histories = await StudyHistory.find({ userId: new mongoose.Types.ObjectId(userId) })
+      .select('lessonId category createdAt status progress duration level')
+      .sort({ createdAt: -1 })
+      .limit(Math.min(Math.max(limit, 1), 200))
+      .lean()
+
+    if (!histories.length) return []
+
+    const groupedIds: Record<ActivityCategory, string[]> = {
+      vocabulary: [],
+      grammar: [],
+      reading: [],
+      listening: [],
+      speaking: [],
+      writing: [],
+      ipa: [],
+    }
+
+    for (const item of histories) {
+      const category = item.category as ActivityCategory
+      groupedIds[category].push(String(item.lessonId))
+    }
+
+    const [vocabulary, grammar, reading, listening, speaking, writing, ipa] = await Promise.all([
+      VocabularyTopic.find({ _id: { $in: groupedIds.vocabulary } }).select('_id name').lean(),
+      GrammarTopic.find({ _id: { $in: groupedIds.grammar } }).select('_id title').lean(),
+      Reading.find({ _id: { $in: groupedIds.reading } }).select('_id title').lean(),
+      Listening.find({ _id: { $in: groupedIds.listening } }).select('_id title').lean(),
+      Speaking.find({ _id: { $in: groupedIds.speaking } }).select('_id title').lean(),
+      writingModel.find({ _id: { $in: groupedIds.writing } }).select('_id title').lean(),
+      Ipa.find({ _id: { $in: groupedIds.ipa } }).select('_id sound').lean(),
+    ])
+
+    const titleMaps = {
+      vocabulary: new Map(vocabulary.map(v => [String(v._id), v.name])),
+      grammar: new Map(grammar.map(g => [String(g._id), g.title])),
+      reading: new Map(reading.map(r => [String(r._id), r.title])),
+      listening: new Map(listening.map(l => [String(l._id), l.title])),
+      speaking: new Map(speaking.map(s => [String(s._id), s.title])),
+      writing: new Map(writing.map(w => [String(w._id), w.title])),
+      ipa: new Map(ipa.map(i => [String(i._id), i.sound])),
+    } as const
+
+    return histories.map(item => {
+      const category = item.category as ActivityCategory
+      const lessonId = String(item.lessonId)
+      const lessonTitle = titleMaps[category].get(lessonId) || 'Bài học'
+      return {
+        lessonId,
+        category,
+        lessonTitle,
+        status: item.status as 'passed' | 'failed' | 'in_progress',
+        progress: typeof item.progress === 'number' ? item.progress : 0,
+        duration: typeof item.duration === 'number' ? item.duration : 0,
+        level: (item.level as string) || 'A1',
+        createdAt: item.createdAt as Date,
+      }
+    })
+  }
+
   // (USER) Cập nhật thông tin cá nhân
-  static async updateMe(userId: string, data: { fullName?: string }): Promise<IUser> {
+  static async updateMe(
+    userId: string,
+    data: { fullName?: string; dateOfBirth?: Date | null; phone?: string; country?: string; city?: string }
+  ): Promise<UserInfo> {
     const updated = await User.findByIdAndUpdate(
       userId,
       {
         ...(data.fullName ? { fullName: data.fullName } : {}),
+        ...(data.dateOfBirth !== undefined ? { dateOfBirth: data.dateOfBirth } : {}),
+        ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.country !== undefined ? { country: data.country } : {}),
+        ...(data.city !== undefined ? { city: data.city } : {}),
       },
       { new: true }
     )
@@ -183,24 +354,39 @@ export class UserService {
       .populate("avatar", "url");
 
     if (!updated) throw new ErrorHandler("Không tìm thấy người dùng", 404);
-    return updated;
+    return {
+      ...updated.toObject(),
+      avatar: (updated?.avatar as any)?.url || '',
+    } as unknown as UserInfo;
   }
 
   // (USER) Cập nhật ảnh đại diện
-  static async updateAvatar(userId: string, avatarMediaId: string): Promise<IUser> {
-    if (!mongoose.isValidObjectId(avatarMediaId))
-      throw new ErrorHandler("Media avatar không hợp lệ", 400);
+  static async updateAvatar(userId: string, avatarUrl: string): Promise<UserInfo> {
+    const DEFAULT_AVATAR_ID = '69293c75f29d5312d6568881'
+    const currentUser = await User.findById(userId).select("avatar")
+    const previousAvatar = currentUser?.avatar
 
     const updated = await User.findByIdAndUpdate(
       userId,
-      { avatar: new mongoose.Types.ObjectId(avatarMediaId) },
+      { avatar: avatarUrl },
       { new: true }
-    )
-      .select("-password")
-      .populate("avatar", "url");
+    ).select("-password");
 
     if (!updated) throw new ErrorHandler("Không tìm thấy người dùng", 404);
-    return updated;
+
+    // Nếu avatar cũ là Media ID, có thể xóa Media đó đi (trừ avatar mặc định)
+    if (
+      previousAvatar &&
+      previousAvatar !== DEFAULT_AVATAR_ID &&
+      mongoose.isValidObjectId(previousAvatar)
+    ) {
+      await MediaService.deleteOne(String(previousAvatar))
+    }
+
+    return {
+      ...updated.toObject(),
+      avatar: updated.avatar,
+    } as unknown as UserInfo;
   }
 
   // (USER) Đổi mật khẩu
@@ -266,26 +452,5 @@ export class UserService {
     }
 
     return user;
-  }
-
-  // (USER) MIDDLEWARE KIỂM TRA VIP
-  static async checkVip(userId: string): Promise<void> {
-    const user = await User.findById(userId).select("-password");
-    if (!user) throw new ErrorHandler("Không tìm thấy người dùng", 404);
-    if (user.role === 'user' && user.isVip && user.vipStartDate) {
-      const vipPlan = await Plan.findById(user.vipPlanId)
-      if (!vipPlan) throw new ErrorHandler('Gói vip không tồn tại', 404)
-      if (vipPlan.isActive === false) throw new ErrorHandler('Gói vip đã bị khóa', 403)
-      const durationDays = vipPlan.billingCycle === 'monthly' ? 30
-        : vipPlan.billingCycle === 'yearly' ? 365
-          : 365000 // ~1000 years
-      if (new Date(user.vipStartDate).getTime() + durationDays * 24 * 60 * 60 * 1000 < new Date().getTime()) {
-        user.isVip = false
-        user.vipPlanId = undefined
-        user.vipStartDate = undefined
-        await user.save()
-        throw new ErrorHandler('Gói vip đã hết hạn', 403)
-      }
-    }
   }
 }

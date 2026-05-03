@@ -43,16 +43,15 @@ export function ListMediaImage() {
 
   const fetchMedia = useCallback(async (nextPage: number, nextLimit: number) => {
     setIsLoading(true)
-    try {
-      const res = await getMediaList({ page: nextPage, limit: nextLimit, type: 'image', sortBy: 'createdAt', sortOrder: 'desc' })
-      setImages(res.data?.filter(item => item.type === 'image') as Media[])
-      setPages(res.pagination.pages || 0)
-      setTotal(res.pagination.total || 0)
-    } catch {
-      toast.error('Không thể tải danh sách ảnh')
-    } finally {
-      setIsLoading(false)
-    }
+    await getMediaList({ page: nextPage, limit: nextLimit, type: 'image', sortBy: 'createdAt', sortOrder: 'desc' })
+      .then(res => {
+        setImages(res.data?.filter(item => item.type === 'image') as Media[])
+        setPages(res.pagination.pages || 0)
+        setTotal(res.pagination.total || 0)
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [])
 
   useEffect(() => {

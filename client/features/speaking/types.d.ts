@@ -44,6 +44,19 @@ export interface Speaking {
   progress: number
 }
 
+export interface subtitle {
+  _id: string
+  start: string
+  end: string
+  english: string
+  vietnamese: string
+  phonetic: string
+}
+
+export interface SpeakingData extends Speaking {
+  subtitleIds: subtitle[]
+}
+
 export interface ISpeakingSentenceAchievement {
   sentenceIndex: number
   bestScore: number

@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useAuth } from '@/libs/contexts/AuthContext'
 import HeaderBar from './sections/HeaderBar'
 import SidebarNav from './sections/SidebarNav'
 import ProfileTab from './sections/ProfileTab'
@@ -14,7 +13,6 @@ interface TabItem { id: string; label: string; description: string; icon: React.
 export function AccountPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
-  const { user } = useAuth()
 
   const tabs: TabItem[] = [
     { id: 'profile', label: 'Thông tin cá nhân', icon: User, description: 'Quản lý thông tin cá nhân' },
@@ -27,9 +25,9 @@ export function AccountPage() {
   const renderProfileTab = () => (
     <ProfileTab
       isEditing={isEditing}
+      setIsEditing={setIsEditing}
       onEdit={() => setIsEditing(true)}
       onCancel={handleCancel}
-      user={user ? { fullName: user.fullName, email: user.email, isVip: user.isVip } : null}
     />
   )
 
@@ -53,7 +51,7 @@ export function AccountPage() {
       <div className="bg-white/50 backdrop-blur-sm border-t border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center text-gray-600">
-            <p>&copy; 2026 EnglishMaster. Tất cả quyền được bảo lưu.</p>
+            <p>&copy; 2026 ActiveLearning. Tất cả quyền được bảo lưu.</p>
           </div>
         </div>
       </div>

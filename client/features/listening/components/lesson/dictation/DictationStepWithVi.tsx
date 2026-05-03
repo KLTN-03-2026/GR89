@@ -1,23 +1,31 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { AudioSection } from '@/components/common/medias'
-import { CheckCircle2, Keyboard, Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { doListeningQuiz } from '@/features/listening/services/listeningApi'
-import { notifyStreakIncrease } from '@/libs/streakToast'
-import { useStudySession } from '@/libs/hooks/useStudySession'
-import { toast } from 'react-toastify'
 import { useRouter } from 'next/navigation'
+import DictationHasStarted from './DictationHasStarted'
+import DictationInput from './DictationInput'
+import { Eye, EyeOff, RefreshCcw, CheckCircle } from 'lucide-react'
+import { diffWords } from 'diff'
 
 interface DictationStepWithViProps {
-  lessonId: string
+  listeningId: string
   audioUrl: string
   subtitleEn: string
   subtitleVi: string
   title: string
-  onComplete: (result: { correct: number; total: number; percentage: number }) => void
+  formDataDictationResult: {
+    value: string
+    added?: boolean
+    removed?: boolean
+  }[]
+  setFormDataDictationResult: (formDataDictationResult: {
+    value: string
+    added?: boolean
+    removed?: boolean
+  }[]) => void
+  handleSubmit: () => void
+  onRetry?: () => void
 }
 
 const sanitizeSubtitleForDictation = (text: string) =>
@@ -28,169 +36,135 @@ const sanitizeSubtitleForDictation = (text: string) =>
     .map((line) => line.replace(/^[AB]\s*:\s*/i, ''))
     .join('\n')
 
-const normalizeWord = (v: string) =>
-  v
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[.,?!;:"'()\-]/g, '')
-    .trim()
-
 export function DictationStepWithVi({
-  lessonId,
+  listeningId,
   audioUrl,
   subtitleEn,
   subtitleVi,
-  onComplete,
+  formDataDictationResult,
+  setFormDataDictationResult,
+  handleSubmit,
+  onRetry
 }: DictationStepWithViProps) {
   const router = useRouter()
   const normalizedSubtitleEn = sanitizeSubtitleForDictation(subtitleEn)
-  const normalizedSubtitleVi = sanitizeSubtitleForDictation(subtitleVi)
-  const wordsEn = normalizedSubtitleEn.trim().split(/\s+/)
-  const sentencesEn = normalizedSubtitleEn.split(/(?<=[.!?])\s+/).filter(Boolean)
-  const sentencesVi = normalizedSubtitleVi.trim().split(/(?<=[.!?])\s+/).filter(Boolean)
 
-  const [currentIndex, setCurrentIndex] = useState(0)
   const [inputText, setInputText] = useState('')
-  const [resultText, setResultText] = useState<{ index: number; text: string; isCorrect: boolean }[]>([])
+
   const [hasStarted, setHasStarted] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
-  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false)
-  const [isSavingResult, setIsSavingResult] = useState(false)
-  const [isResultSaved, setIsResultSaved] = useState(false)
-  const [completedSentences, setCompletedSentences] = useState<number[]>([])
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false)
-  const [duration, setDuration] = useState(0)
-  const { startSession, getSessionPayload } = useStudySession()
+  const [showSubtitleVi, setShowSubtitleVi] = useState(false)
+  const [diffResult, setDiffResult] = useState<any[]>([])
 
-  useEffect(() => {
-    if (!hasStarted || isCompleted) return
-    const timer = window.setInterval(() => {
-      setDuration((prev) => prev + 1)
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [hasStarted, isCompleted])
-
-  const persistListeningResult = async (
-    finalResult: { index: number; text: string; isCorrect: boolean }[]
-  ): Promise<boolean> => {
-    if (isSavingResult || isResultSaved) return true
-    setIsSavingResult(true)
-    try {
-      const studySession = getSessionPayload()
-      await doListeningQuiz(lessonId, duration, finalResult, studySession, 'dictation')
-      await notifyStreakIncrease()
-      setIsResultSaved(true)
-      toast.success('Đã lưu kết quả bài nghe')
-      return true
-    } catch {
-      toast.error('Không thể lưu kết quả. Vui lòng thử lại.')
-      return false
-    } finally {
-      setIsSavingResult(false)
-    }
-  }
-
-  const getSentenceIndexForWordIndex = (wordIdx: number) => {
-    let count = 0
-    for (let i = 0; i < sentencesEn.length; i++) {
-      const wordsInSentence = sentencesEn[i].trim().split(/\s+/).length
-      if (wordIdx < count + wordsInSentence) return i
-      count += wordsInSentence
-    }
-    return -1
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Audio shortcuts should work while typing
+  // Handle keyboard events
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Tua lùi 5s audio
     if (e.key === 'ArrowLeft') {
       e.preventDefault()
       window.dispatchEvent(new CustomEvent('audio:seek', { detail: { delta: -5 } }))
       return
     }
+
+    // Tua tới 5s audio
     if (e.key === 'ArrowRight') {
       e.preventDefault()
       window.dispatchEvent(new CustomEvent('audio:seek', { detail: { delta: 5 } }))
       return
     }
+
+    // Click Control toggle audio
     if (e.key === 'Control') {
       e.preventDefault()
       window.dispatchEvent(new Event('audio:toggle'))
       return
     }
+  }
 
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      const rawTarget = wordsEn[currentIndex] || ''
-      const isCorrect = normalizeWord(inputText) === normalizeWord(rawTarget)
+  // Handle submit dictation full text
+  const handleSubmitDictation = async () => {
+    const cleanCorrect = normalizedSubtitleEn.replace(/[.,?!;:"'()\-’‘´”“…]/g, '').replace(/[ \t]+/g, ' ').trim()
+    const cleanUser = inputText.replace(/[.,?!;:"'()\-’‘´”“…]/g, '').replace(/[ \t]+/g, ' ').trim()
 
-      const newItem = { index: currentIndex, text: inputText, isCorrect }
-      const newResult = [...resultText, newItem]
-      setResultText(newResult)
-      setInputText('')
-      const nextIndex = currentIndex + 1
+    // Đổi vị trí cleanUser và cleanCorrect để diffWords giữ lại định dạng xuống dòng (\n) từ cleanCorrect
+    const differences = diffWords(cleanUser, cleanCorrect, { ignoreCase: true })
 
-      const sentenceIdx = getSentenceIndexForWordIndex(currentIndex)
-      const wordsInThisSentence = sentencesEn[sentenceIdx]?.trim().split(/\s+/)?.length ?? 0
-      const wordOffsetInSentence = sentenceIdx >= 0
-        ? currentIndex - sentencesEn.slice(0, sentenceIdx).reduce((acc, s) => acc + s.trim().split(/\s+/).length, 0)
-        : 0
-      const isLastWordOfSentence = wordOffsetInSentence === wordsInThisSentence - 1
+    const formattedDiff = differences.map(part => ({
+      value: part.value,
+      ...(part.removed && { added: true }),
+      ...(part.added && { removed: true })
+    }))
 
-      if (isLastWordOfSentence && sentenceIdx >= 0 && !completedSentences.includes(sentenceIdx)) {
-        // Add newest completed sentence to top
-        setCompletedSentences(prev => [sentenceIdx, ...prev])
-      }
+    setDiffResult(formattedDiff)
+    setFormDataDictationResult(formattedDiff)
+    setIsCompleted(true)
+  }
 
-      setCurrentIndex(nextIndex)
-
-      if (nextIndex >= wordsEn.length) {
-        setIsCompleted(true)
-        const correctCount = newResult.filter(r => r.isCorrect).length
-        const total = newResult.length
-        setShowCompleteConfirm(true)
-        void persistListeningResult(newResult)
-        onComplete({
-          correct: correctCount,
-          total,
-          percentage: total > 0 ? Math.round((correctCount / total) * 100) : 0,
-        })
-      }
+  // Tính điểm và tỷ lệ đúng
+  const correctCount = formDataDictationResult.reduce((acc, part) => {
+    if (!part?.added && !part?.removed) {
+      return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
     }
-  }
+    return acc;
+  }, 0);
 
-  const handleStart = () => {
-    setHasStarted(true)
-    setDuration(0)
-    startSession()
-  }
+  const totalWords = formDataDictationResult.reduce((acc, part) => {
+    if (!part?.added) {
+      return acc + (part?.value || '').trim().split(/[ \t\n]+/).filter(Boolean).length;
+    }
+    return acc;
+  }, 0);
 
-  const correctCount = resultText.filter(r => r.isCorrect).length
-  const pct = resultText.length ? Math.round((correctCount / resultText.length) * 100) : 0
+  const pct = totalWords > 0 ? Math.round((correctCount / totalWords) * 100) : 0
 
+  // Handle go to result page
   const handleGoToResultPage = async () => {
-    if (!isResultSaved) {
-      const saved = await persistListeningResult(resultText)
-      if (!saved) {
-        return
-      }
-    }
-    router.push(`/skills/listening/result/${lessonId}`)
+    handleSubmit()
   }
 
+  // Handle retry
   const handleRetry = () => {
-    setCurrentIndex(0)
-    setInputText('')
-    setResultText([])
-    setHasStarted(false)
-    setIsCompleted(false)
-    setShowCompleteConfirm(false)
-    setIsSavingResult(false)
-    setIsResultSaved(false)
-    setCompletedSentences([])
-    setDuration(0)
-    startSession()
+    if (!onRetry) {
+      router.replace(`/skills/listening/${listeningId}`)
+    }
+    else {
+      setInputText('')
+      setFormDataDictationResult([])
+      setHasStarted(false)
+      setIsCompleted(false)
+      setShowSubtitleVi(false)
+      onRetry()
+    }
   }
+
+  // Format the diff result into lines for rendering
+  const diffLines: { value: string, added?: boolean, removed?: boolean }[][] = [];
+  let currentLineParts: { value: string, added?: boolean, removed?: boolean }[] = [];
+
+  diffResult.forEach(part => {
+    const value = part?.value || '';
+    const subParts = value.split('\n');
+    subParts.forEach((subPart: string, index: number) => {
+      if (index > 0) {
+        diffLines.push(currentLineParts);
+        currentLineParts = [];
+      }
+      if (subPart) {
+        currentLineParts.push({ ...part, value: subPart });
+      }
+    });
+  });
+  if (currentLineParts.length > 0 || diffLines.length === 0) {
+    diffLines.push(currentLineParts);
+  }
+
+  const linesVi = subtitleVi.split('\n').map(line => line.trim()).filter(Boolean);
+
+  // Extract speaker names from the original subtitleEn
+  const originalLines = String(subtitleEn || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const speakerNames = originalLines.map(line => {
+    const match = line.match(/^([A-Za-z0-9\s]+)\s*:/i);
+    return match ? match[1] : null;
+  });
 
   return (
     <div className="space-y-6">
@@ -200,105 +174,97 @@ export function DictationStepWithVi({
       <div className="rounded-2xl border border-gray-200/80 bg-white shadow-sm overflow-hidden">
         <div className="p-6 space-y-5">
           {!hasStarted ? (
-            <div className="text-center py-12 px-6">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center mx-auto mb-5">
-                <Sparkles className="w-10 h-10 text-indigo-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Sẵn sàng chép chính tả</h3>
-              <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">
-                Bạn sẽ nghe audio và gõ lại từng từ. Nhấn <kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-xs">Enter</kbd> hoặc <kbd className="px-1.5 py-0.5 rounded bg-gray-100 font-mono text-xs">Space</kbd> để xác nhận.
-                Sau mỗi câu hoàn thành, bản dịch tiếng Việt sẽ hiện ra.
-              </p>
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 max-w-md mx-auto mb-4">
-                Lưu ý: Không nhập các tiêu đề như &quot;Conversation 1/2/3&quot; khi chép chính tả.
-              </p>
-              <Button
-                onClick={handleStart}
-                className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 shadow-lg shadow-indigo-200/50 px-8 py-3 text-base font-semibold"
-              >
-                Bắt đầu chép chính tả
-              </Button>
-            </div>
+            <DictationHasStarted handleStart={() => setHasStarted(true)} />
           ) : (
-            <>
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-gray-700">
-                  Gõ từng từ <span className="text-gray-400">(Enter/Space xác nhận)</span>
-                </p>
-                <Button variant="outline" size="sm" onClick={() => setIsShortcutsOpen(true)}>
-                  <Keyboard className="w-4 h-4 mr-2" />
-                  Phím tắt
-                </Button>
-              </div>
-              <input
-                type="text"
-                placeholder="Gõ những gì bạn nghe được..."
-                value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onPaste={e => e.preventDefault()}
-                autoComplete="off"
-                spellCheck={false}
-                disabled={isCompleted}
-                className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-base font-medium"
-              />
-            </>
-          )}
-
-          {hasStarted && resultText.length > 0 && (
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-x-1.5 gap-y-2 leading-relaxed text-sm min-h-[100px] max-h-72 overflow-y-auto p-4 rounded-xl bg-gradient-to-br from-slate-50 to-indigo-50/30 border border-indigo-100/50">
-                {wordsEn.map((_, wordIdx) => {
-                  const res = resultText.find(r => r.index === wordIdx)
-                  if (!res) return null
+              <DictationInput
+                inputText={inputText}
+                setInputText={setInputText}
+                handleKeyDown={handleKeyDown}
+                isCompleted={isCompleted}
+              />
 
-                  return (
-                    <span key={wordIdx} className="inline-flex flex-wrap items-baseline gap-x-1">
-                      {res.isCorrect ? (
-                        <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 font-medium">{wordsEn[wordIdx]}</span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-lg bg-red-100 text-red-800 inline-flex items-center gap-1">
-                          <span className="line-through">{res.text || '(-)'}</span>
-                          <span>{wordsEn[wordIdx]}</span>
-                        </span>
-                      )}
-                    </span>
-                  )
-                })}
-              </div>
-
-              {completedSentences.length > 0 && (
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-3">
-                    Các câu đã hoàn thành
-                  </p>
-                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                    {completedSentences.map((sentenceIdx) => (
-                      <div
-                        key={sentenceIdx}
-                        className="rounded-lg border border-indigo-200 bg-white p-3 shadow-sm"
-                      >
-                        <p className="text-sm font-medium text-gray-900 leading-relaxed">
-                          {sentencesEn[sentenceIdx]}
-                        </p>
-                        {sentencesVi[sentenceIdx] && (
-                          <p className="mt-1.5 text-sm text-gray-600 italic leading-relaxed border-l-2 border-indigo-300 pl-2.5">
-                            {sentencesVi[sentenceIdx]}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+              {!isCompleted && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSubmitDictation}
+                    disabled={!inputText.trim()}
+                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    Nộp bài chấm điểm
+                  </button>
                 </div>
               )}
+            </div>
+          )}
 
-              <div className="flex items-center gap-6 text-sm">
+          {hasStarted && isCompleted && (
+            <div className="space-y-6">
+              {/* Diff Result Line by Line */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between bg-gray-50 px-5 py-3 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-700">Đoạn hội thoại đã chấm điểm</h3>
+                  <button
+                    onClick={() => setShowSubtitleVi(!showSubtitleVi)}
+                    className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition"
+                  >
+                    {showSubtitleVi ? (
+                      <><EyeOff className="w-4 h-4" /> Ẩn tiếng Việt</>
+                    ) : (
+                      <><Eye className="w-4 h-4" /> Xem tiếng Việt</>
+                    )}
+                  </button>
+                </div>
+                <div className="p-5 space-y-3 max-h-96 overflow-y-auto">
+                  {diffLines.map((lineParts, index) => {
+                    if (lineParts.length === 0 && !linesVi[index]) return null;
+                    const speaker = speakerNames[index];
+                    return (
+                      <div key={index} className="space-y-0.5">
+                        <div className="text-gray-800 leading-relaxed text-base flex items-start">
+                          {speaker && (
+                            <span className="font-bold text-indigo-700 mr-2 flex-shrink-0">{speaker}:</span>
+                          )}
+                          <div className="flex-1">
+                            {lineParts.map((part, i) => {
+                              if (part.added) {
+                                return (
+                                  <span key={i} className="bg-red-100 text-red-700 line-through mx-0.5 px-1 py-0.5 rounded-md">
+                                    {part.value}
+                                  </span>
+                                );
+                              }
+                              if (part.removed) {
+                                return (
+                                  <span key={i} className="bg-amber-100 text-amber-800 mx-0.5 px-1 py-0.5 rounded-md" title="Từ này bạn gõ thiếu hoặc sai">
+                                    {part.value}
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span key={i} className="text-gray-800">
+                                  {part.value}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {showSubtitleVi && linesVi[index] && (
+                          <p className={`text-gray-500 text-sm leading-snug mt-0.5 ${speaker ? 'ml-8' : ''}`}>{linesVi[index]}</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6 text-sm bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-600">Điểm:</span>
-                  <span className="font-bold text-indigo-600 tabular-nums">{correctCount}/{resultText.length}</span>
+                  <span className="font-bold text-indigo-600 tabular-nums">{correctCount}/{totalWords}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-600">Tỷ lệ:</span>
+                  <span className="text-gray-600">Tỷ lệ chính xác:</span>
                   <span className={`font-bold tabular-nums ${pct >= 80 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-red-500'
                     }`}>
                     {pct}%
@@ -310,64 +276,29 @@ export function DictationStepWithVi({
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600">Thời gian:</span>
-                  <span className="font-bold text-indigo-600 tabular-nums">
-                    {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, '0')}
-                  </span>
-                </div>
+              </div>
+
+              {/* Các nút hành động */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  onClick={handleRetry}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition"
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                  Làm lại
+                </button>
+                <button
+                  onClick={handleGoToResultPage}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition shadow-sm"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Hoàn thành
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      <Dialog open={isShortcutsOpen} onOpenChange={setIsShortcutsOpen}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Phím tắt</DialogTitle>
-            <DialogDescription>Enter / Space: Xác nhận từ. Ctrl: Phát/tạm dừng. ← →: Tua 5 giây.</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={() => setIsShortcutsOpen(false)}>Đóng</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showCompleteConfirm} onOpenChange={setShowCompleteConfirm}>
-        <DialogContent
-          className="rounded-2xl"
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onPointerDownOutside={(e) => e.preventDefault()}
-          onInteractOutside={(e) => e.preventDefault()}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onKeyDown={(e) => {
-            // Prevent Space from triggering unintended close/actions while dialog is open
-            if (e.key === ' ') {
-              e.preventDefault()
-              e.stopPropagation()
-            }
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              Bạn đã hoàn thành bài chép chính tả
-            </DialogTitle>
-            <DialogDescription>
-              Bạn muốn sang trang kết quả hay làm lại bài này?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleRetry}>
-              Làm lại
-            </Button>
-            <Button onClick={handleGoToResultPage} disabled={isSavingResult}>
-              {isSavingResult ? 'Đang lưu...' : 'Sang kết quả'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

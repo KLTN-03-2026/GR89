@@ -1,7 +1,8 @@
 'use client'
 
 import authorizedAxios from '@/libs/apis/authorizedAxios'
-import type { StudySessionPayload } from '@/libs/apis/types'
+import { SentenceEvaluation } from '../components/lesson/types'
+import { StudySessionPayload } from '@/libs/apis/types'
 
 interface ApiResponse<T = unknown> {
   success: boolean
@@ -47,10 +48,9 @@ export async function assessSpeakingPronunciation(
 }
 
 export async function saveHighestSpeakingScore(
-  userId: string,
   lessonId: string,
-  score: number,
-  studySession?: StudySessionPayload
+  sentenceEvaluations: SentenceEvaluation[],
+  studySession: StudySessionPayload
 ): Promise<ApiResponse<{
   isNewRecord: boolean
   currentScore: number
@@ -66,13 +66,6 @@ export async function saveHighestSpeakingScore(
     updatedAt?: Date
   }
 }>> {
-  const response = await authorizedAxios.post(
-    `/speaking-scoring/users/${userId}/save-highest-score`,
-    {
-      lessonId,
-      score,
-      studySession
-    }
-  )
+  const response = await authorizedAxios.post(`/speaking-scoring/users/${lessonId}/save-highest-score`, { sentenceEvaluations, studySession })
   return response.data
 }

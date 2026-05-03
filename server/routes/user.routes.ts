@@ -19,11 +19,18 @@ router.get("/streak/status", authenticateTokenUser, CatchAsyncError(async (req: 
 /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
 
 router.get("/", authenticateTokenAdmin, requireRole(["admin", "content"]), UserController.getAllUsers);
+router.get(
+  "/:id/study-history",
+  authenticateTokenAdmin,
+  requireRole(["admin", "content"]),
+  UserController.getAdminUserStudyHistory
+);
 router.put("/bulk/status", authenticateTokenAdmin, requireRole(["admin", "content"]), UserController.updateManyUsersStatus);
 
 /*============================ NGƯỜI DÙNG & CHUNG ============================*/
 
 router.get("/me/user", authenticateTokenUser, requireRole(["user"]), UserController.getMe);
+router.get("/me/recent-activities", authenticateTokenUser, requireRole(["user"]), UserController.getRecentActivities);
 router.get("/me/admin", authenticateTokenAdmin, requireRole(["admin", "content"]), UserController.getMe);
 router.put("/me", authenticateTokenUser, requireRole(["user"]), UserController.updateMe);
 router.put("/me/avatar", authenticateTokenUser, requireRole(["user"]), upload.single("file"), UserController.updateAvatar);

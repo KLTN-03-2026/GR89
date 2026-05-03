@@ -26,7 +26,7 @@ import {
   Save,
   Loader2,
 } from "lucide-react"
-import { createVocabularyTopic } from "../../services/api"
+import { createVocabularyTopic, DataCreateVocabularyTopic } from "../../services/api"
 import { toast } from "react-toastify"
 import { DialogImageToMedia } from "@/components/common/dialog"
 import Image from "next/image"
@@ -60,18 +60,17 @@ export function SheetAddVocabularyTopic({ callback }: { callback: () => void }) 
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
-    try {
-      await createVocabularyTopic(data as any)
-      toast.success('Đã tạo chủ đề ' + data.name)
-      setOpen(false)
-      form.reset()
-      setImageUrl("")
-      callback()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể tạo chủ đề')
-    } finally {
-      setLoading(false)
-    }
+    await createVocabularyTopic(data as DataCreateVocabularyTopic)
+      .then(() => {
+        toast.success('Đã tạo chủ đề ' + data.name)
+        setOpen(false)
+        form.reset()
+        setImageUrl("")
+        callback()
+      })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   return (

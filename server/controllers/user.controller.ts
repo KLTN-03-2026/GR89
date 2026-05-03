@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import mongoose from "mongoose";
 import { CatchAsyncError } from "../middleware/CatchAsyncError";
 import { UserService } from "../services/user.service";
 import ErrorHandler from "../utils/ErrorHandler";
@@ -69,7 +70,7 @@ export class UserController {
     res.status(200).json({
       success: true,
       message: "Lấy danh sách người dùng thành công",
-      data: (result as any).users ?? (result as any).docs ?? [],
+      data: result.docs ?? [],
       pagination: {
         page: result.page,
         limit: result.limit,
@@ -123,13 +124,56 @@ export class UserController {
     });
   });
 
+  // (USER) Lấy hoạt động học gần đây
+  static getRecentActivities = CatchAsyncError(async (req: Request, res: Response) => {
+    const userId = req.user?._id as string
+    const limit = req.query.limit ? Number(req.query.limit) : 5
+    const activities = await UserService.getRecentActivities(userId, limit)
+    res.status(200).json({
+      success: true,
+      message: "Lấy hoạt động gần đây thành công",
+      data: activities,
+    })
+  })
+
+  // (ADMIN) Lịch sử học tập của một người dùng (StudyHistory)
+  static getAdminUserStudyHistory = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return next(new ErrorHandler("Mã người dùng không hợp lệ", 400))
+    }
+    const rawLimit = req.query.limit != null ? Number(req.query.limit) : 80
+    const limit = Number.isFinite(rawLimit) ? rawLimit : 80
+    const data = await UserService.getAdminStudyHistory(id, limit)
+    await UserController.logAdminAction(req, {
+      action: "view_user_study_history",
+      resourceType: "user",
+      resourceId: id,
+      description: "Xem lịch sử học tập người dùng",
+      metadata: { returnedCount: data.length, limit },
+    })
+    res.status(200).json({
+      success: true,
+      message: "Lấy lịch sử học tập thành công",
+      data,
+    })
+  })
+
   // (USER) Cập nhật thông tin cá nhân
   static updateMe = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
-    const { fullName } = req.body;
+    const { fullName, dateOfBirth, phone, country, city } = req.body;
     if (fullName && String(fullName).trim().length < 3)
       return next(new ErrorHandler("Tên phải có ít nhất 3 ký tự", 400));
+    if (phone && String(phone).trim().length > 20)
+      return next(new ErrorHandler("Số điện thoại không hợp lệ", 400));
 
-    const me = await UserService.updateMe(req.user?._id as string, { fullName });
+    const me = await UserService.updateMe(req.user?._id as string, {
+      fullName: fullName?.trim(),
+      dateOfBirth: dateOfBirth || null,
+      phone: phone?.trim(),
+      country: country?.trim(),
+      city: city?.trim(),
+    });
     res.status(200).json({
       success: true,
       message: "Cập nhật thông tin thành công",
@@ -144,12 +188,9 @@ export class UserController {
     const userId = req.user?._id;
     if (!userId) return next(new ErrorHandler("Vui lòng đăng nhập", 401));
 
-    const media = await MediaService.uploadMedia({
-      filePath: req.file.path,
-      userId,
-    });
+    const result = await MediaService.uploadRawImage(req.file.path);
 
-    const me = await UserService.updateAvatar(userId, media._id as string);
+    const me = await UserService.updateAvatar(userId, result.url);
     res.status(200).json({
       success: true,
       message: "Cập nhật ảnh đại diện thành công",

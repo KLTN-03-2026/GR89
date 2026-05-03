@@ -8,6 +8,7 @@ import type { SheetImportOnImportPayload, SheetImportResult } from '@/components
 import { importWritingJson } from '../../services/api'
 import { buildExcelTemplateWorkbook, buildJsonTemplateData } from './templates'
 import { parseExcelToWritingJson, validateWritingImportJson } from './validateWritingImport'
+import { Writing } from '../../types'
 
 export function WritingSheetImport({ callback }: { callback?: () => void }) {
   return (
@@ -42,7 +43,7 @@ export function WritingSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadExcel={parseExcelToWritingJson}
       defaultSkipErrors={true}
       onImport={async (payload: SheetImportOnImportPayload): Promise<SheetImportResult> => {
-        const res = await importWritingJson(payload.jsonRoot, payload.skipErrors)
+        const res = await importWritingJson(payload.jsonRoot as Writing[], payload.skipErrors)
 
         type ImportWritingJsonResponse = {
           success: boolean

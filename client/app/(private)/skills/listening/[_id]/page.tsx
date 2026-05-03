@@ -1,4 +1,4 @@
-import { ListeningLesson, getListeningLesson } from '@/features/listening'
+import { ListeningLessonPage, getListeningLesson } from '@/features/listening'
 
 export default async function page({ params }: { params: Promise<{ _id: string }> }) {
   const { _id } = await params
@@ -9,7 +9,7 @@ export default async function page({ params }: { params: Promise<{ _id: string }
 
   return (
     <div className='max-w-7xl mx-auto'>
-      <ListeningLesson listening={listening} />
+      <ListeningLessonPage listening={listening} />
     </div>
   )
 }
