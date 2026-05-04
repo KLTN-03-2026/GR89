@@ -1,15 +1,17 @@
 'use client'
 
 import { WelcomeSection } from "@/components/common/WelcomeSection";
-import { CATEGORY_CONFIGS } from "../mockData";
 import { CategoryType } from "../types";
+import type { IStatsOverview } from "@/types";
 import { Users, BookOpen, Clock, Target } from "lucide-react";
+import { CATEGORY_CONFIGS } from "@/features/catelogies/mockData";
 
 interface CategoryHeaderProps {
   type: CategoryType;
+  statsOverview?: IStatsOverview[];
 }
 
-export function CategoryHeader({ type }: CategoryHeaderProps) {
+export function CategoryHeader({ type, statsOverview }: CategoryHeaderProps) {
   const config = CATEGORY_CONFIGS[type];
 
   const welcomeContent = {
@@ -26,18 +28,20 @@ export function CategoryHeader({ type }: CategoryHeaderProps) {
     background: config.welcomeBackground
   };
 
-  const statsOverview = [
-    { title: 'Lớp tại trung tâm', value: '24', change: 'Đang mở', Icon: BookOpen, color: 'from-blue-500 to-blue-400' },
-    { title: 'Học viên trực tiếp', value: '350+', change: '+20 mới', Icon: Users, color: 'from-purple-500 to-purple-400' },
-    { title: 'Tỷ lệ đầu ra', value: '98%', change: 'Cam kết IELTS', Icon: Target, color: 'from-orange-500 to-orange-400' },
-    { title: 'Giảng viên', value: '15+', change: '8.0+ IELTS', Icon: Clock, color: 'from-emerald-500 to-emerald-400' },
+  const fallbackStatsOverview: IStatsOverview[] = [
+    { title: 'Tổng lớp', value: '—', change: 'Đang cập nhật', Icon: BookOpen, color: 'from-blue-500 to-blue-400' },
+    { title: 'Tổng học viên', value: '—', change: 'Đang cập nhật', Icon: Users, color: 'from-purple-500 to-purple-400' },
+    { title: 'Tổng học viên (catelogies)', value: '—', change: 'Đang cập nhật', Icon: Target, color: 'from-orange-500 to-orange-400' },
+    { title: 'Giảng viên đang dạy', value: '—', change: 'Đang cập nhật', Icon: Clock, color: 'from-emerald-500 to-emerald-400' },
   ];
+
+  const resolvedStatsOverview = statsOverview?.length ? statsOverview : fallbackStatsOverview;
 
   const CustomWelcomeSection = () => {
     return (
       <WelcomeSection
         welcomeContent={welcomeContent}
-        statsOverview={statsOverview}
+        statsOverview={resolvedStatsOverview}
       />
     );
   };

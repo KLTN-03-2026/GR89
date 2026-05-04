@@ -7,7 +7,6 @@ import { login, loginGoogle, logout, register } from '@/features/auth/services/a
 import { getMyProfile, updateMyAvatar, updateMyProfile } from '@/features/account/services/accountApi'
 import { toast } from "react-toastify";
 import { useGoogleLogin } from "@react-oauth/google";
-import { AuthorizedAxios } from "../apis/authorizedAxios";
 
 interface LoginRequest {
   email: string

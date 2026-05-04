@@ -19,7 +19,7 @@ export function DocumentItem({ document, onView }: DocumentItemProps) {
 
         <div className="space-y-1">
           <h4 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors cursor-pointer" onClick={() => onView(document)}>
-            {document.title}
+            {document.name}
           </h4>
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1">

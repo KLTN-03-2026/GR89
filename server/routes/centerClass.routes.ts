@@ -10,6 +10,49 @@ const router = express.Router()
 
 /*============================ QUẢN LÝ LỚP HỌC ============================*/
 
+// User: xem danh sách lớp theo danh mục, xem chi tiết lớp (không lộ password)
+router.get(
+  '/user/stats',
+  authenticateTokenUser,
+  requireRole(['user']),
+  CenterClassController.getUserStats,
+)
+
+router.post(
+  '/user/check-password',
+  authenticateTokenUser,
+  requireRole(['user']),
+  CenterClassController.checkPasswordClass,
+)
+
+router.post(
+  '/user/is-enrolled',
+  authenticateTokenUser,
+  requireRole(['user']),
+  CenterClassController.isUserEnrolledInClass,
+)
+
+router.get(
+  '/user',
+  authenticateTokenUser,
+  requireRole(['user']),
+  CenterClassController.getUserClasses,
+)
+router.get(
+  '/user/:id',
+  authenticateTokenUser,
+  requireRole(['user']),
+  CenterClassController.getUserClassById,
+)
+
+// Admin/Content: thống kê lớp học
+router.get(
+  '/stats',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  CenterClassController.getStats,
+)
+
 router.post(
   '/',
   authenticateTokenAdmin,

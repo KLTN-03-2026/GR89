@@ -35,6 +35,7 @@ export interface ICenterClass {
   schedule: string;
   status: 'opening' | 'ongoing' | 'finished';
   password?: string;
+  maxStudents?: number | null;
   isActive: boolean;
   students: IClassStudent[];
   documents: IGlobalDocument[];

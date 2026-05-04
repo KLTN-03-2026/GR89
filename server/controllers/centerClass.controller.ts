@@ -9,6 +9,22 @@ export class CenterClassController {
   // Tạo lớp học mới
   static createClass = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const data = req.body
+
+    //check tất cả dữ liệu
+    if (!data.name || !data.password) {
+      return next(new ErrorHandler('Vui lòng nhập tên lớp học và mật khẩu', 400))
+    }
+    if (data.password.length !== 6) {
+      return next(new ErrorHandler('Mật khẩu phải là 6 ký tự số', 400))
+    }
+    if (data.maxStudents !== undefined && data.maxStudents !== null && data.maxStudents !== '') {
+      const maxStudents = Number(data.maxStudents)
+      if (!Number.isInteger(maxStudents) || maxStudents <= 0) {
+        return next(new ErrorHandler('Số học viên tối đa phải là số nguyên dương', 400))
+      }
+      data.maxStudents = maxStudents
+    }
+
     const newClass = await CenterClassService.createClass(data)
     res.status(201).json({
       success: true,
@@ -47,6 +63,99 @@ export class CenterClassController {
     },
   )
 
+  // (ADMIN/CONTENT) Thống kê lớp học trung tâm
+  static getStats = CatchAsyncError(async (req: Request, res: Response) => {
+    const { search, category, status, isActive } = req.query
+    const stats = await CenterClassService.getCenterClassStats({
+      search: search as string | undefined,
+      category: category as string | undefined,
+      status: status as string | undefined,
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+    })
+    res.status(200).json({
+      success: true,
+      message: 'Lấy thống kê lớp học thành công',
+      data: stats,
+    })
+  })
+
+  // (USER) Lấy danh sách lớp học theo danh mục
+  static getUserClasses = CatchAsyncError(async (req: Request, res: Response) => {
+    const { category } = req.query
+    const classes = await CenterClassService.getClassesForUser(category as string | undefined)
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách lớp học thành công',
+      data: classes,
+    })
+  })
+
+  // (USER) Kiểm tra password class
+  static checkPasswordClass = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const { classId, password } = req.body
+      const userId = req.user?._id
+
+      if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập trước', 401))
+      const result = await CenterClassService.checkPasswordClass(userId, classId, password)
+      res.status(200).json({
+        success: true,
+        message: 'Kiểm tra password lớp thành công',
+        data: result,
+      })
+    },
+  )
+
+  // (USER) Kiểm tra người dùng đã tham gia lớp học chưa
+  static isUserEnrolledInClass = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const { classId } = req.body
+      const userId = req.user?._id
+
+      if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập trước', 401))
+      const result = await CenterClassService.isUserEnrolledInClass(userId, classId)
+      res.status(200).json({
+        success: true,
+        message: 'Kiểm tra người dùng đã tham gia lớp học thành công',
+        data: result,
+      })
+    },
+  )
+
+  // (USER) Thống kê lớp học trung tâm (theo danh mục nếu có)
+  static getUserStats = CatchAsyncError(async (req: Request, res: Response) => {
+    const { category } = req.query
+    const stats = await CenterClassService.getCenterClassStats({
+      category: category as string | undefined,
+      isActive: true,
+    })
+    res.status(200).json({
+      success: true,
+      message: 'Lấy thống kê lớp học thành công',
+      data: stats,
+    })
+  })
+
+  // (USER) Lấy chi tiết lớp học
+  static getUserClassById = CatchAsyncError(async (req: Request, res: Response) => {
+    const { id } = req.params
+    const userId = req.user?._id
+
+    if (!userId) {
+      throw new ErrorHandler('Vui lòng đăng nhập trước', 401)
+    }
+
+    const centerClass = await CenterClassService.getClassByIdForUser(id, userId)
+    if (!centerClass) {
+      throw new ErrorHandler('Không tìm thấy lớp học', 404)
+    }
+    res.status(200).json({
+      success: true,
+      message: 'Lấy chi tiết lớp học thành công',
+      data: centerClass,
+    })
+  })
+
   // Lấy chi tiết lớp học
   static getClassById = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
@@ -62,6 +171,20 @@ export class CenterClassController {
   static updateClass = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
     const data = req.body
+    //check tất cả dữ liệu
+    if (!data.name || !data.password) {
+      return next(new ErrorHandler('Vui lòng nhập tên lớp học và mật khẩu', 400))
+    }
+    if (data.password.length !== 6) {
+      return next(new ErrorHandler('Mật khẩu phải là 6 ký tự số', 400))
+    }
+    if (data.maxStudents !== undefined && data.maxStudents !== null && data.maxStudents !== '') {
+      const maxStudents = Number(data.maxStudents)
+      if (!Number.isInteger(maxStudents) || maxStudents <= 0) {
+        return next(new ErrorHandler('Số học viên tối đa phải là số nguyên dương', 400))
+      }
+      data.maxStudents = maxStudents
+    }
     const updatedClass = await CenterClassService.updateClass(id, data)
     res.status(200).json({
       success: true,

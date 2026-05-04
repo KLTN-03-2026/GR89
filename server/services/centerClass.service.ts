@@ -2,7 +2,8 @@ import { CenterClass, ICenterClass } from '../models/centerClass.model'
 import { Homework, IHomework } from '../models/homework.model'
 import { GlobalDocument } from '../models/globalDocument.model'
 import ErrorHandler from '../utils/ErrorHandler'
-import mongoose from 'mongoose'
+import mongoose, { Mongoose } from 'mongoose'
+import { User } from '../models/user.model'
 
 export interface ICreateClassData {
   name: string
@@ -12,6 +13,7 @@ export interface ICreateClassData {
   schedule: string
   status?: 'opening' | 'ongoing' | 'finished'
   password?: string
+  maxStudents?: number | null
   isActive?: boolean
   documents?: string[]
 }
@@ -24,6 +26,7 @@ export interface IUpdateClassData {
   schedule?: string
   status?: 'opening' | 'ongoing' | 'finished'
   password?: string
+  maxStudents?: number | null
   isActive?: boolean
   documents?: string[]
 }
@@ -38,6 +41,29 @@ export interface IClassOptions {
   status?: string
 }
 
+export interface ICenterClassStatsOptions {
+  search?: string
+  category?: string
+  status?: string
+  isActive?: boolean
+}
+
+export interface ICenterClassStats {
+  totalClasses: number
+  totalStudentsUnique: number
+  totalStudentsEnrollments: number
+  totalTeachers: number
+  byCategory: Record<
+    'kids' | 'teenager' | 'adult',
+    {
+      classes: number
+      studentsUnique: number
+      studentsEnrollments: number
+      teachers: number
+    }
+  >
+}
+
 export interface ICreateHomeworkData {
   centerClassId: string
   title: string
@@ -48,13 +74,143 @@ export interface ICreateHomeworkData {
 }
 
 export class CenterClassService {
-  /* ============================ CLASS MANAGEMENT ============================ */
-
+  // (ADMIN/CONTENT) Tạo lớp học
   static async createClass(data: ICreateClassData): Promise<ICenterClass> {
-    const newClass = await CenterClass.create(data)
-    return newClass
+    const classesExist = await CenterClass.find({ name: data.name })
+    if (classesExist.length > 0) {
+      throw new ErrorHandler('Tên lớp đã tồn tại', 400)
+    }
+
+    return await CenterClass.create(data)
   }
 
+  // (USER) Thống kê lớp học + học viên + giảng viên (có thể lọc theo search/category/status/isActive)
+  static async getCenterClassStats(
+    options: ICenterClassStatsOptions = {},
+  ): Promise<ICenterClassStats> {
+    const { search, category, status, isActive } = options
+    const match: any = {}
+    if (typeof isActive === 'boolean') match.isActive = isActive
+    if (category) match.category = category
+    if (status) match.status = status
+    if (search) match.name = { $regex: search, $options: 'i' }
+
+    const [
+      totalClasses,
+      totalTeachersArr,
+      totalEnrollmentsAgg,
+      totalUniqueAgg,
+      byCategoryAgg,
+      byCategoryUniqueAgg,
+    ] = await Promise.all([
+      CenterClass.countDocuments(match),
+      CenterClass.distinct('teacher', { ...match, teacher: { $ne: null } }),
+      CenterClass.aggregate([
+        { $match: match },
+        { $project: { cnt: { $size: { $ifNull: ['$students', []] } } } },
+        { $group: { _id: null, value: { $sum: '$cnt' } } },
+      ]),
+      CenterClass.aggregate([
+        { $match: match },
+        { $unwind: { path: '$students', preserveNullAndEmptyArrays: false } },
+        { $group: { _id: '$students.user' } },
+        { $count: 'value' },
+      ]),
+      CenterClass.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: '$category',
+            classes: { $sum: 1 },
+            studentsEnrollments: { $sum: { $size: { $ifNull: ['$students', []] } } },
+            teacherSet: { $addToSet: '$teacher' },
+          },
+        },
+        {
+          $project: {
+            classes: 1,
+            studentsEnrollments: 1,
+            teachers: { $size: { $setDifference: ['$teacherSet', [null]] } },
+          },
+        },
+      ]),
+      CenterClass.aggregate([
+        { $match: match },
+        { $unwind: { path: '$students', preserveNullAndEmptyArrays: false } },
+        { $group: { _id: { category: '$category', user: '$students.user' } } },
+        { $group: { _id: '$_id.category', studentsUnique: { $sum: 1 } } },
+      ]),
+    ])
+
+    const totalStudentsEnrollments = Number((totalEnrollmentsAgg as any[])?.[0]?.value || 0)
+    const totalStudentsUnique = Number((totalUniqueAgg as any[])?.[0]?.value || 0)
+    const totalTeachers = Array.isArray(totalTeachersArr) ? totalTeachersArr.length : 0
+
+    const byCategory: ICenterClassStats['byCategory'] = {
+      kids: { classes: 0, studentsUnique: 0, studentsEnrollments: 0, teachers: 0 },
+      teenager: { classes: 0, studentsUnique: 0, studentsEnrollments: 0, teachers: 0 },
+      adult: { classes: 0, studentsUnique: 0, studentsEnrollments: 0, teachers: 0 },
+    }
+
+    for (const row of (byCategoryAgg || []) as any[]) {
+      const key = row?._id as 'kids' | 'teenager' | 'adult'
+      if (!key || !(key in byCategory)) continue
+      byCategory[key].classes = Number(row?.classes || 0)
+      byCategory[key].studentsEnrollments = Number(row?.studentsEnrollments || 0)
+      byCategory[key].teachers = Number(row?.teachers || 0)
+    }
+    for (const row of (byCategoryUniqueAgg || []) as any[]) {
+      const key = row?._id as 'kids' | 'teenager' | 'adult'
+      if (!key || !(key in byCategory)) continue
+      byCategory[key].studentsUnique = Number(row.studentsUnique || 0)
+    }
+
+    return {
+      totalClasses: Number(totalClasses || 0),
+      totalStudentsUnique,
+      totalStudentsEnrollments,
+      totalTeachers,
+      byCategory,
+    }
+  }
+
+  // (USER) Kiểm tra password class
+  static async checkPasswordClass(
+    userId: string,
+    classId: string,
+    password: string,
+  ): Promise<boolean> {
+    const user = await User.findById(userId)
+    if (!user) {
+      throw new ErrorHandler('Không tìm thấy người dùng', 404)
+    }
+
+    const centerClass = await CenterClass.findById(classId)
+    if (!centerClass) {
+      throw new ErrorHandler('Không tìm thấy lớp học', 404)
+    }
+
+    if (centerClass.password !== password) {
+      throw new ErrorHandler('Password không đúng vui lòng thử lại', 400)
+    }
+
+    centerClass.students.push({ user: new mongoose.Types.ObjectId(userId), joinDate: new Date() })
+    await centerClass.save()
+
+    return true
+  }
+
+  // (USER) Kiểm tra người dùng đã tham gia lớp học chưa
+  static async isUserEnrolledInClass(userId: string, classId: string): Promise<boolean> {
+    const centerClass = await CenterClass.findById(classId)
+    if (!centerClass) {
+      throw new ErrorHandler('Không tìm thấy lớp học', 404)
+    }
+
+    return centerClass.students.some((student) => student.user.equals(userId))
+  }
+
+  // (ADMIN/CONTENT) Lấy danh sách lớp (phân trang + filter)
   static async getAllClassesPaginated(options: IClassOptions) {
     const {
       page = 1,
@@ -94,6 +250,54 @@ export class CenterClassService {
     return await CenterClass.paginate(query, paginateOptions)
   }
 
+  // (USER) Lấy danh sách lớp theo danh mục (không trả password)
+  static async getClassesForUser(category?: string): Promise<ICenterClass[]> {
+    const query: any = { isActive: true }
+    if (category) query.category = category
+
+    const classes = await CenterClass.find(query)
+      .select('-password')
+      .populate('teacher', 'fullName email avatar')
+      .sort({ createdAt: -1 })
+
+    return classes
+  }
+
+  // (USER) Lấy chi tiết lớp học theo id (không trả password)
+  static async getClassByIdForUser(classId: string, userId: string): Promise<ICenterClass> {
+    const user = await User.findById(userId)
+    if (!user) {
+      throw new ErrorHandler('Không tìm thấy người dùng', 404)
+    }
+
+    const centerClass = await CenterClass.findById(classId)
+      .select('-password')
+      .populate('teacher', 'fullName email avatar')
+      .populate('students.user', 'fullName email avatar')
+      .populate('documents')
+      .populate({
+        path: 'homeworks',
+        strictPopulate: false,
+        populate: [
+          { path: 'documents', strictPopulate: false },
+          { path: 'document', strictPopulate: false },
+          { path: 'submissions.user', select: 'fullName email avatar', strictPopulate: false },
+        ],
+      })
+
+    if (!centerClass || !centerClass.isActive) {
+      throw new ErrorHandler('Không tìm thấy lớp học', 404)
+    }
+
+    // Kiểm tra người dùng có tham gia lớp học không
+    if (!centerClass.students.some((student) => student.user.equals(userId))) {
+      throw new ErrorHandler('Người dùng không tham gia lớp học', 403)
+    }
+
+    return centerClass
+  }
+
+  // (ADMIN/CONTENT) Lấy chi tiết lớp học theo id
   static async getClassById(id: string): Promise<ICenterClass> {
     const centerClass = await CenterClass.findById(id)
       .populate('teacher', 'fullName email avatar')
@@ -115,6 +319,7 @@ export class CenterClassService {
     return centerClass
   }
 
+  // (ADMIN/CONTENT) Cập nhật lớp học
   static async updateClass(id: string, data: IUpdateClassData): Promise<ICenterClass> {
     const centerClass = await CenterClass.findByIdAndUpdate(id, data, {
       new: true,
@@ -124,20 +329,20 @@ export class CenterClassService {
     if (!centerClass) {
       throw new ErrorHandler('Không tìm thấy lớp học để cập nhật', 404)
     }
+
     return centerClass
   }
 
+  // (ADMIN/CONTENT) Xóa lớp học
   static async deleteClass(id: string): Promise<void> {
     const centerClass = await CenterClass.findByIdAndDelete(id)
     if (!centerClass) {
       throw new ErrorHandler('Không tìm thấy lớp học để xóa', 404)
     }
-    // Xóa tất cả bài tập liên quan
     await Homework.deleteMany({ _id: { $in: centerClass.homeworks } })
   }
 
-  /* ============================ STUDENT MANAGEMENT ============================ */
-
+  // (ADMIN/CONTENT) Thêm học viên vào lớp
   static async addStudentToClass(
     classId: string,
     userId: string,
@@ -154,6 +359,7 @@ export class CenterClassService {
     return centerClass
   }
 
+  // (ADMIN/CONTENT) Xóa học viên khỏi lớp
   static async removeStudentFromClass(classId: string, userId: string): Promise<ICenterClass> {
     const centerClass = await CenterClass.findById(classId)
     if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
@@ -165,6 +371,7 @@ export class CenterClassService {
 
   /* ============================ DOCUMENT MANAGEMENT ============================ */
 
+  // (ADMIN/CONTENT) Thêm tài liệu vào lớp
   static async addDocumentToClass(classId: string, documentId: string): Promise<ICenterClass> {
     const centerClass = await CenterClass.findById(classId)
     if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
@@ -180,6 +387,7 @@ export class CenterClassService {
     return centerClass
   }
 
+  // (ADMIN/CONTENT) Xóa tài liệu khỏi lớp
   static async removeDocumentFromClass(classId: string, documentId: string): Promise<ICenterClass> {
     const centerClass = await CenterClass.findById(classId)
     if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
@@ -189,12 +397,14 @@ export class CenterClassService {
     return centerClass
   }
 
+  // (ADMIN/CONTENT) Lấy danh sách tài liệu của lớp
   static async getDocumentsByClassId(classId: string) {
     const centerClass = await CenterClass.findById(classId).populate('documents')
     if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
     return centerClass.documents
   }
 
+  // (ADMIN/CONTENT) Set lại toàn bộ tài liệu của lớp
   static async setDocumentsForClass(classId: string, documentIds: string[]): Promise<ICenterClass> {
     const centerClass = await CenterClass.findById(classId)
     if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
@@ -212,7 +422,7 @@ export class CenterClassService {
 
   /* ============================ HOMEWORK MANAGEMENT ============================ */
 
-  // Tạo bài tập mới cho lớp
+  // (ADMIN/CONTENT) Tạo bài tập mới cho lớp
   static async createHomework(data: ICreateHomeworkData): Promise<IHomework> {
     const rawIds =
       data.documentIds !== undefined ? data.documentIds : data.documentId ? [data.documentId] : []
@@ -242,6 +452,7 @@ export class CenterClassService {
     return homework
   }
 
+  // (ADMIN/CONTENT) Lấy danh sách bài tập của lớp
   static async getHomeworksByClassId(classId: string) {
     const centerClass = await CenterClass.findById(classId).populate({
       path: 'homeworks',
@@ -256,6 +467,7 @@ export class CenterClassService {
     return centerClass.homeworks
   }
 
+  // (ADMIN/CONTENT) Cập nhật bài tập
   static async updateHomework(
     homeworkId: string,
     data: {
@@ -295,6 +507,7 @@ export class CenterClassService {
     return homework
   }
 
+  // (ADMIN/CONTENT) Xóa bài tập (kiểm tra thuộc lớp)
   static async deleteHomeworkFromClass(classId: string, homeworkId: string): Promise<void> {
     const centerClass = await CenterClass.findById(classId)
     if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
@@ -305,7 +518,7 @@ export class CenterClassService {
     await CenterClassService.deleteHomework(homeworkId)
   }
 
-  // Học sinh nộp bài
+  // (USER) Học viên nộp bài
   static async submitHomework(
     homeworkId: string,
     userId: string,
@@ -317,12 +530,10 @@ export class CenterClassService {
     const submissionIndex = homework.submissions.findIndex((s) => s.user.toString() === userId)
 
     if (submissionIndex !== -1) {
-      // Nếu đã nộp rồi thì cập nhật nội dung
       homework.submissions[submissionIndex].content = content
       homework.submissions[submissionIndex].submittedAt = new Date()
       homework.submissions[submissionIndex].status = 'pending'
     } else {
-      // Nếu chưa nộp thì thêm mới
       homework.submissions.push({
         user: new mongoose.Types.ObjectId(userId),
         content,
@@ -336,7 +547,7 @@ export class CenterClassService {
     return homework
   }
 
-  // Giáo viên chấm bài
+  // (ADMIN/CONTENT) Chấm bài
   static async gradeHomework(
     homeworkId: string,
     userId: string,
@@ -358,6 +569,7 @@ export class CenterClassService {
     return homework
   }
 
+  // (ADMIN/CONTENT) Lấy chi tiết bài tập
   static async getHomeworkById(id: string): Promise<IHomework> {
     const homework = await Homework.findById(id)
       .populate({ path: 'documents', strictPopulate: false })
@@ -371,11 +583,11 @@ export class CenterClassService {
     return homework
   }
 
+  // (ADMIN/CONTENT) Xóa bài tập
   static async deleteHomework(id: string): Promise<void> {
     const homework = await Homework.findByIdAndDelete(id)
     if (!homework) throw new ErrorHandler('Không tìm thấy bài tập', 404)
 
-    // Xóa tham chiếu từ lớp học
     await CenterClass.findOneAndUpdate({ homeworks: id }, { $pull: { homeworks: id } })
   }
 }

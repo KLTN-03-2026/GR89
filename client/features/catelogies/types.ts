@@ -4,8 +4,8 @@ export type CategoryType = 'kids' | 'teenager' | 'adult';
 export type DocumentType = 'material' | 'homework';
 
 export interface IDocument {
-  id: string;
-  title: string;
+  _id: string;
+  name: string;
   description: string;
   content: string; // Rich text (HTML)
   createdAt: string;
@@ -23,8 +23,26 @@ export interface IDocument {
   };
 }
 
+export interface IHomeworkSubmission {
+  _id: string;
+  studentId: string;
+  content: string; // Rich text (HTML)
+  createdAt: string;
+}
+
+
+export interface IHomework {
+  _id: string
+  title: string
+  description: string
+  documents: IDocument[]
+  deadline: Date
+  submissions: IHomeworkSubmission[];
+  submittedAt: Date
+}
+
 export interface IClass {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   level: string;
@@ -33,8 +51,27 @@ export interface IClass {
   category: CategoryType;
   startDate: string;
   teacherName: string;
+  teacherId?: string;
   schedule: string;
+  status?: 'opening' | 'ongoing' | 'finished';
   documents: IDocument[];
+  homeworks: IHomework[];
+}
+
+export interface CenterClassStats {
+  totalClasses: number
+  totalStudentsUnique: number
+  totalStudentsEnrollments: number
+  totalTeachers: number
+  byCategory: Record<
+    'kids' | 'teenager' | 'adult',
+    {
+      classes: number
+      studentsUnique: number
+      studentsEnrollments: number
+      teachers: number
+    }
+  >
 }
 
 export interface ICategoryConfig {

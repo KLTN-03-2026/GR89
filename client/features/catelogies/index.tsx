@@ -1,45 +1,52 @@
 'use client'
 
-import { useState, useMemo } from "react";
-import { CategoryType, IClass, IDocument } from "./types";
-import { MOCK_CLASSES } from "./mockData";
+import { useMemo, useState } from "react";
+import { CategoryType, IClass } from "./types";
 import { CategoryHeader } from "./components/CategoryHeader";
 import { ClassCard } from "./components/ClassCard";
-import { DocumentDetailDialog } from "./components/DocumentDetailDialog";
 import { ClassPasswordDialog } from "./components/ClassPasswordDialog";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import type { CenterClassStats } from "./types";
+import { Users, BookOpen, Clock, Target } from "lucide-react";
+import { isUserEnrolledInClass } from "@/features/catelogies/services/api";
 
 interface CategoryContainerProps {
   type: CategoryType;
+  classes: IClass[];
+  stats?: CenterClassStats;
 }
 
-export function CategoryContainer({ type }: CategoryContainerProps) {
+export function CategoryContainer({ type, classes, stats }: CategoryContainerProps) {
   const router = useRouter();
   const [selectedClass, setSelectedClass] = useState<IClass | null>(null);
-  const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const classes = useMemo(() => {
-    return MOCK_CLASSES.filter(c => c.category === type);
-  }, [type]);
-
-  const handleClassClick = (classItem: IClass) => {
+  const handleClassClick = async (classItem: IClass) => {
     setSelectedClass(classItem);
-    setIsPasswordOpen(true);
+    setIsLoading(true);
+    await isUserEnrolledInClass(classItem._id)
+      .then(res => {
+        if (res.success && res.data) {
+          if (classItem) {
+            router.push(`/catelogy/${classItem.category}/${classItem._id}`);
+          }
+        }
+        else {
+          setIsPasswordOpen(true);
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      })
   };
 
-  const handlePasswordSuccess = (id: string) => {
+  const handlePasswordSuccess = () => {
     setIsPasswordOpen(false);
     if (selectedClass) {
-      router.push(`/catelogy/${selectedClass.category}/${id}`);
+      router.push(`/catelogy/${selectedClass.category}/${selectedClass._id}`);
     }
-  };
-
-  const handleViewDocument = (doc: IDocument) => {
-    setSelectedDoc(doc);
-    setIsDialogOpen(true);
   };
 
   const container = {
@@ -57,9 +64,45 @@ export function CategoryContainer({ type }: CategoryContainerProps) {
     show: { opacity: 1, y: 0 }
   };
 
+  const statsOverview = useMemo(() => {
+    const catStats = stats?.byCategory?.[type];
+    if (!catStats) return undefined;
+
+    return [
+      {
+        title: 'Tổng lớp',
+        value: String(catStats.classes),
+        change: catStats.classes ? 'Đang cập nhật' : 'Chưa có dữ liệu',
+        Icon: BookOpen,
+        color: 'from-blue-500 to-blue-400',
+      },
+      {
+        title: 'Tổng học viên',
+        value: String(catStats.studentsUnique),
+        change: catStats.studentsUnique ? 'Học viên unique' : 'Chưa có dữ liệu',
+        Icon: Users,
+        color: 'from-purple-500 to-purple-400',
+      },
+      {
+        title: 'Tổng học viên (catelogies)',
+        value: String(catStats.studentsEnrollments),
+        change: catStats.studentsEnrollments ? `Tổng lượt đăng ký` : 'Chưa có dữ liệu',
+        Icon: Target,
+        color: 'from-orange-500 to-orange-400',
+      },
+      {
+        title: 'Giảng viên phụ trách',
+        value: String(catStats.teachers),
+        change: catStats.teachers ? 'Giảng viên được phân công' : 'Chưa có dữ liệu',
+        Icon: Clock,
+        color: 'from-emerald-500 to-emerald-400',
+      },
+    ];
+  }, [stats, type]);
+
   return (
     <div className="space-y-10 pb-20">
-      <CategoryHeader type={type} />
+      <CategoryHeader type={type} statsOverview={statsOverview} />
 
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
@@ -76,13 +119,14 @@ export function CategoryContainer({ type }: CategoryContainerProps) {
           variants={container}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8"
         >
           {classes.map((classItem) => (
-            <motion.div key={classItem.id} variants={item}>
+            <motion.div key={classItem._id} variants={item}>
               <ClassCard
+                isLoading={isLoading}
                 classItem={classItem}
-                onClick={handleClassClick}
+                onClick={() => handleClassClick(classItem)}
               />
             </motion.div>
           ))}
@@ -104,12 +148,6 @@ export function CategoryContainer({ type }: CategoryContainerProps) {
         isOpen={isPasswordOpen}
         onClose={() => setIsPasswordOpen(false)}
         onSuccess={handlePasswordSuccess}
-      />
-
-      <DocumentDetailDialog
-        document={selectedDoc}
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
       />
     </div>
   );

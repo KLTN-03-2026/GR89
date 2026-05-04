@@ -3,17 +3,18 @@
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, User, ArrowRight, BookOpen, Clock } from "lucide-react";
+import { Calendar, User, ArrowRight, BookOpen, Clock } from "lucide-react";
 import { IClass } from "../types";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { formatDateOnly } from "@/libs/utils";
 
 interface ClassCardProps {
+  isLoading: boolean;
   classItem: IClass;
   onClick: (classItem: IClass) => void;
 }
 
-export function ClassCard({ classItem, onClick }: ClassCardProps) {
+export function ClassCard({ isLoading, classItem, onClick }: ClassCardProps) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
@@ -51,7 +52,7 @@ export function ClassCard({ classItem, onClick }: ClassCardProps) {
                 <Calendar className="w-3 h-3" />
                 Khai giảng
               </div>
-              <p className="text-sm font-bold text-gray-900">{classItem.startDate}</p>
+              <p className="text-sm font-bold text-gray-900">{formatDateOnly(classItem.startDate)}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
               <div className="flex items-center gap-2 text-gray-500 text-xs mb-1 font-bold uppercase tracking-wider">
@@ -77,9 +78,17 @@ export function ClassCard({ classItem, onClick }: ClassCardProps) {
         </CardContent>
 
         <CardFooter className="p-6 pt-4">
-          <Button className="w-full bg-gray-900 hover:bg-blue-600 text-white font-bold py-6 rounded-2xl transition-all group/btn shadow-lg shadow-gray-200">
-            Vào lớp học
-            <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
+          <Button 
+            disabled={isLoading}
+            onClick={() => onClick(classItem)}
+            className="w-full bg-gray-900 hover:bg-blue-600 text-white font-bold py-6 rounded-2xl transition-all group/btn shadow-lg shadow-gray-200"
+            >
+            {isLoading ? <>
+              ... Đang vào lớp
+            </> :
+            <>
+            Vào lớp học <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
+            </>}
           </Button>
         </CardFooter>
       </Card>

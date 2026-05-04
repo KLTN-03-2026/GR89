@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Lock, Calendar, Pencil, Loader2, Clock } from 'lucide-react'
+import { Lock, Calendar, Pencil, Loader2, Clock, EyeClosed, Eye } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ICenterClass } from '../../type'
@@ -31,6 +31,7 @@ export function SheetUpdateClass({ classData, onClose }: SheetUpdateClassProps) 
   const [loading, setLoading] = useState(false)
   const [teachers, setTeachers] = useState<User[]>([])
   const [loadingTeachers, setLoadingTeachers] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
   const scheduleParsed = (() => {
@@ -96,6 +97,7 @@ export function SheetUpdateClass({ classData, onClose }: SheetUpdateClassProps) 
     teacher: classData.teacher?._id || '',
     startDate: classData.startDate ? new Date(classData.startDate).toISOString().split('T')[0] : '',
     password: classData.password || '',
+    maxStudents: classData.maxStudents != null ? String(classData.maxStudents) : '',
     schedule: scheduleParsed.flexibleSchedule,
     isActive: classData.isActive
   })
@@ -139,8 +141,17 @@ export function SheetUpdateClass({ classData, onClose }: SheetUpdateClassProps) 
       finalSchedule = `${days} (${fixedSchedule.startTime} - ${fixedSchedule.endTime})`
     }
 
+    const maxStudents = formData.maxStudents.trim()
+      ? Number(formData.maxStudents.trim())
+      : null
+    if (maxStudents != null && (!Number.isInteger(maxStudents) || maxStudents <= 0)) {
+      toast.error('Số học viên tối đa phải là số nguyên dương')
+      return
+    }
+
     setLoading(true)
-    await updateCenterClass(classData._id, {...formData, schedule: finalSchedule})
+    const { maxStudents: _maxStudents, ...rest } = formData
+    await updateCenterClass(classData._id, { ...rest, schedule: finalSchedule, maxStudents })
       .then(() => {
         toast.success('Cập nhật lớp học thành công')
         router.refresh()
@@ -269,12 +280,64 @@ export function SheetUpdateClass({ classData, onClose }: SheetUpdateClassProps) 
                 <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-amber-500" /> Mật khẩu lớp
                 </Label>
-                <Input
-                  type="password"
+                <div className='relative'>
+                  <Input 
+                  type={showPassword ? 'text' : 'password'} 
+                  placeholder="Mật khẩu (nếu có)" 
+                  className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold" 
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={6}
+                  autoComplete="one-time-code"
                   value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Mật khẩu (nếu có)"
+                  onChange={(e) => {
+                    const nextValue = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    setFormData(prev => ({ ...prev, password: nextValue }))
+                  }}
+                  onKeyDown={(e) => {
+                    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End']
+                    if (allowedKeys.includes(e.key)) return
+                    if (e.key.length === 1 && !/^\d$/.test(e.key)) {
+                      e.preventDefault()
+                    }
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault()
+                    const pasted = e.clipboardData.getData('text')
+                    const nextValue = pasted.replace(/\D/g, '').slice(0, 6)
+                    setFormData(prev => ({ ...prev, password: nextValue }))
+                  }}
+                />
+                
+                  <button
+                    className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md text-gray-500"
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeClosed className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+                  Số học viên tối đa
+                </Label>
+                <Input
+                  placeholder="Ví dụ: 30 (để trống = không giới hạn)"
                   className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold"
+                  inputMode="numeric"
+                  pattern="\d*"
+                  value={formData.maxStudents}
+                  onChange={(e) => {
+                    const nextValue = e.target.value.replace(/\D/g, '').slice(0, 4)
+                    setFormData(prev => ({ ...prev, maxStudents: nextValue }))
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault()
+                    const pasted = e.clipboardData.getData('text')
+                    const nextValue = pasted.replace(/\D/g, '').slice(0, 4)
+                    setFormData(prev => ({ ...prev, maxStudents: nextValue }))
+                  }}
                 />
               </div>
             </div>

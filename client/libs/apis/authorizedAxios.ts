@@ -7,10 +7,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 let isRefreshing = false
 let pendingRequests: (() => void)[] = []
 
-export const AuthorizedAxios = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-})
 
 function translateErrorMessage(message: string): string {
   const translations: Record<string, string> = {
@@ -113,9 +109,30 @@ const refreshApi = axios.create({
   withCredentials: true,
 })
 
+export const AuthorizedAxios = api
+
 // ◆ Interceptor refresh token
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    const data = res.data
+    if (data && typeof data === 'object' && 'success' in data && data.success === false) {
+      const message = typeof data.message === 'string' && data.message.trim() ? data.message : 'Đã xảy ra lỗi'
+      const err = new AxiosError(message, undefined, res.config, res.request, res) as AxiosError & { _handled?: boolean }
+      err._handled = true
+
+      const config = res.config as InternalAxiosRequestConfig & {
+        _retry?: boolean
+        _skipErrorToast?: boolean
+      }
+      if (!config?._skipErrorToast) {
+        toast.error(translateErrorMessage(message))
+      }
+
+      return Promise.reject(err)
+    }
+
+    return res
+  },
 
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
@@ -221,4 +238,3 @@ if (typeof window !== "undefined") {
 }
 
 export default api
-

@@ -31,7 +31,6 @@ export function ClassesMain({ initialData, pagination }: ClassesMainProps) {
       <ClassesContent 
         initialData={initialData}
         pagination={pagination}
-        onOpenAddModal={() => setIsAddModalOpen(true)}
       />
     </AdminPageShell>
   )
