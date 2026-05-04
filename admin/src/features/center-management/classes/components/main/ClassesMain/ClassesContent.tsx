@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useRef, useState } from 'react'
-import { Search, Filter, LayoutGrid, List, Plus } from 'lucide-react'
+import { Search, Filter, LayoutGrid, List } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,16 +25,16 @@ interface ClassesContentProps {
     hasNext: boolean
     hasPrev: boolean
   }
-  onOpenAddModal?: () => void
 }
 
-export default function ClassesContent({ initialData, pagination,onOpenAddModal }: ClassesContentProps) {
+export default function ClassesContent({ initialData, pagination }: ClassesContentProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
   const filter = (() => {
     const raw = searchParams.get('category')
     if (raw === 'kids' || raw === 'teenager' || raw === 'adult') return raw
@@ -48,12 +48,11 @@ export default function ClassesContent({ initialData, pagination,onOpenAddModal 
       if (value == null || value === '') params.delete(key)
       else params.set(key, value)
     })
-    if (!params.get('page')) params.set('page', '1')
     router.push(`${pathname}?${params.toString()}`)
   }
 
   const stats = [
-    { title: 'Tổng số lớp', value: String(pagination.total), icon: GraduationCap, color: 'from-blue-500 to-indigo-600', },
+    { title: 'Tổng số lớp', value: String(pagination.total), icon: GraduationCap, color: 'from-blue-500 to-indigo-600' },
     { title: 'Đang mở', value: String(initialData.filter(c => c.status === 'opening').length), icon: UserCheck, color: 'from-emerald-500 to-teal-600' },
     { title: 'Tổng học viên', value: String(initialData.reduce((acc, curr) => acc + (curr.students?.length || 0), 0)), icon: Users, color: 'from-orange-500 to-red-600' },
     { title: 'Tài liệu lớp', value: String(initialData.reduce((acc, curr) => acc + (curr.documents?.length || 0), 0)), icon: BookOpen, color: 'from-purple-500 to-pink-600' },
@@ -131,22 +130,8 @@ export default function ClassesContent({ initialData, pagination,onOpenAddModal 
               <ClassCard key={c._id} classData={c} />
             ))}
             {initialData.length === 0 && (
-              <div className="col-span-full py-24 text-center space-y-6 bg-gray-50/50 rounded-[3rem] border-2 border-dashed border-gray-100 animate-in fade-in duration-500">
-                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm">
-                  <GraduationCap className="w-10 h-10 text-gray-200" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-gray-900">Chưa có lớp học nào</h3>
-                  <p className="text-gray-500 text-sm max-w-xs mx-auto">Hệ thống hiện tại chưa có lớp học nào. Hãy bắt đầu bằng cách tạo lớp học đầu tiên.</p>
-                </div>
-                {onOpenAddModal && (
-                  <Button 
-                    onClick={onOpenAddModal}
-                    className="bg-indigo-600 hover:bg-indigo-700 rounded-2xl px-10 h-14 font-bold shadow-lg shadow-indigo-100"
-                  >
-                    <Plus className="w-5 h-5 mr-2" /> Tạo lớp học ngay
-                  </Button>
-                )}
+              <div className="col-span-full py-20 text-center text-gray-400 font-bold">
+                Không tìm thấy lớp học nào
               </div>
             )}
           </div>

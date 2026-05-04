@@ -9,6 +9,7 @@ export interface ICenterClass extends Document {
   schedule: string
   status: 'opening' | 'ongoing' | 'finished'
   password: string
+  maxStudents?: number | null
   isActive: boolean
   students: {
     user: mongoose.Types.ObjectId
@@ -54,7 +55,15 @@ const centerClassSchema = new Schema<ICenterClass>(
     },
     password: {
       type: String,
-      required: [true, 'Mật khẩu lớp học là bắt buộc'],
+      length: 6,
+      required: [true, 'Mật khẩu là bắt buộc'],
+      match: [/^\d{6}$/, 'Mật khẩu phải là 6 ký tự số'],
+      trim: true,
+    },
+    maxStudents: {
+      type: Number,
+      default: 40,
+      min: [1, 'Số học viên tối đa phải lớn hơn 0'],
     },
     isActive: {
       type: Boolean,

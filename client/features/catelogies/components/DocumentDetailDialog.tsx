@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { IDocument } from "../types";
 import { Download, Printer, Share2, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatDateOnly } from "@/libs/utils";
 
 interface DocumentDetailDialogProps {
   document: IDocument | null;
@@ -28,9 +29,9 @@ export function DocumentDetailDialog({ document, isOpen, onClose }: DocumentDeta
         <DialogHeader className="p-6 bg-gradient-to-r from-blue-600 to-indigo-700 text-white relative">
           <div className="flex justify-between items-start pr-8">
             <div className="space-y-1">
-              <DialogTitle className="text-2xl font-bold">{document.title}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold">{document.name}</DialogTitle>
               <DialogDescription className="text-blue-100/80">
-                Đăng bởi {document.author || 'Hệ thống'} • {document.createdAt}
+                Đăng bởi {document.author || 'Hệ thống'} • {formatDateOnly(document.createdAt)}
               </DialogDescription>
             </div>
           </div>

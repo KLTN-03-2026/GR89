@@ -1,4 +1,4 @@
-import { Lock, MapPin, Phone, MessageCircle, ArrowRight, ShieldCheck, X } from "lucide-react"
+import { Lock, MapPin, Phone, MessageCircle, ArrowRight, ShieldCheck } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog"
 import {
   InputOTP,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/input-otp"
 import { IClass } from "../types"
 import { toast } from "react-toastify"
+import { checkClassPassword } from "@/features/catelogies/services/api"
 
 interface ClassPasswordDialogProps {
   classItem: IClass | null
@@ -32,18 +32,21 @@ export function ClassPasswordDialog({ classItem, isOpen, onClose, onSuccess }: C
     if (!classItem) return
     setIsVerifying(true)
 
-    // Mock password verification (Mật khẩu mặc định là 123456 cho demo)
-    setTimeout(() => {
-      if (password === "123456") {
+    try {
+      const res = await checkClassPassword(classItem._id, password)
+      if (res?.success) {
         toast.success("Xác thực thành công!")
-        onSuccess(classItem.id)
+        onSuccess(classItem._id)
         setPassword("")
-      } else {
-        toast.error("Mật khẩu không chính xác. Vui lòng thử lại!")
-        setPassword("")
+        return
       }
+      toast.error(res?.message || "Mã PIN không đúng")
+    } catch {
+      // Interceptor đã hiển thị toast lỗi theo response
+    } finally {
       setIsVerifying(false)
-    }, 800)
+      setPassword("")
+    }
   }
 
   if (!classItem) return null
@@ -53,15 +56,6 @@ export function ClassPasswordDialog({ classItem, isOpen, onClose, onSuccess }: C
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
         {/* Header with Branding */}
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full"
-            onClick={onClose}
-          >
-            <X className="w-5 h-5" />
-          </Button>
-
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
               <ShieldCheck className="w-6 h-6 text-yellow-300" />
@@ -72,7 +66,7 @@ export function ClassPasswordDialog({ classItem, isOpen, onClose, onSuccess }: C
           <DialogHeader className="text-left p-0">
             <DialogTitle className="text-3xl font-extrabold text-white mb-2">Xác thực quyền truy cập</DialogTitle>
             <DialogDescription className="text-blue-100/80 text-base leading-relaxed">
-              Lớp <span className="text-white font-bold">"{classItem.name}"</span> dành riêng cho học viên trực tiếp tại trung tâm. Vui lòng nhập mã truy cập được cấp bởi giáo viên.
+              Lớp <span className="text-white font-bold">&quot;{classItem.name}&quot;</span> dành riêng cho học viên trực tiếp tại trung tâm. Vui lòng nhập mã truy cập được cấp bởi giáo viên.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -90,7 +84,9 @@ export function ClassPasswordDialog({ classItem, isOpen, onClose, onSuccess }: C
             <InputOTP
               maxLength={6}
               value={password}
-              onChange={setPassword}
+              inputMode="numeric"
+              pattern="\d*"
+              onChange={(v) => setPassword(v.replace(/\D/g, '').slice(0, 6))}
               disabled={isVerifying}
             >
               <InputOTPGroup className="gap-2">
@@ -98,12 +94,12 @@ export function ClassPasswordDialog({ classItem, isOpen, onClose, onSuccess }: C
                   <InputOTPSlot
                     key={index}
                     index={index}
-                    className="w-12 h-14 text-xl font-bold border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:ring-blue-500 transition-all"
+                    mask
+                    className="w-12 h-14 text-4xl font-bold border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:ring-blue-500 transition-all"
                   />
                 ))}
               </InputOTPGroup>
             </InputOTP>
-
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700 h-14 rounded-2xl font-bold text-lg shadow-lg shadow-blue-100 transition-all active:scale-95"
               onClick={handleVerify}

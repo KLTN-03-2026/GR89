@@ -32,7 +32,7 @@ export function SolutionDetailDialog({ document, isOpen, onClose }: SolutionDeta
                 <CheckCircle2 className="w-5 h-5 text-emerald-200" />
                 <span className="text-xs font-bold uppercase tracking-widest text-emerald-100">Bài giải từ giáo viên</span>
               </div>
-              <DialogTitle className="text-2xl font-bold">Đáp án: {document.title}</DialogTitle>
+              <DialogTitle className="text-2xl font-bold">Đáp án: {document.name}</DialogTitle>
               <DialogDescription className="text-emerald-100/80">
                 Cập nhật lúc {document.solution.publishedAt}
               </DialogDescription>

@@ -39,10 +39,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(true)
     await login(credentials)
       .then((res) => {
-        setUser(res.data as User)
-        toast.success('Đăng nhập thành công')
-        router.push('/')
-        localStorage.setItem('admin', JSON.stringify(res.data))
+        if (res.success) {
+          setUser(res.data as User)
+          toast.success('Đăng nhập thành công')
+          router.push('/')
+          localStorage.setItem('admin', JSON.stringify(res.data))
+        }
       })
       .finally(() => {
         setIsLoading(false)
@@ -51,11 +53,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logoutUser = async () => {
     await logout()
-      .then(() => {
-        setUser(null)
-        toast.success('Đăng xuất thành công')
-        router.push('/login')
-        localStorage.removeItem('admin')
+      .then((res) => {
+        if (res.success) {
+          setUser(null)
+          toast.success('Đăng xuất thành công')
+          router.push('/login')
+          localStorage.removeItem('admin')
+        }
       })
       .finally(() => {
         setIsLoading(false)

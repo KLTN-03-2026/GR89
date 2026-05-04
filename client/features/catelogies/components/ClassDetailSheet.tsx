@@ -73,7 +73,7 @@ export function ClassDetailSheet({ classItem, isOpen, onClose, onViewDocument }:
             <div className="space-y-4">
               {classItem.documents.map((doc) => (
                 <DocumentItem 
-                  key={doc.id} 
+                  key={doc._id} 
                   document={doc} 
                   onView={onViewDocument} 
                 />

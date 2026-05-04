@@ -54,7 +54,11 @@ export function DictationStepWithVi({
   const [hasStarted, setHasStarted] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const [showSubtitleVi, setShowSubtitleVi] = useState(false)
-  const [diffResult, setDiffResult] = useState<any[]>([])
+  const [diffResult, setDiffResult] = useState<{
+    value: string
+    added?: boolean
+    removed?: boolean
+  }[]>([])
 
   // Handle keyboard events
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

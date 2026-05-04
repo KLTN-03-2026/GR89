@@ -36,6 +36,7 @@ export interface CreateClassRequest {
   schedule: string
   status?: 'opening' | 'ongoing' | 'finished'
   password?: string
+  maxStudents?: number | null
   isActive?: boolean
   documents?: string[]
 }

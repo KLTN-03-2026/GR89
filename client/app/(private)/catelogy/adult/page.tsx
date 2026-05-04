@@ -1,8 +1,12 @@
 import { CategoryContainer } from '@/features/catelogies'
-import React from 'react'
+import { getCenterClassStats, getClassesByCategory } from '@/features/catelogies/services/serverApi'
 
-export default function AdultCategoryPage() {
+export default async function AdultCategoryPage() {
+  const [classes, stats] = await Promise.all([
+    getClassesByCategory('adult'),
+    getCenterClassStats()
+  ])
   return (
-    <CategoryContainer type="adult" />
+    <CategoryContainer type="adult" classes={classes} stats={stats} />
   )
 }

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Lock, Calendar, Clock, GraduationCap, Loader2 } from 'lucide-react'
+import { Lock, Calendar, Clock, GraduationCap, Loader2, Eye, EyeClosed } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'react-toastify'
@@ -30,6 +30,7 @@ export function SheetAddClass({ onClose }: SheetAddClassProps) {
   const [loading, setLoading] = useState(false)
   const [teachers, setTeachers] = useState<User[]>([])
   const [loadingTeachers, setLoadingTeachers] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -37,6 +38,7 @@ export function SheetAddClass({ onClose }: SheetAddClassProps) {
     teacher: '',
     startDate: '',
     password: '',
+    maxStudents: '',
     schedule: '',
   })
 
@@ -79,12 +81,34 @@ export function SheetAddClass({ onClose }: SheetAddClassProps) {
       finalSchedule = `${days} (${fixedSchedule.startTime} - ${fixedSchedule.endTime})`
     }
 
+    //check tất cả dữ liệu
+    if (!formData.name || !formData.password) {
+      toast.error('Vui lòng nhập tên lớp học và mật khẩu')
+      return
+    }
+
+    if (formData.password.length !== 6 || !/^\d+$/.test(formData.password)) {
+      toast.error('Mật khẩu phải là 6 ký tự số')
+      return
+    }
+
+    const maxStudents = formData.maxStudents.trim()
+      ? Number(formData.maxStudents.trim())
+      : null
+    if (maxStudents != null && (!Number.isInteger(maxStudents) || maxStudents <= 0)) {
+      toast.error('Số học viên tối đa phải là số nguyên dương')
+      return
+    }
+
     setLoading(true)
-    await createCenterClass({ ...formData, schedule: finalSchedule})
-      .then(() => {
-        toast.success('Tạo lớp học thành công')
-        router.refresh()
-        onClose()
+    const { maxStudents: _maxStudents, ...rest } = formData
+    await createCenterClass({ ...rest, schedule: finalSchedule, maxStudents })
+      .then((res) => {
+        if (res.success) {
+          toast.success('Tạo lớp học thành công')
+          router.refresh()
+          onClose()
+        }
       })
       .finally(() => setLoading(false))
   }
@@ -190,12 +214,68 @@ export function SheetAddClass({ onClose }: SheetAddClassProps) {
                 <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5 text-amber-500" /> Mật khẩu lớp
                 </Label>
-                <Input 
-                  type="password" 
+                <div className='relative'>
+                  <Input 
+                  type={showPassword ? 'text' : 'password'} 
                   placeholder="Mật khẩu (nếu có)" 
                   className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold" 
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={6}
+                  autoComplete="one-time-code"
                   value={formData.password}
-                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  onChange={(e) => {
+                    const nextValue = e.target.value.replace(/\D/g, '').slice(0, 6)
+                    setFormData(prev => ({ ...prev, password: nextValue }))
+                  }}
+                  onKeyDown={(e) => {
+                    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End']
+                    if (allowedKeys.includes(e.key)) return
+                    if (e.key.length === 1 && !/^\d$/.test(e.key)) {
+                      e.preventDefault()
+                    }
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault()
+                    const pasted = e.clipboardData.getData('text')
+                    const nextValue = pasted.replace(/\D/g, '').slice(0, 6)
+                    setFormData(prev => ({ ...prev, password: nextValue }))
+                  }}
+                />
+                
+                  <button
+                    className="absolute top-1/2 right-2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md text-gray-500"
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeClosed className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2 col-span-2">
+                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
+                  Số học viên tối đa
+                </Label>
+                <Input
+                  placeholder="Ví dụ: 30 (để trống = không giới hạn)"
+                  className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold"
+                  inputMode="numeric"
+                  pattern="\d*"
+                  value={formData.maxStudents}
+                  onChange={(e) => {
+                    const nextValue = e.target.value.replace(/\D/g, '').slice(0, 4)
+                    setFormData((prev) => ({ ...prev, maxStudents: nextValue }))
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault()
+                    const pasted = e.clipboardData.getData('text')
+                    const nextValue = pasted.replace(/\D/g, '').slice(0, 4)
+                    setFormData((prev) => ({ ...prev, maxStudents: nextValue }))
+                  }}
                 />
               </div>
             </div>

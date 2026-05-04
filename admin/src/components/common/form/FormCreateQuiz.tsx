@@ -49,8 +49,10 @@ export default function FormCreateQuiz({ callback }: FormCreateQuizProps) {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
     await createQuiz(data)
-      .then(() => {
-        toast.success('Đã thêm câu hỏi')
+      .then((res) => {
+        if (res.success) {
+          toast.success('Đã thêm câu hỏi')
+        }
       })
       .finally(() => {
         form.reset()

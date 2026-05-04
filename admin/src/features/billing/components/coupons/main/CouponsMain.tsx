@@ -121,8 +121,10 @@ export function CouponsMain({ initialData, pagination: initialPagination }: Coup
   // Fetch plans once so both Add and Edit sheets can use them.
   useEffect(() => {
     getPlansPaginated({ limit: 100 })
-      .then(res => {
-        setPlans(res.data || [])
+      .then(res => {  
+        if (res.success) {
+          setPlans(res.data || [])
+        }
       })
       .catch(() => {
         toast.error('Không thể tải danh sách gói')
@@ -226,7 +228,7 @@ export function CouponsMain({ initialData, pagination: initialPagination }: Coup
         tone: "amber" as const,
       },
     ]
-  }, [coupons, total])
+  }, [coupons])
 
   return (
     <div className="p-6 space-y-8 bg-gray-50/30 min-h-screen">
@@ -292,7 +294,7 @@ export function CouponsMain({ initialData, pagination: initialPagination }: Coup
                 >
                   <Trash2 className="w-4 h-4 mr-2" /> Xóa
                 </Button>
-                <div className="h-4 w-[1px] bg-gray-200 mx-1" />
+                <div className="h-4 w-1px bg-gray-200 mx-1" />
                 <span className="text-xs font-black text-gray-400 px-3 uppercase tracking-tighter">Đã chọn {selectedRows.length}</span>
               </div>
             )}
@@ -302,11 +304,11 @@ export function CouponsMain({ initialData, pagination: initialPagination }: Coup
                 placeholder="Tìm mã hoặc tên..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[250px] transition-all font-medium"
+                className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-250px transition-all font-medium"
               />
             </div>
             <Select value={urlIsActive === undefined ? "all" : urlIsActive ? "active" : "inactive"} onValueChange={(v) => updateUrl({ isActive: v === "all" ? undefined : v === "active", page: 1 })}>
-              <SelectTrigger className="h-11 w-[180px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-180px rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">
@@ -319,7 +321,7 @@ export function CouponsMain({ initialData, pagination: initialPagination }: Coup
               value={urlSortBy}
               onValueChange={(v) => updateUrl({ sortBy: v, page: 1 })}
             >
-              <SelectTrigger className="h-11 w-[180px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-180px rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Sắp xếp theo" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">
@@ -336,7 +338,7 @@ export function CouponsMain({ initialData, pagination: initialPagination }: Coup
               value={urlSortOrder}
               onValueChange={(v: 'asc' | 'desc') => updateUrl({ sortOrder: v, page: 1 })}
             >
-              <SelectTrigger className="h-11 w-[150px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-150px rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Thứ tự" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">

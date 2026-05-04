@@ -25,7 +25,7 @@ export function StudentsMain({ initialData, classId }: StudentsMainProps) {
   const classData = initialData
 
   const stats = useMemo(() => {
-    const maxSize = 40
+    const maxSize = classData?.maxStudents || 40
     const total = classData?.students?.length || 0
     const remaining = Math.max(0, maxSize - total)
     return [
