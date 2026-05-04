@@ -1,3 +1,6 @@
+import { AuthorizedAxios } from '@/libs/apis/authorizedAxios'
+import { ApiResponse } from '@/libs/apis/types'
+
 export type { StudySessionPayload } from './types'
 
 export interface LessonSkillStats {
@@ -84,4 +87,11 @@ export interface VocabularyOverview {
   avgScore: number
   totalScore: number
   totalTime: number
+}
+
+export async function uploadEditorImage(file: File): Promise<ApiResponse<{ url: string; publicId: string }>> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await AuthorizedAxios.post('/media/upload/editor', formData)
+  return response.data as ApiResponse<{ url: string; publicId: string }>
 }

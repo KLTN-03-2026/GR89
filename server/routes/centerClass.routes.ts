@@ -175,6 +175,14 @@ router.get(
   requireRole(['admin', 'content']),
   CenterClassController.getHomeworkById,
 )
+
+router.get(
+  '/homework/:id/submissions',
+  authenticateTokenUser,
+  requireRole(['user']),
+  CenterClassController.getHomeworkSubmissions,
+)
+
 router.put(
   '/homework/:id',
   authenticateTokenAdmin,

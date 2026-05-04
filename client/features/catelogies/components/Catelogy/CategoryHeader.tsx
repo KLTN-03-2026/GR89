@@ -1,7 +1,7 @@
 'use client'
 
 import { WelcomeSection } from "@/components/common/WelcomeSection";
-import { CategoryType } from "../types";
+import { CategoryType } from "../../types";
 import type { IStatsOverview } from "@/types";
 import { Users, BookOpen, Clock, Target } from "lucide-react";
 import { CATEGORY_CONFIGS } from "@/features/catelogies/mockData";

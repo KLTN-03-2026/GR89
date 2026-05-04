@@ -150,6 +150,7 @@ const SidebarProvider = React.forwardRef<
               "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
               className
             )}
+            suppressHydrationWarning
             ref={ref}
             {...props}
           >
@@ -190,6 +191,7 @@ const Sidebar = React.forwardRef<
             "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
             className
           )}
+          suppressHydrationWarning
           ref={ref}
           {...props}
         >
@@ -216,7 +218,9 @@ const Sidebar = React.forwardRef<
               <SheetTitle>Sidebar</SheetTitle>
               <SheetDescription>Displays the mobile sidebar.</SheetDescription>
             </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex h-full w-full flex-col" suppressHydrationWarning>
+              {children}
+            </div>
           </SheetContent>
         </Sheet>
       )
@@ -230,6 +234,7 @@ const Sidebar = React.forwardRef<
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
         data-side={side}
+        suppressHydrationWarning
       >
         {/* This is what handles the sidebar gap on desktop */}
         <div
@@ -241,6 +246,7 @@ const Sidebar = React.forwardRef<
               ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
           )}
+          suppressHydrationWarning
         />
         <div
           className={cn(
@@ -254,11 +260,13 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l border-gray-300",
             className
           )}
+          suppressHydrationWarning
           {...props}
         >
           <div
             data-sidebar="sidebar"
             className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+            suppressHydrationWarning
           >
             {children}
           </div>
@@ -369,6 +377,7 @@ const SidebarHeader = React.forwardRef<
       ref={ref}
       data-sidebar="header"
       className={cn("flex flex-col gap-2 p-2", className)}
+      suppressHydrationWarning
       {...props}
     />
   )
@@ -384,6 +393,7 @@ const SidebarFooter = React.forwardRef<
       ref={ref}
       data-sidebar="footer"
       className={cn("flex flex-col gap-2 p-2", className)}
+      suppressHydrationWarning
       {...props}
     />
   )
@@ -417,6 +427,7 @@ const SidebarContent = React.forwardRef<
         "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
         className
       )}
+      suppressHydrationWarning
       {...props}
     />
   )
@@ -432,6 +443,7 @@ const SidebarGroup = React.forwardRef<
       ref={ref}
       data-sidebar="group"
       className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+      suppressHydrationWarning
       {...props}
     />
   )
@@ -490,6 +502,7 @@ const SidebarGroupContent = React.forwardRef<
     ref={ref}
     data-sidebar="group-content"
     className={cn("w-full text-sm", className)}
+    suppressHydrationWarning
     {...props}
   />
 ))
@@ -649,6 +662,7 @@ const SidebarMenuBadge = React.forwardRef<
       "group-data-[collapsible=icon]:hidden",
       className
     )}
+    suppressHydrationWarning
     {...props}
   />
 ))
@@ -660,16 +674,14 @@ const SidebarMenuSkeleton = React.forwardRef<
     showIcon?: boolean
   }
 >(({ className, showIcon = false, ...props }, ref) => {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  const width = "80%"
 
   return (
     <div
       ref={ref}
       data-sidebar="menu-skeleton"
       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
+      suppressHydrationWarning
       {...props}
     >
       {showIcon && (

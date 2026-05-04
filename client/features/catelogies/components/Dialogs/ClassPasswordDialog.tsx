@@ -13,7 +13,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp"
-import { IClass } from "../types"
+import { IClass } from "../../types"
 import { toast } from "react-toastify"
 import { checkClassPassword } from "@/features/catelogies/services/api"
 

@@ -8,12 +8,12 @@ export function PrivateLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <ChatProvider>
-        <div className="flex h-screen w-full">
+        <div className="flex h-screen w-full" suppressHydrationWarning>
           <AppSidebar />
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col" suppressHydrationWarning>
             <PrivateHeader />
             <main className="flex-1 overflow-auto bg-white">
-              <div className="p-4">
+              <div className="p-4" suppressHydrationWarning>
                 {children}
               </div>
             </main>

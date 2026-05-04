@@ -1,5 +1,5 @@
 import { CenterClass, ICenterClass } from '../models/centerClass.model'
-import { Homework, IHomework } from '../models/homework.model'
+import { Homework, IHomework, ISubmission } from '../models/homework.model'
 import { GlobalDocument } from '../models/globalDocument.model'
 import ErrorHandler from '../utils/ErrorHandler'
 import mongoose, { Mongoose } from 'mongoose'
@@ -259,7 +259,6 @@ export class CenterClassService {
       .select('-password')
       .populate('teacher', 'fullName email avatar')
       .sort({ createdAt: -1 })
-
     return classes
   }
 
@@ -280,10 +279,16 @@ export class CenterClassService {
         strictPopulate: false,
         populate: [
           { path: 'documents', strictPopulate: false },
-          { path: 'document', strictPopulate: false },
-          { path: 'submissions.user', select: 'fullName email avatar', strictPopulate: false },
+          {
+            path: 'submissions.user',
+            select: 'fullName email avatar',
+            match: { _id: userId },
+            strictPopulate: false,
+          },
         ],
       })
+
+    console.log(centerClass)
 
     if (!centerClass || !centerClass.isActive) {
       throw new ErrorHandler('Không tìm thấy lớp học', 404)
@@ -292,6 +297,19 @@ export class CenterClassService {
     // Kiểm tra người dùng có tham gia lớp học không
     if (!centerClass.students.some((student) => student.user.equals(userId))) {
       throw new ErrorHandler('Người dùng không tham gia lớp học', 403)
+    }
+
+    const centerClassAny = centerClass as any
+    if (Array.isArray(centerClassAny.homeworks)) {
+      centerClassAny.homeworks.forEach((hw: any) => {
+        if (!Array.isArray(hw?.submissions)) return
+        hw.submissions = hw.submissions.filter((s: any) => {
+          const populatedUser = s?.user
+          if (!populatedUser) return false
+          const id = populatedUser?._id ?? populatedUser
+          return id?.toString?.() === userId
+        })
+      })
     }
 
     return centerClass
@@ -465,6 +483,19 @@ export class CenterClassService {
     })
     if (!centerClass) throw new ErrorHandler('Lớp học không tồn tại', 404)
     return centerClass.homeworks
+  }
+
+  // (USER) Lấy bài nộp theo học sinh và bài tập
+  static async getHomeworkSubmissions(
+    homeworkId: string,
+    userId: string,
+  ): Promise<ISubmission | null> {
+    const homework = await Homework.findById(homeworkId)
+    if (!homework) throw new ErrorHandler('Không tìm thấy bài tập', 404)
+
+    const submission = homework.submissions.find((s) => s.user.toString() === userId)
+    if (!submission) return null
+    return submission
   }
 
   // (ADMIN/CONTENT) Cập nhật bài tập

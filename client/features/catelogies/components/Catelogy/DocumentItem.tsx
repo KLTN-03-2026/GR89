@@ -1,6 +1,6 @@
 'use client'
 
-import { IDocument } from "../types";
+import { IDocument } from "../../types";
 import { FileText, Download, Calendar, User, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

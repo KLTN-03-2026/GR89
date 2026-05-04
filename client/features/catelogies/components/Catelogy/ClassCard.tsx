@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, User, ArrowRight, BookOpen, Clock } from "lucide-react";
-import { IClass } from "../types";
+import { IClass } from "../../types";
 import { motion } from "framer-motion";
 import { formatDateOnly } from "@/libs/utils";
 

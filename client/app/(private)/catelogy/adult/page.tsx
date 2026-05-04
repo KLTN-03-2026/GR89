@@ -1,4 +1,4 @@
-import { CategoryContainer } from '@/features/catelogies'
+import { ClassCatelogyPage } from '@/features/catelogies'
 import { getCenterClassStats, getClassesByCategory } from '@/features/catelogies/services/serverApi'
 
 export default async function AdultCategoryPage() {
@@ -7,6 +7,6 @@ export default async function AdultCategoryPage() {
     getCenterClassStats()
   ])
   return (
-    <CategoryContainer type="adult" classes={classes} stats={stats} />
+    <ClassCatelogyPage type="adult" classes={classes} stats={stats} />
   )
 }

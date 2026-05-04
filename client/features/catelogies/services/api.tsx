@@ -16,3 +16,17 @@ export const isUserEnrolledInClass = async (classId: string) => {
   })
   return response.data
 }
+
+// (USER) Lấy bài nộp theo học sinh và bài tập
+export const getHomeworkSubmissions = async (homeworkId: string) => {
+  const response = await authorizedAxios.get(`/center-classes/homework/${homeworkId}/submissions`)
+  return response.data
+}
+
+// (USER) Nộp bài tập
+export const submitHomework = async (homeworkId: string, content: string) => {
+  const response = await authorizedAxios.post(`/center-classes/homework/${homeworkId}/submit`, {
+    content,
+  })
+  return response.data
+}

@@ -19,38 +19,48 @@ import {
   AlignRight,
   Highlighter,
   Palette,
-  Image as ImageIcon,
-  Link as LinkIcon,
   Subscript as SubscriptIcon,
   Superscript as SuperscriptIcon,
   CheckSquare,
   Upload,
   Table as TableIcon,
   Type,
+  Link,
+  Send,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useState, useRef, useEffect } from "react"
-import { DialogImageToMedia } from "@/components/common/dialog/DialogImageToMedia"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
   EDITOR_COLORS,
   EDITOR_HIGHLIGHTS,
   EDITOR_FONT_SIZES,
 } from "./constants"
 import { toast } from "react-toastify"
-import { uploadEditorImage } from "@/features/Media/services/api"
+import { cn } from "@/libs/utils"
+import { uploadEditorImage } from "@/libs/apis/api"
 
 export function Toolbar({ editor }: { editor: Editor | null }) {
-  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
   const [isFontSizeOpen, setIsFontSizeOpen] = useState(false)
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const linkInputRef = useRef<HTMLInputElement>(null)
 
   // State để ép UI re-render khi Tiptap update
   const [, setUpdate] = useState(0)
@@ -66,11 +76,18 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
 
   if (!editor) return null
 
+  const normalizeUrl = (rawUrl: string) => {
+    const url = rawUrl.trim()
+    if (!url) return ""
+    if (url.startsWith("#")) return url
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) return url
+    return `https://${url}`
+  }
+
   const addImage = (url: string) => {
     if (url) {
       editor.chain().focus().setImage({ src: url }).run()
     }
-    setIsImageDialogOpen(false)
   }
 
   const handleLocalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +102,7 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
         } else {
           toast.error(res.message || "Tải ảnh lên thất bại")
         }
-      } catch { 
+      } catch {
         toast.error("Đã có lỗi xảy ra khi tải ảnh lên")
       } finally {
         toast.dismiss(loadingToast)
@@ -95,42 +112,45 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border border-input p-1 rounded-t-md border-b-0 bg-muted/50">
-      {/* Lịch sử thao tác (Undo/Redo) */}
-      <div className="flex items-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
-          title="Hoàn tác (Ctrl+Z)"
-        >
-          <Undo className="h-4 w-4" />
-        </Button>
+    <>
+      <div className="flex flex-wrap items-center gap-0.5 border border-input p-1 rounded-t-md border-b-0 bg-muted/50">
+        {/* Lịch sử thao tác (Undo/Redo) */}
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-sky-500"
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().undo()}
+            title="Hoàn tác (Ctrl+Z)"
+          >
+            <Undo className="h-4 w-4" />
+          </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
-          title="Làm lại (Ctrl+Y)"
-        >
-          <Redo className="h-4 w-4" />
-        </Button>
-      </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-sky-500"
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().redo()}
+            title="Làm lại (Ctrl+Y)"
+          >
+            <Redo className="h-4 w-4" />
+          </Button>
+        </div>
 
-      {/* Cấu hình Cỡ chữ */}
-      <div className="flex items-center gap-0.5">
+        {/* Cấu hình Cỡ chữ */}
+        <div className="flex items-center gap-0.5">
         <Popover open={isFontSizeOpen} onOpenChange={setIsFontSizeOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 flex items-center gap-1 px-2 min-w-60px transition-all",
-                editor.getAttributes("textStyle").fontSize ? "bg-sky-100 text-sky-700 font-bold border-sky-200" : "hover:bg-muted"
+                "h-8 flex items-center gap-1 px-2 min-w-[60px] transition-all",
+                editor.getAttributes("textStyle").fontSize
+                  ? "bg-sky-200 text-sky-700 font-bold border border-sky-200 hover:bg-sky-500"
+                  : "hover:bg-sky-500"
               )}
               title="Cỡ chữ"
             >
@@ -146,7 +166,7 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
                 <button
                   key={size}
                   className={cn(
-                    "text-xs px-2 py-1.5 text-left hover:bg-accent rounded-sm transition-colors",
+                    "text-xs px-2 py-1.5 text-left hover:bg-sky-500 rounded-sm transition-colors",
                     editor.getAttributes("textStyle").fontSize === size && "bg-accent font-bold"
                   )}
                   onClick={() => {
@@ -159,7 +179,7 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
               ))}
               <Separator className="my-1" />
               <button
-                className="text-xs px-2 py-1.5 text-left hover:bg-accent rounded-sm text-rose-500"
+                className="text-xs px-2 py-1.5 text-left hover:bg-sky-500 rounded-sm text-rose-500"
                 onClick={() => {
                   editor.chain().focus().unsetFontSize().run()
                   setIsFontSizeOpen(false)
@@ -179,7 +199,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("bold") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("bold")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleBold().run()}
           title="In đậm (Ctrl+B)"
@@ -191,7 +213,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("italic") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("italic")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           title="In nghiêng (Ctrl+I)"
@@ -203,7 +227,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("underline") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("underline")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           title="Gạch chân (Ctrl+U)"
@@ -215,7 +241,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("strike") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("strike")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleStrike().run()}
           title="Gạch ngang"
@@ -233,7 +261,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
               size="sm"
               className={cn(
                 "h-8 w-8 p-0 transition-all",
-                editor.getAttributes("textStyle").color ? "bg-sky-100 border border-sky-200" : "hover:bg-muted"
+                editor.getAttributes("textStyle").color
+                  ? "bg-sky-200 text-sky-700 border border-sky-200 hover:bg-sky-500"
+                  : "hover:bg-sky-500"
               )}
               title="Màu chữ"
             >
@@ -270,7 +300,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
               size="sm"
               className={cn(
                 "h-8 w-8 p-0 transition-all",
-                editor.isActive("highlight") ? "bg-sky-100 border border-sky-200" : "hover:bg-muted"
+                editor.isActive("highlight")
+                  ? "bg-sky-200 text-sky-700 border border-sky-200 hover:bg-sky-500"
+                  : "hover:bg-sky-500"
               )}
               title="Màu nền chữ"
             >
@@ -309,8 +341,10 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
             variant="ghost"
             size="sm"
             className={cn(
-              "h-8 w-8 p-0",
-              editor.isActive("heading", { level }) && "bg-accent text-accent-foreground shadow-sm"
+              "h-8 w-8 p-0 transition-all",
+              editor.isActive("heading", { level })
+                ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+                : "hover:bg-sky-500"
             )}
             onClick={() => editor.chain().focus().toggleHeading({ level: level as 1 | 2 | 3 | 4 }).run()}
             title={`Tiêu đề ${level}`}
@@ -327,7 +361,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive({ textAlign: "left" }) ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive({ textAlign: "left" })
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().setTextAlign("left").run()}
           title="Căn trái"
@@ -339,7 +375,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive({ textAlign: "center" }) ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive({ textAlign: "center" })
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().setTextAlign("center").run()}
           title="Căn giữa"
@@ -351,7 +389,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive({ textAlign: "right" }) ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive({ textAlign: "right" })
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().setTextAlign("right").run()}
           title="Căn phải"
@@ -367,7 +407,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("bulletList") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("bulletList")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           title="Danh sách dấu chấm"
@@ -379,7 +421,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("orderedList") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("orderedList")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           title="Danh sách số"
@@ -391,7 +435,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("taskList") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("taskList")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleTaskList().run()}
           title="Danh sách công việc"
@@ -403,7 +449,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("blockquote") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("blockquote")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           title="Trích dẫn"
@@ -424,7 +472,7 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-sky-500"
           title="Tải ảnh lên từ máy tính"
           onClick={() => fileInputRef.current?.click()}
         >
@@ -434,43 +482,29 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-sky-500"
           title="Chèn bảng"
           onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
         >
           <TableIcon className="h-4 w-4" />
         </Button>
 
-        <Dialog open={isImageDialogOpen} onOpenChange={setIsImageDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Chọn ảnh từ thư viện Media">
-              <ImageIcon className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>Thư viện hình ảnh</DialogTitle>
-            </DialogHeader>
-            <DialogImageToMedia onSelect={(img) => addImage(img.url)} />
-          </DialogContent>
-        </Dialog>
-
         <Button
           variant="ghost"
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("link") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("link")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => {
-            const url = window.prompt("Nhập URL liên kết:")
-            if (url) {
-              editor.chain().focus().setLink({ href: url }).run()
-            }
+            setLinkUrl(editor.getAttributes("link")?.href || "")
+            setIsLinkDialogOpen(true)
           }}
           title="Chèn liên kết"
         >
-          <LinkIcon className="h-4 w-4" />
+          <Link className="h-4 w-4" />
         </Button>
 
         <Button
@@ -478,7 +512,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("subscript") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("subscript")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleSubscript().run()}
           title="Chỉ số dưới"
@@ -490,7 +526,9 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           size="sm"
           className={cn(
             "h-8 w-8 p-0 transition-all",
-            editor.isActive("superscript") ? "bg-sky-100 text-sky-700 shadow-inner border border-sky-200" : "hover:bg-muted"
+            editor.isActive("superscript")
+              ? "bg-sky-200 text-sky-700 shadow-inner border border-sky-200 hover:bg-sky-500"
+              : "hover:bg-sky-500"
           )}
           onClick={() => editor.chain().focus().toggleSuperscript().run()}
           title="Chỉ số trên"
@@ -498,6 +536,77 @@ export function Toolbar({ editor }: { editor: Editor | null }) {
           <SuperscriptIcon className="h-4 w-4" />
         </Button>
       </div>
-    </div>
+      </div>
+
+      <Dialog
+        open={isLinkDialogOpen}
+        onOpenChange={(open) => {
+          setIsLinkDialogOpen(open)
+          if (open) {
+            queueMicrotask(() => linkInputRef.current?.focus())
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[520px]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const href = normalizeUrl(linkUrl)
+              if (!href) return
+              editor.chain().focus().setLink({ href }).run()
+              setIsLinkDialogOpen(false)
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Chèn liên kết</DialogTitle>
+              <DialogDescription>Dán URL vào ô bên dưới để tạo liên kết.</DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-4 space-y-2">
+              <Label htmlFor="editor-link-url">URL</Label>
+              <Input
+                id="editor-link-url"
+                ref={linkInputRef}
+                placeholder="https://example.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                autoComplete="off"
+                inputMode="url"
+              />
+            </div>
+
+            <DialogFooter className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-between sm:space-x-2">
+              <div className="flex gap-2 sm:mr-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsLinkDialogOpen(false)
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={!editor.isActive("link")}
+                  onClick={() => {
+                    editor.chain().focus().unsetLink().run()
+                    setIsLinkDialogOpen(false)
+                  }}
+                >
+                  Gỡ link
+                </Button>
+              </div>
+
+              <Button type="submit" disabled={!linkUrl.trim()}>
+                <Send className="h-4 w-4 mr-2" />
+                Áp dụng
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

@@ -15,7 +15,10 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className={`flex items-center px-4 py-2 transition-all duration-200 ${collapsed ? "justify-center" : "gap-3"}`}>
+        <div
+          className={`flex items-center px-4 py-2 transition-all duration-200 ${collapsed ? "justify-center" : "gap-3"}`}
+          suppressHydrationWarning
+        >
           <Image
             title="logo"
             src='/images/logo.png'
@@ -26,7 +29,7 @@ export function AppSidebar() {
           />
 
           {!collapsed && (
-            <div>
+            <div suppressHydrationWarning>
               <h1 className="font-bold text-lg bg-gradient-to-r from-[#FF6B35] to-[#4A90E2] bg-clip-text text-transparent">
                 ActiveLearning
               </h1>
@@ -53,7 +56,10 @@ export function AppSidebar() {
                         href={item.url}
                         className={`flex items-center gap-3 hover:scale-[1.02] transition-all duration-300`}
                       >
-                        <div className={`w-8 h-8 p-2 rounded-lg bg-gradient-to-br ${item.gradient} text-white shadow-sm group-hover:shadow-md transition-all duration-300 flex items-center justify-center`}>
+                        <div
+                          className={`w-8 h-8 p-2 rounded-lg bg-gradient-to-br ${item.gradient} text-white shadow-sm group-hover:shadow-md transition-all duration-300 flex items-center justify-center`}
+                          suppressHydrationWarning
+                        >
                           <item.icon className="size-4" />
                         </div>
 

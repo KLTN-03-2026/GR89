@@ -9,29 +9,32 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IDocument } from "../types";
-import { Download, Printer, Share2, X } from "lucide-react";
+import { IDocument } from "../../types";
+import { Download, Printer, X, CheckCircle2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDateOnly } from "@/libs/utils";
 
-interface DocumentDetailDialogProps {
+interface SolutionDetailDialogProps {
   document: IDocument | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function DocumentDetailDialog({ document, isOpen, onClose }: DocumentDetailDialogProps) {
-  if (!document) return null;
+export function SolutionDetailDialog({ document, isOpen, onClose }: SolutionDetailDialogProps) {
+  if (!document || !document.solution) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
-        <DialogHeader className="p-6 bg-gradient-to-r from-blue-600 to-indigo-700 text-white relative">
+        <DialogHeader className="p-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white relative">
           <div className="flex justify-between items-start pr-8">
             <div className="space-y-1">
-              <DialogTitle className="text-2xl font-bold">{document.name}</DialogTitle>
-              <DialogDescription className="text-blue-100/80">
-                Đăng bởi {document.author || 'Hệ thống'} • {formatDateOnly(document.createdAt)}
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="w-5 h-5 text-emerald-200" />
+                <span className="text-xs font-bold uppercase tracking-widest text-emerald-100">Bài giải từ giáo viên</span>
+              </div>
+              <DialogTitle className="text-2xl font-bold">Đáp án: {document.name}</DialogTitle>
+              <DialogDescription className="text-emerald-100/80">
+                Cập nhật lúc {document.solution.publishedAt}
               </DialogDescription>
             </div>
           </div>
@@ -47,24 +50,20 @@ export function DocumentDetailDialog({ document, isOpen, onClose }: DocumentDeta
 
         <ScrollArea className="flex-1 p-8 bg-white">
           <div 
-            className="prose prose-blue max-w-none 
-              prose-headings:font-bold prose-h2:text-2xl prose-h2:border-b prose-h2:pb-2 prose-h2:mt-8
+            className="prose prose-emerald max-w-none 
+              prose-headings:font-bold prose-h3:text-xl prose-h3:text-emerald-800 prose-h3:mt-6
               prose-p:text-gray-600 prose-p:leading-relaxed
               prose-ul:list-disc prose-li:text-gray-600
               prose-strong:text-gray-900 prose-strong:font-bold"
-            dangerouslySetInnerHTML={{ __html: document.content }}
+            dangerouslySetInnerHTML={{ __html: document.solution.content }}
           />
         </ScrollArea>
 
         <DialogFooter className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between sm:justify-between">
           <div className="flex gap-2">
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-600">
+            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-emerald-600">
               <Printer className="w-4 h-4 mr-2" />
-              In tài liệu
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-600">
-              <Share2 className="w-4 h-4 mr-2" />
-              Chia sẻ
+              In bài giải
             </Button>
           </div>
           
@@ -72,10 +71,10 @@ export function DocumentDetailDialog({ document, isOpen, onClose }: DocumentDeta
             <Button variant="outline" onClick={onClose}>
               Đóng
             </Button>
-            {document.fileUrl && (
-              <Button className="bg-blue-600 hover:bg-blue-700">
+            {document.solution.fileUrl && (
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
                 <Download className="w-4 h-4 mr-2" />
-                Tải xuống ({document.fileSize})
+                Tải file bài giải ({document.solution.fileSize})
               </Button>
             )}
           </div>

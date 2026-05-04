@@ -434,6 +434,20 @@ export class CenterClassController {
     },
   )
 
+  static getHomeworkSubmissions = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const { id: homeworkId } = req.params
+      const userId = req.user?._id as string
+
+      const submissions = await CenterClassService.getHomeworkSubmissions(homeworkId, userId)
+      res.status(200).json({
+        success: true,
+        message: 'Lấy danh sách nộp bài thành công',
+        data: submissions,
+      })
+    },
+  )
+
   // Xóa bài tập
   static deleteHomework = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
