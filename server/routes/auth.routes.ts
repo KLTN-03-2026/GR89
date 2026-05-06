@@ -1,8 +1,13 @@
-import express from "express";
-import { AuthController } from "../controllers/auth.controller";
-import { authenticateTokenAdmin, authenticateTokenContent, authenticateTokenUser, requireRole } from "../middleware/auth.middleware";
+import express from 'express'
+import { AuthController } from '../controllers/auth.controller'
+import {
+  authenticateTokenAdmin,
+  authenticateTokenContent,
+  authenticateTokenUser,
+  requireRole,
+} from '../middleware/auth.middleware'
 
-const router = express.Router();
+const router = express.Router()
 
 /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
@@ -17,10 +22,10 @@ router.post('/register', AuthController.register)
 router.get('/verify-email', AuthController.verifyEmail)
 
 // QUÊN MẬT KHẨU
-router.post('/forgot-password', AuthController.requestPasswordReset);
+router.post('/forgot-password', AuthController.requestPasswordReset)
 
 // ĐẶT LẠI MẬT KHẨU
-router.post('/reset-password', AuthController.resetPassword);
+router.post('/reset-password', AuthController.resetPassword)
 
 // ĐĂNG NHẬP
 router.post('/login', AuthController.login)
@@ -43,6 +48,11 @@ router.post('/admin/logout', authenticateTokenAdmin, AuthController.logout)
 router.post('/login-admin', AuthController.loginAdmin)
 
 // (ADMIN) TẠO USER MỚI
-router.post('/create-user', authenticateTokenAdmin, requireRole(['admin', 'content']), AuthController.createUser)
+router.post(
+  '/create-user',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  AuthController.createUser,
+)
 
-export const authRoutes = router;
+export const authRoutes = router

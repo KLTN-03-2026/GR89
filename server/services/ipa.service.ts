@@ -1,28 +1,32 @@
-import { IIpa, Ipa, IIpaPaginateResult, IExample } from "../models/ipa.model"
-import { StudyHistory } from "../models/studyHistory.model"
-import { StudyService } from "./study.service"
-import { SpeechAceProvider } from "../providers/speechace.provider"
-import ErrorHandler from "../utils/ErrorHandler"
+import { IIpa, Ipa, IIpaPaginateResult, IExample } from '../models/ipa.model'
+import { StudyHistory } from '../models/studyHistory.model'
+import { StudyService } from './study.service'
+import { SpeechAceProvider } from '../providers/speechace.provider'
+import ErrorHandler from '../utils/ErrorHandler'
 import XLSX from 'xlsx'
-import mongoose from "mongoose"
-import { AIProvider } from "../providers/ai.provider"
-import { User } from "../models/user.model"
-import { MediaService } from "./media.service"
+import mongoose from 'mongoose'
+import { AIProvider } from '../providers/ai.provider'
+import { User } from '../models/user.model'
+import { MediaService } from './media.service'
 
 export class IpaService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
 
   // (ADMIN) Lấy thống kê tổng quan về IPA
   static async getOverviewStats(): Promise<any> {
-    const totalLessons = await Ipa.countDocuments();
-    const activeLessons = await Ipa.countDocuments({ isActive: true });
-    const totalUsers = await User.countDocuments({ role: 'user' });
-    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'ipa' });
-    const completedProgressRecords = await StudyHistory.countDocuments({ category: 'ipa', status: 'passed' });
+    const totalLessons = await Ipa.countDocuments()
+    const activeLessons = await Ipa.countDocuments({ isActive: true })
+    const totalUsers = await User.countDocuments({ role: 'user' })
+    const totalProgressRecords = await StudyHistory.countDocuments({ category: 'ipa' })
+    const completedProgressRecords = await StudyHistory.countDocuments({
+      category: 'ipa',
+      status: 'passed',
+    })
 
-    const completionRate = totalProgressRecords > 0
-      ? Math.round((completedProgressRecords / totalProgressRecords) * 100)
-      : 0
+    const completionRate =
+      totalProgressRecords > 0
+        ? Math.round((completedProgressRecords / totalProgressRecords) * 100)
+        : 0
 
     const currentMonth = new Date()
     currentMonth.setDate(1)
@@ -30,7 +34,7 @@ export class IpaService {
 
     const monthlyLearns = await StudyHistory.countDocuments({
       category: 'ipa',
-      createdAt: { $gte: currentMonth }
+      createdAt: { $gte: currentMonth },
     })
 
     const lastMonth = new Date(currentMonth)
@@ -40,13 +44,16 @@ export class IpaService {
       category: 'ipa',
       createdAt: {
         $gte: lastMonth,
-        $lt: currentMonth
-      }
+        $lt: currentMonth,
+      },
     })
 
-    const monthlyChange = lastMonthLearns > 0
-      ? Math.round(((monthlyLearns - lastMonthLearns) / lastMonthLearns) * 100)
-      : monthlyLearns > 0 ? 100 : 0
+    const monthlyChange =
+      lastMonthLearns > 0
+        ? Math.round(((monthlyLearns - lastMonthLearns) / lastMonthLearns) * 100)
+        : monthlyLearns > 0
+          ? 100
+          : 0
 
     return {
       totalLessons,
@@ -56,8 +63,8 @@ export class IpaService {
       monthlyLearns,
       monthlyChange,
       completedProgressRecords,
-      totalProgressRecords
-    };
+      totalProgressRecords,
+    }
   }
 
   // (ADMIN) Xuất dữ liệu IPA ra file Excel
@@ -68,21 +75,25 @@ export class IpaService {
       .sort({ sound: 1 })
       .lean()
 
-    const ipaRows: any[][] = [[
-      'ID', 'sound', 'soundType', 'imageID', 'videoID', 'description'
-    ]]
-    const exampleRows: any[][] = [[
-      'IPA_ID', 'word', 'phonetic', 'vietnamese'
-    ]]
+    const ipaRows: any[][] = [['ID', 'sound', 'soundType', 'imageID', 'videoID', 'description']]
+    const exampleRows: any[][] = [['IPA_ID', 'word', 'phonetic', 'vietnamese']]
 
     for (const i of ipas as any[]) {
       ipaRows.push([
-        String(i._id), i.sound || '', i.soundType || '', i.image ? String(i.image._id ?? i.image) : '', i.video ? String(i.video._id ?? i.video) : '', i.description || ''
+        String(i._id),
+        i.sound || '',
+        i.soundType || '',
+        i.image ? String(i.image._id ?? i.image) : '',
+        i.video ? String(i.video._id ?? i.video) : '',
+        i.description || '',
       ])
       const examples = Array.isArray(i.examples) ? i.examples : []
       for (const ex of examples) {
         exampleRows.push([
-          String(i._id), String(ex.word || ''), String(ex.phonetic || ''), String(ex.vietnamese || '')
+          String(i._id),
+          String(ex.word || ''),
+          String(ex.phonetic || ''),
+          String(ex.vietnamese || ''),
         ])
       }
     }
@@ -148,11 +159,13 @@ export class IpaService {
           return {
             word: normalizeString(ex.word),
             phonetic: normalizeString(ex.phonetic),
-            vietnamese: normalizeString(ex.vietnamese)
+            vietnamese: normalizeString(ex.vietnamese),
           }
         })
 
-        let existing = await Ipa.findOne({ sound: { $regex: `^${sound.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } })
+        let existing = await Ipa.findOne({
+          sound: { $regex: `^${sound.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+        })
 
         if (existing) {
           existing.soundType = soundType as any
@@ -176,7 +189,7 @@ export class IpaService {
             isVipRequired,
             isActive,
             examples: normalizedExamples,
-            createdBy: new mongoose.Types.ObjectId(userId)
+            createdBy: new mongoose.Types.ObjectId(userId),
           })
 
           await newIpa.save()
@@ -191,26 +204,29 @@ export class IpaService {
   }
 
   // Helper xử lý Media ID hoặc URL (Chỉ chấp nhận Video)
-  private static async resolveVideoId(videoInput: string, userId: string): Promise<mongoose.Types.ObjectId> {
-    const input = String(videoInput || '').trim();
-    if (!input) throw new ErrorHandler('Thiếu thông tin media (video)', 400);
+  private static async resolveVideoId(
+    videoInput: string,
+    userId: string,
+  ): Promise<mongoose.Types.ObjectId> {
+    const input = String(videoInput || '').trim()
+    if (!input) throw new ErrorHandler('Thiếu thông tin media (video)', 400)
 
     if (mongoose.Types.ObjectId.isValid(input)) {
-      const media = await MediaService.getMediaById(input);
-      if (media) return new mongoose.Types.ObjectId(input);
+      const media = await MediaService.getMediaById(input)
+      if (media) return new mongoose.Types.ObjectId(input)
     }
 
-    const urlPattern = /^(https?:\/\/)/i;
+    const urlPattern = /^(https?:\/\/)/i
     if (urlPattern.test(input)) {
       try {
-        const media = await MediaService.createVideoFromUrl(input, userId);
-        return media._id as mongoose.Types.ObjectId;
+        const media = await MediaService.createVideoFromUrl(input, userId)
+        return media._id as mongoose.Types.ObjectId
       } catch (error: any) {
-        throw new ErrorHandler(`Không thể xử lý URL video: ${error.message}`, 400);
+        throw new ErrorHandler(`Không thể xử lý URL video: ${error.message}`, 400)
       }
     }
 
-    throw new ErrorHandler(`Thông tin video không hợp lệ: ${input}`, 400);
+    throw new ErrorHandler(`Thông tin video không hợp lệ: ${input}`, 400)
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
@@ -233,14 +249,14 @@ export class IpaService {
       sortBy = 'sound',
       sortOrder = 'asc',
       soundType,
-      createdBy
+      createdBy,
     } = options
 
     const query: any = {}
     if (search) {
       query.$or = [
         { sound: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { description: { $regex: search, $options: 'i' } },
       ]
     }
     if (soundType) {
@@ -261,7 +277,7 @@ export class IpaService {
         { path: 'image', select: 'url' },
         { path: 'video', select: 'url' },
         { path: 'createdBy', select: 'fullName email' },
-        { path: 'updatedBy', select: 'fullName email' }
+        { path: 'updatedBy', select: 'fullName email' },
       ],
       lean: false,
       customLabels: {
@@ -273,22 +289,25 @@ export class IpaService {
         hasNextPage: 'hasNext',
         hasPrevPage: 'hasPrev',
         nextPage: 'next',
-        prevPage: 'prev'
-      }
+        prevPage: 'prev',
+      },
     }
 
     return await Ipa.paginate(query, paginateOptions)
   }
 
   // (ADMIN) Cập nhật trạng thái xuất bản cho nhiều IPA
-  static async updateManyIpaStatus(ids: string[], isActive: boolean): Promise<{ updatedCount: number; updatedIpas: IIpa[] }> {
+  static async updateManyIpaStatus(
+    ids: string[],
+    isActive: boolean,
+  ): Promise<{ updatedCount: number; updatedIpas: IIpa[] }> {
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new ErrorHandler('Danh sách ID IPA trống', 400)
     }
 
     const validIds = ids
-      .map(id => String(id).trim())
-      .filter(id => id.length > 0 && mongoose.Types.ObjectId.isValid(id))
+      .map((id) => String(id).trim())
+      .filter((id) => id.length > 0 && mongoose.Types.ObjectId.isValid(id))
 
     if (validIds.length === 0) {
       throw new ErrorHandler('Không có ID hợp lệ', 400)
@@ -300,28 +319,27 @@ export class IpaService {
       throw new ErrorHandler(`Không tìm thấy một số IPA`, 404)
     }
 
-    const result = await Ipa.updateMany(
-      { _id: { $in: validIds } },
-      { $set: { isActive } }
-    )
+    const result = await Ipa.updateMany({ _id: { $in: validIds } }, { $set: { isActive } })
 
     const updatedIpas = await Ipa.find({ _id: { $in: validIds } })
 
     return {
       updatedCount: result.modifiedCount || 0,
-      updatedIpas
+      updatedIpas,
     }
   }
 
   // (ADMIN) Xóa nhiều IPA
-  static async deleteManyIpa(ids: string[]): Promise<{ deletedCount: number; deletedIpas: IIpa[] }> {
+  static async deleteManyIpa(
+    ids: string[],
+  ): Promise<{ deletedCount: number; deletedIpas: IIpa[] }> {
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new ErrorHandler('Danh sách ID IPA trống', 400)
     }
 
     const validIds = ids
-      .map(id => String(id).trim())
-      .filter(id => id.length > 0 && mongoose.Types.ObjectId.isValid(id))
+      .map((id) => String(id).trim())
+      .filter((id) => id.length > 0 && mongoose.Types.ObjectId.isValid(id))
 
     if (validIds.length === 0) {
       throw new ErrorHandler('Không có ID hợp lệ', 400)
@@ -343,7 +361,7 @@ export class IpaService {
 
       return {
         deletedCount: Number(deleteResult?.deletedCount || 0),
-        deletedIpas: ipasToDelete as unknown as IIpa[]
+        deletedIpas: ipasToDelete as unknown as IIpa[],
       }
     } catch (error) {
       await session.abortTransaction()
@@ -356,20 +374,19 @@ export class IpaService {
   /*============================ NGƯỜI DÙNG & CHUNG ============================*/
   // (USER) Lấy danh sách IPA kèm tiến độ cho người dùng
   static async getIpaByUser(userId: string): Promise<IIpa[]> {
-    const ipas = await Ipa.find({ isActive: true })
-      .sort({ orderIndex: 1 })
+    const ipas = await Ipa.find({ isActive: true }).sort({ orderIndex: 1 })
 
     // Lấy bản ghi tốt nhất từ StudyHistory
     const progresses = await StudyHistory.aggregate([
       { $match: { userId: new mongoose.Types.ObjectId(userId), category: 'ipa' } },
       { $sort: { progress: -1, createdAt: -1 } },
-      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+      { $group: { _id: '$lessonId', best: { $first: '$$ROOT' } } },
     ])
 
-    const progressMap = new Map(progresses.map(p => [String(p._id), p.best]))
+    const progressMap = new Map(progresses.map((p) => [String(p._id), p.best]))
 
     return ipas.map((ipa) => {
-      const p = progressMap.get(String(ipa._id));
+      const p = progressMap.get(String(ipa._id))
       return {
         ...ipa.toObject(),
         progress: p?.progress || 0,
@@ -378,8 +395,8 @@ export class IpaService {
         isActive: true,
         isResult: !!(p && ((p.resultId && p.resultId.length > 0) || (p.progress || 0) > 0)),
         isVipRequired: ipa.isVipRequired !== undefined ? ipa.isVipRequired : true,
-      } as unknown as IIpa;
-    });
+      } as unknown as IIpa
+    })
   }
 
   // (USER) Chấm điểm phát âm IPA bằng AI và lưu kết quả
@@ -388,7 +405,7 @@ export class IpaService {
     audioBuffer: Buffer,
     userId: string,
     ipaId: string,
-    studyTimeSeconds: number = 0
+    studyTimeSeconds: number = 0,
   ): Promise<any> {
     const ipa = await Ipa.findById(ipaId)
     if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
@@ -396,10 +413,15 @@ export class IpaService {
     const speechAceProvider = new SpeechAceProvider()
     const result = await speechAceProvider.assessGuidedPronunciation({
       referenceText: referenceText.trim(),
-      audioBuffer
+      audioBuffer,
     })
 
-    if (result.status == 'error' || !result.text_score || !result.text_score.word_score_list || result.text_score.word_score_list.length === 0) {
+    if (
+      result.status == 'error' ||
+      !result.text_score ||
+      !result.text_score.word_score_list ||
+      result.text_score.word_score_list.length === 0
+    ) {
       throw new ErrorHandler('Không phát hiện thấy giọng nói nào, vui lòng thử lại', 500)
     }
 
@@ -415,45 +437,55 @@ export class IpaService {
     const overallScore = Number(overallScoreRaw) || 0
 
     const phoneScoreList =
-      (Array.isArray((textScore as any)?.phone_score_list) ? (textScore as any).phone_score_list : undefined) ??
-      (Array.isArray((wordScoreList?.[0] as any)?.phone_score_list) ? (wordScoreList[0] as any).phone_score_list : undefined) ??
-      (Array.isArray((wordScoreList?.[0] as any)?.phone_score_list_list) ? (wordScoreList[0] as any).phone_score_list_list : undefined) ??
-      wordScoreList
-        .flatMap((w: any) => (Array.isArray(w?.phone_score_list) ? w.phone_score_list : []))
+      (Array.isArray((textScore as any)?.phone_score_list)
+        ? (textScore as any).phone_score_list
+        : undefined) ??
+      (Array.isArray((wordScoreList?.[0] as any)?.phone_score_list)
+        ? (wordScoreList[0] as any).phone_score_list
+        : undefined) ??
+      (Array.isArray((wordScoreList?.[0] as any)?.phone_score_list_list)
+        ? (wordScoreList[0] as any).phone_score_list_list
+        : undefined) ??
+      wordScoreList.flatMap((w: any) =>
+        Array.isArray(w?.phone_score_list) ? w.phone_score_list : [],
+      )
 
     // Ở bước assess chỉ chấm điểm và trả kết quả ngay; chưa lưu history/progress.
 
     // Gọi AI để sinh nhận xét chi tiết (tiếng Việt) cho người học
-    let aiFeedback = ""
+    let aiFeedback = ''
     try {
       const weakPhones = (Array.isArray(phoneScoreList) ? phoneScoreList : [])
-        .map((p: any) => ({ phone: String(p?.phone || ""), quality_score: Number(p?.quality_score) || 0 }))
-        .filter(p => !!p.phone)
+        .map((p: any) => ({
+          phone: String(p?.phone || ''),
+          quality_score: Number(p?.quality_score) || 0,
+        }))
+        .filter((p) => !!p.phone)
         .sort((a, b) => a.quality_score - b.quality_score)
         .slice(0, 2)
 
       const systemPrompt = [
-        "Bạn là giáo viên phát âm tiếng Anh.",
-        "Ngữ cảnh: Bài IPA chỉ có 1 TỪ, mục tiêu là sửa phát âm theo từng ÂM (phoneme).",
-        "Trả lời tiếng Việt, cực ngắn, chỉ 2 dòng, tổng <= 160 ký tự.",
-        "hướng dẫn sửa ÂM yếu nhất (nêu âm + mẹo đặt miệng/lưỡi/ngắt hơi).",
-        "Không chấm điểm. Không ví dụ câu. Không emoji. Không dấu ngoặc kép."
-      ].join("\n")
+        'Bạn là giáo viên phát âm tiếng Anh.',
+        'Ngữ cảnh: Bài IPA chỉ có 1 TỪ, mục tiêu là sửa phát âm theo từng ÂM (phoneme).',
+        'Trả lời tiếng Việt, cực ngắn, chỉ 2 dòng, tổng <= 160 ký tự.',
+        'hướng dẫn sửa ÂM yếu nhất (nêu âm + mẹo đặt miệng/lưỡi/ngắt hơi).',
+        'Không chấm điểm. Không ví dụ câu. Không emoji. Không dấu ngoặc kép.',
+      ].join('\n')
 
       const userPrompt = JSON.stringify({
-        type: "ipa_pronunciation_feedback",
+        type: 'ipa_pronunciation_feedback',
         referenceText: referenceText.trim(),
         overallScore,
         weakPhones,
       })
 
-      aiFeedback = await AIProvider.chat([
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+      aiFeedback = await AIProvider.chatbotAi([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ])
     } catch {
       // Nếu AI lỗi thì bỏ qua, không chặn kết quả chính
-      aiFeedback = ""
+      aiFeedback = ''
     }
 
     // Return the shape the client UI expects (IIpaScoringResult)
@@ -466,27 +498,22 @@ export class IpaService {
   }
 
   // (USER) Lấy điểm cao nhất của bài IPA
-  static async getHighestScore(
-    userId: string,
-    ipaId: string
-  ): Promise<number> {
+  static async getHighestScore(userId: string, ipaId: string): Promise<number> {
     const history = await StudyHistory.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(ipaId),
-      category: 'ipa'
-    }).sort({ progress: -1, createdAt: -1 });
+      category: 'ipa',
+    }).sort({ progress: -1, createdAt: -1 })
 
-    return history?.progress || 0;
+    return history?.progress || 0
   }
 
   // (USER) Lấy thông tin chi tiết IPA theo ID cho người dùng
   static async getIpaByIdForUser(id: string, userId: string): Promise<IIpa> {
-    const ipa = await Ipa.findOne({ _id: id, isActive: true })
-      .populate('image')
-      .populate('video');
-    if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404);
+    const ipa = await Ipa.findOne({ _id: id, isActive: true }).populate('image').populate('video')
+    if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
 
-    return ipa;
+    return ipa
   }
 
   // (USER) Lấy thông tin chi tiết IPA theo âm
@@ -500,7 +527,7 @@ export class IpaService {
     return {
       ...ipa,
       image: (ipa.image as any)?.url || null,
-      video: (ipa.video as any)?.url || null
+      video: (ipa.video as any)?.url || null,
     } as unknown as IIpa
   }
 
@@ -508,19 +535,21 @@ export class IpaService {
 
   // (ADMIN) Lấy thông tin chi tiết IPA theo ID
   static async getIpaById(id: string): Promise<IIpa> {
-    const ipa = await Ipa.findOne({ _id: id }).populate({
-      path: 'image',
-      select: 'url'
-    }).populate({
-      path: 'video',
-      select: 'url'
-    })
+    const ipa = await Ipa.findOne({ _id: id })
+      .populate({
+        path: 'image',
+        select: 'url',
+      })
+      .populate({
+        path: 'video',
+        select: 'url',
+      })
       .lean()
     if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
     return {
       ...ipa,
       image: (ipa.image as any)?.url || null,
-      video: (ipa.video as any)?.url || null
+      video: (ipa.video as any)?.url || null,
     } as unknown as IIpa
   }
 
@@ -532,7 +561,11 @@ export class IpaService {
 
   // (ADMIN) Cập nhật IPA
   static async updateIpa(id: string, ipa: IIpa): Promise<IIpa> {
-    const updatedIpa = await Ipa.findByIdAndUpdate(id, { ...ipa, updatedBy: new mongoose.Types.ObjectId(ipa.updatedBy) }, { new: true })
+    const updatedIpa = await Ipa.findByIdAndUpdate(
+      id,
+      { ...ipa, updatedBy: new mongoose.Types.ObjectId(ipa.updatedBy) },
+      { new: true },
+    )
     if (!updatedIpa) throw new ErrorHandler('IPA không tồn tại', 404)
     return updatedIpa as unknown as IIpa
   }
@@ -573,58 +606,61 @@ export class IpaService {
   }
 
   // (ADMIN) Thay đổi thứ tự IPA (Lên/Xuống)
-  static async swapOrderIndex(ipaId: string, direction: 'up' | 'down'): Promise<{ currentIpa: IIpa; swappedIpa: IIpa }> {
-    const currentIpa = await Ipa.findById(ipaId);
-    if (!currentIpa) throw new ErrorHandler('IPA không tồn tại', 404);
+  static async swapOrderIndex(
+    ipaId: string,
+    direction: 'up' | 'down',
+  ): Promise<{ currentIpa: IIpa; swappedIpa: IIpa }> {
+    const currentIpa = await Ipa.findById(ipaId)
+    if (!currentIpa) throw new ErrorHandler('IPA không tồn tại', 404)
 
-    let adjacentIpa: IIpa | null = null;
+    let adjacentIpa: IIpa | null = null
     if (direction === 'up') {
-      adjacentIpa = await Ipa.findOne({ orderIndex: { $lt: currentIpa.orderIndex } })
-        .sort({ orderIndex: -1 });
+      adjacentIpa = await Ipa.findOne({ orderIndex: { $lt: currentIpa.orderIndex } }).sort({
+        orderIndex: -1,
+      })
     } else {
-      adjacentIpa = await Ipa.findOne({ orderIndex: { $gt: currentIpa.orderIndex } })
-        .sort({ orderIndex: 1 });
+      adjacentIpa = await Ipa.findOne({ orderIndex: { $gt: currentIpa.orderIndex } }).sort({
+        orderIndex: 1,
+      })
     }
 
     if (!adjacentIpa) {
-      throw new ErrorHandler(`Không thể di chuyển ${direction === 'up' ? 'lên' : 'xuống'}. Đã ở vị trí ${direction === 'up' ? 'đầu' : 'cuối'} danh sách.`, 400);
+      throw new ErrorHandler(
+        `Không thể di chuyển ${direction === 'up' ? 'lên' : 'xuống'}. Đã ở vị trí ${direction === 'up' ? 'đầu' : 'cuối'} danh sách.`,
+        400,
+      )
     }
 
-    const currentIndex = currentIpa.orderIndex;
-    const adjacentIndex = adjacentIpa.orderIndex;
+    const currentIndex = currentIpa.orderIndex
+    const adjacentIndex = adjacentIpa.orderIndex
 
-    const temp = Date.now();
+    const temp = Date.now()
 
     // B1: đẩy current ra ngoài
-    await Ipa.updateOne(
-      { _id: currentIpa._id },
-      { orderIndex: temp }
-    );
+    await Ipa.updateOne({ _id: currentIpa._id }, { orderIndex: temp })
 
     // B2: cập nhật adjacent
-    await Ipa.updateOne(
-      { _id: adjacentIpa._id },
-      { orderIndex: currentIndex }
-    );
+    await Ipa.updateOne({ _id: adjacentIpa._id }, { orderIndex: currentIndex })
 
     // B3: cập nhật current
-    await Ipa.updateOne(
-      { _id: currentIpa._id },
-      { orderIndex: adjacentIndex }
-    );
+    await Ipa.updateOne({ _id: currentIpa._id }, { orderIndex: adjacentIndex })
 
     return {
       currentIpa,
-      swappedIpa: adjacentIpa
-    };
+      swappedIpa: adjacentIpa,
+    }
   }
 
   // (ADMIN) Cập nhật ví dụ cho IPA
-  static async updateExampleIpa(ipaId: string, exampleId: string, example: IExample): Promise<IIpa> {
+  static async updateExampleIpa(
+    ipaId: string,
+    exampleId: string,
+    example: IExample,
+  ): Promise<IIpa> {
     const ipa = await Ipa.findById(ipaId)
     if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
 
-    const exampleIndex = ipa.examples.findIndex(ex => (ex as any)._id.toString() === exampleId)
+    const exampleIndex = ipa.examples.findIndex((ex) => (ex as any)._id.toString() === exampleId)
     if (exampleIndex === -1) throw new ErrorHandler('Ví dụ không tồn tại trong IPA này', 404)
 
     ipa.examples[exampleIndex] = { ...example, _id: new mongoose.Types.ObjectId(exampleId) } as any
@@ -636,7 +672,7 @@ export class IpaService {
   static async deleteExampleIpa(ipaId: string, exampleId: string): Promise<IIpa> {
     const ipa = await Ipa.findById(ipaId)
     if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
-    ipa.examples = ipa.examples.filter(example => (example as any)._id.toString() !== exampleId)
+    ipa.examples = ipa.examples.filter((example) => (example as any)._id.toString() !== exampleId)
     await ipa.save()
     return ipa
   }
@@ -646,8 +682,8 @@ export class IpaService {
     const ipa = await Ipa.findById(ipaId)
     if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
 
-    const idSet = new Set(exampleIds.map(id => String(id)))
-    ipa.examples = ipa.examples.filter(example => !idSet.has((example as any)._id.toString()))
+    const idSet = new Set(exampleIds.map((id) => String(id)))
+    ipa.examples = ipa.examples.filter((example) => !idSet.has((example as any)._id.toString()))
     await ipa.save()
     return ipa
   }
@@ -657,7 +693,7 @@ export class IpaService {
     userId: string,
     ipaId: string,
     progress: number,
-    studyTimeSeconds: number = 0
+    studyTimeSeconds: number = 0,
   ): Promise<{
     isNewRecord: boolean
     currentScore: number
@@ -677,7 +713,7 @@ export class IpaService {
     const existingBest = await StudyHistory.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       lessonId: new mongoose.Types.ObjectId(ipaId),
-      category: 'ipa'
+      category: 'ipa',
     }).sort({ progress: -1, createdAt: -1 })
 
     const previousBest = existingBest?.progress || 0
@@ -691,7 +727,7 @@ export class IpaService {
       progress,
       point: progress,
       isCompleted: true, // Chỉ cần có làm là tính hoàn thành
-      studyTime: Math.max(0, studyTimeSeconds)
+      studyTime: Math.max(0, studyTimeSeconds),
     })
 
     return {
@@ -704,8 +740,8 @@ export class IpaService {
         ipaId: ipaId,
         progress: progress,
         createdAt: history?.createdAt,
-        updatedAt: history?.createdAt
-      }
+        updatedAt: history?.createdAt,
+      },
     }
   }
 }

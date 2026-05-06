@@ -154,7 +154,8 @@ api.interceptors.response.use(
     if (
       error.response?.status === 410 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/refresh-token')
+      !originalRequest.url?.includes('/auth/refresh-token') &&
+      !originalRequest.url?.includes('/auth/logout')
     ) {
       originalRequest._retry = true
 

@@ -1,8 +1,8 @@
-export { ChatProvider, useChat } from './context/ChatProvider'
-export type { ChatType } from './context/ChatProvider'
+export { ChatProvider, useChat } from '../../libs/contexts/ChatProvider'
+export type { ChatType } from '../../libs/contexts/ChatProvider'
 
-export { default as AIChatButton } from './components/AIChatButton'
-export { default as AIChatWindow } from './components/AIChatWindow'
+export { default as AIChatButton } from './components/chatbot/AIChatButton'
+export { default as AIChatWindow } from './components/chatbot/AIChatWindow'
 export { HumanChatButton, HumanChatWindow } from './components/chatHuman'
 
 export { useChatbot } from './hooks/useChatbot'

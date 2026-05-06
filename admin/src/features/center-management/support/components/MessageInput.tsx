@@ -8,15 +8,16 @@ import { Button } from '@/components/ui/button'
 interface MessageInputProps {
   onSendMessage: (message: string) => void
   onSendFile: (file: File) => void
+  disabled?: boolean
 }
 
-export function MessageInput({ onSendMessage, onSendFile }: MessageInputProps) {
+export function MessageInput({ onSendMessage, onSendFile, disabled = false }: MessageInputProps) {
   const [message, setMessage] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
   const handleSend = () => {
-    if (message.trim()) {
+    if (!disabled && message.trim()) {
       onSendMessage(message)
       setMessage('')
     }
@@ -35,7 +36,7 @@ export function MessageInput({ onSendMessage, onSendFile }: MessageInputProps) {
       <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
       <input type="file" ref={imageInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
       
-      <div className="flex items-center gap-4 bg-gray-50 p-2 pl-4 rounded-[2rem] border border-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
+      <div className="flex items-center gap-4 bg-gray-50 p-2 pl-4 rounded-2xl border border-gray-100 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-500/10 transition-all">
         <div className="flex items-center gap-1">
           <Button 
             variant="ghost" 
@@ -62,14 +63,15 @@ export function MessageInput({ onSendMessage, onSendFile }: MessageInputProps) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          className="border-none bg-transparent focus-visible:ring-0 font-bold h-11"
+          disabled={disabled}
+          className="border-none bg-transparent focus-visible:ring-0 font-bold h-11 disabled:cursor-not-allowed disabled:opacity-60"
         />
         <Button 
           onClick={handleSend}
           className={`w-11 h-11 rounded-full p-0 transition-all ${
             message.trim() ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-gray-200'
           }`}
-          disabled={!message.trim()}
+          disabled={!message.trim() || disabled}
         >
           <Send className={`w-5 h-5 ${message.trim() ? 'text-white' : 'text-gray-400'}`} />
         </Button>

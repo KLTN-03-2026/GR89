@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { sendChatbotMessage } from '../services/chatService'
 import { useLessonContext } from '@/libs/hooks/useLessonContext'
-import { useChat } from '../context/ChatProvider'
+import { useChat } from '../../../libs/contexts/ChatProvider'
 
 export function useChatbot() {
   const routeContext = useLessonContext()

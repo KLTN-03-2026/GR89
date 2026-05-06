@@ -26,8 +26,8 @@ export default async function page({ searchParams }: PageProps) {
     page: Number(page),
     limit: Number(limit),
     search,
-    sortBy: sortBy as any,
-    sortOrder: sortOrder as any,
+    sortBy: sortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt',
+    sortOrder: sortOrder as 'asc' | 'desc',
     isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined
   })
 

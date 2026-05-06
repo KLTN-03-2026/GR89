@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { AuthProvider } from "@/context/AuthContext";
 import { DialogCleanupProvider } from "@/components/common/providers/DialogCleanupProvider";
 import { EmergencyCleanupButton } from "@/components/common/providers/EmergencyCleanupButton";
+import { SocketProvider } from "@/context/SocketProvider";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -37,9 +38,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           <DialogCleanupProvider>
-            <ToastContainer />
-            <EmergencyCleanupButton />
-            {children}
+            <SocketProvider>
+              <ToastContainer />
+              <EmergencyCleanupButton />
+              {children}
+            </SocketProvider>
           </DialogCleanupProvider>
         </AuthProvider>
       </body>

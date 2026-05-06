@@ -1,11 +1,11 @@
-import { app } from "./app"
-import connectDB from "./providers/db"
+import connectDB from './providers/db'
+import { server } from './socket'
+
 require('dotenv').config()
 
 const PORT = process.env.PORT || 8000
 
-// Create server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   connectDB()
     .then(() => {
       console.log(`Server is running on port http://localhost:${PORT}`)

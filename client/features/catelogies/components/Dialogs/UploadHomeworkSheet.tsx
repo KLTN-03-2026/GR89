@@ -51,6 +51,10 @@ export default function UploadHomeworkSheet({
 
   const handleSubmit = async () => {
     if (isSubmitting || isEmpty) return
+    if (currentHomework?.deadline && new Date() > new Date(currentHomework.deadline)) {
+      alert('Bài tập đã hết hạn nộp.')
+      return
+    }
 
     setIsSubmitting(true)
     try {

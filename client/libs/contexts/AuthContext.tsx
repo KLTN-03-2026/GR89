@@ -49,39 +49,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(isCurrentPathAuth ? false : true)
   const router = useRouter();
-
+  
   useEffect(() => {
-    if (!user) {
-      const raw = localStorage.getItem('user')
-      if (raw) {
-        setUser(JSON.parse(raw) as User)
+    const fetchProfile = async () => {
+      if (!user) {
+        const raw = localStorage.getItem('user')
+        if (raw) {
+          setUser(JSON.parse(raw))
+          setIsLoading(false)
+          return
+        }
+      }
+
+      if (isCurrentPathAuth || user) {
         setIsLoading(false)
         return
       }
-    }
 
-    if (isCurrentPathAuth || !!user) {
-      setIsLoading(false)
-      return
-    }
-
-    let cancelled = false
-    setIsLoading(true)
-    getMyProfile()
-      .then((res) => {
-        if (!cancelled) setUser(res.data as User)
+      try {
+        setIsLoading(true)
+        const res = await getMyProfile()
+        setUser(res.data)
         localStorage.setItem('user', JSON.stringify(res.data))
-      })
-      .catch(() => {
-        if (!cancelled) setUser(null)
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false)
-      })
-
-    return () => {
-      cancelled = true
+      } catch {
+        setUser(null)
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    fetchProfile()
   }, [currentPath, isCurrentPathAuth, user])
 
   const loginUser = async (credentials: LoginRequest) => {

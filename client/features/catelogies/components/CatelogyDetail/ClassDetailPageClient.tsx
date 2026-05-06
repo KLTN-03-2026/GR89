@@ -52,7 +52,7 @@ export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
                   </div>
                   <div>
                     <p className="text-xs text-gray-400 font-bold uppercase">Giảng viên</p>
-                    <p className="text-sm font-bold text-gray-900">{classItem.teacherName}</p>
+                    <p className="text-sm font-bold text-gray-900">{classItem.teacher.fullName}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
