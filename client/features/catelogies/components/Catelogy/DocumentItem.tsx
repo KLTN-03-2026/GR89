@@ -3,6 +3,7 @@
 import { IDocument } from "../../types";
 import { FileText, Download, Calendar, User, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDateOnly } from "@/libs/utils";
 
 interface DocumentItemProps {
   document: IDocument;
@@ -24,7 +25,7 @@ export function DocumentItem({ document, onView }: DocumentItemProps) {
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              <span>{document.createdAt}</span>
+              <span>{formatDateOnly(document.createdAt)}</span>
             </div>
             {document.author && (
               <div className="flex items-center gap-1">

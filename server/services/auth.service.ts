@@ -1,52 +1,53 @@
 import { User } from '../models/user.model'
 import ErrorHandler from '../utils/ErrorHandler'
 import { JWTUtils } from '../utils/jwt.utils'
-import { Media } from '../models/media.model';
-import crypto from 'crypto';
-import { sendMail } from '../providers/mailer.provider';
-import bcrypt from 'bcrypt';
+import { Media } from '../models/media.model'
+import crypto from 'crypto'
+import { sendMail } from '../providers/mailer.provider'
+import bcrypt from 'bcrypt'
 import { StreakService } from './streak.service'
-import axios from 'axios';
+import axios from 'axios'
+import { CookieUtil } from '../utils/cookie.util'
 
 interface RegisterData {
-  fullName: string;
-  email: string;
-  password: string;
-  role?: string;
+  fullName: string
+  email: string
+  password: string
+  role?: string
 }
 
 interface LoginData {
-  email: string;
-  password: string;
-  role: string;
+  email: string
+  password: string
+  role: string
 }
 
 export interface UserInfo {
-  _id: string;
-  fullName: string;
-  email: string;
-  avatar: string;
-  dateOfBirth?: Date | null;
-  phone?: string;
-  country?: string;
-  city?: string;
-  role: string;
-  currentLevel: string;
-  currentStreak: number;
-  longestStreak: number;
-  totalStudyTime: number;
-  totalPoints: number;
-  isActive: boolean;
-  vipPlanId: string;
-  vipStartDate?: Date;
+  _id: string
+  fullName: string
+  email: string
+  avatar: string
+  dateOfBirth?: Date | null
+  phone?: string
+  country?: string
+  city?: string
+  role: string
+  currentLevel: string
+  currentStreak: number
+  longestStreak: number
+  totalStudyTime: number
+  totalPoints: number
+  isActive: boolean
+  vipPlanId: string
+  vipStartDate?: Date
   vipExpireDate?: Date
 }
 
 interface AuthResponse {
-  user: UserInfo;
-  accessToken: string;
-  refreshToken: string;
-  streakWarning?: string;
+  user: UserInfo
+  accessToken: string
+  refreshToken: string
+  streakWarning?: string
 }
 
 export class AuthService {
@@ -54,10 +55,10 @@ export class AuthService {
 
   // LẤY THÔNG TIN USER THEO ID
   static async getUserById(userId: string): Promise<{ user: UserInfo }> {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId)
 
     if (!user) {
-      throw new ErrorHandler('Không tìm thấy người dùng', 404);
+      throw new ErrorHandler('Không tìm thấy người dùng', 404)
     }
     return {
       user: {
@@ -74,8 +75,8 @@ export class AuthService {
         vipPlanId: user.vipPlanId?.toString() || '',
         vipStartDate: user.vipStartDate || null,
         vipExpireDate: user.vipExpireDate || null,
-      } as unknown as UserInfo
-    };
+      } as unknown as UserInfo,
+    }
   }
 
   /*============================ QUẢN TRỊ - THAO TÁC HÀNG LOẠT ============================*/
@@ -84,37 +85,35 @@ export class AuthService {
 
   // ĐĂNG KÍ TÀI KHOẢN MỚI
   static async register(userData: RegisterData) {
-    const { fullName, email, password } = userData;
+    const { fullName, email, password } = userData
 
     //Tạo token để xác thực email
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const token = crypto.randomBytes(32).toString('hex')
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
     //Kiểm tra email đã tồn tại chưa
     const existingUser = await User.findOne({ email })
 
     if (existingUser && existingUser.isEmailVerified) {
-      throw new ErrorHandler('Email đã tồn tại', 400);
-    }
-    else if (existingUser && !existingUser.isEmailVerified) {
-      existingUser.fullName = fullName;
-      existingUser.password = await bcrypt.hash(password, 10);
-      existingUser.verificationToken = token;
-      existingUser.verificationTokenExpires = expires;
-      await existingUser.save();
-    }
-    else {
+      throw new ErrorHandler('Email đã tồn tại', 400)
+    } else if (existingUser && !existingUser.isEmailVerified) {
+      existingUser.fullName = fullName
+      existingUser.password = await bcrypt.hash(password, 10)
+      existingUser.verificationToken = token
+      existingUser.verificationTokenExpires = expires
+      await existingUser.save()
+    } else {
       //Tạo user mới
       await User.create({
         fullName,
         email,
         password,
         verificationToken: token,
-        verificationTokenExpires: expires
+        verificationTokenExpires: expires,
       })
     }
 
-    const verifyUrl = `${process.env.SERVER_BASE_URL || 'http://localhost:8000'}/api/auth/verify-email?token=${token}`;
+    const verifyUrl = `${process.env.SERVER_BASE_URL || 'http://localhost:8000'}/api/auth/verify-email?token=${token}`
 
     await sendMail({
       to: email,
@@ -131,16 +130,17 @@ export class AuthService {
         <p>Nếu không bấm được, copy link sau:</p>
         <p><a href="${verifyUrl}">${verifyUrl}</a></p>
       </div>
-    `
+    `,
     })
   }
 
   // VERIFY EMAIL
   static async verifyEmail(token: string) {
     const user = await User.findOne({ verificationToken: token })
-    if (!user) throw new ErrorHandler('Token không hợp lệ', 400);
+    if (!user) throw new ErrorHandler('Token không hợp lệ', 400)
 
-    if (user.verificationTokenExpires && user.verificationTokenExpires < new Date()) throw new ErrorHandler('Token đã hết hạn', 400);
+    if (user.verificationTokenExpires && user.verificationTokenExpires < new Date())
+      throw new ErrorHandler('Token đã hết hạn', 400)
 
     user.isEmailVerified = true
     user.verificationToken = undefined
@@ -150,17 +150,17 @@ export class AuthService {
 
   // QUÊN MẬT KHẨU
   static async requestPasswordReset(email: string): Promise<{ message: string }> {
-    const user = await User.findOne({ email });
-    if (!user) return { message: 'Nếu email tồn tại, chúng tôi sẽ gửi hướng dẫn đặt lại.' };
+    const user = await User.findOne({ email })
+    if (!user) return { message: 'Nếu email tồn tại, chúng tôi sẽ gửi hướng dẫn đặt lại.' }
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 giờ
+    const token = crypto.randomBytes(32).toString('hex')
+    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 giờ
 
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = expires;
-    await user.save();
+    user.resetPasswordToken = token
+    user.resetPasswordExpires = expires
+    await user.save()
 
-    const resetUrl = `${process.env.CLIENT_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const resetUrl = `${process.env.CLIENT_BASE_URL || 'http://localhost:3000'}/reset-password?token=${token}`
     await sendMail({
       to: email,
       subject: 'Đặt lại mật khẩu',
@@ -171,46 +171,49 @@ export class AuthService {
           <p><a href="${resetUrl}">${resetUrl}</a></p>
           <p>Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
         </div>
-      `
-    });
+      `,
+    })
 
-    return { message: 'Nếu email tồn tại, chúng tôi sẽ gửi hướng dẫn đặt lại.' };
+    return { message: 'Nếu email tồn tại, chúng tôi sẽ gửi hướng dẫn đặt lại.' }
   }
 
   // ĐẶT LẠI MẬT KHẨU
   static async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() }
-    }).select('+password');
+      resetPasswordExpires: { $gt: new Date() },
+    }).select('+password')
 
-    if (!user) throw new ErrorHandler('Token không hợp lệ hoặc đã hết hạn', 400);
+    if (!user) throw new ErrorHandler('Token không hợp lệ hoặc đã hết hạn', 400)
 
-    user.password = newPassword; // sẽ được hash bởi pre('save')
-    user.resetPasswordToken = null as any;
-    user.resetPasswordExpires = null as any;
-    await user.save();
+    user.password = newPassword // sẽ được hash bởi pre('save')
+    user.resetPasswordToken = null as any
+    user.resetPasswordExpires = null as any
+    await user.save()
 
-    return { message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập.' };
+    return { message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập.' }
   }
 
   // ĐĂNG NHẬP NGƯỜI DÙNG
   static async login(loginData: LoginData): Promise<AuthResponse> {
-    const { email, password, role } = loginData;
+    const { email, password, role } = loginData
 
     //Tìm user có password
-    const user = await User.findOne({ email: email.toLocaleLowerCase().trim(), role }).select('+password')
+    const user = await User.findOne({ email: email.toLocaleLowerCase().trim(), role }).select(
+      '+password',
+    )
 
-    if (!user) throw new ErrorHandler('Email không tồn tại', 400);
+    if (!user) throw new ErrorHandler('Email không tồn tại', 400)
 
-    const isPasswordValid = await user?.comparePassword(password);
-    if (!isPasswordValid) throw new ErrorHandler('Mật khẩu không chính xác', 400);
+    const isPasswordValid = await user?.comparePassword(password)
+    if (!isPasswordValid) throw new ErrorHandler('Mật khẩu không chính xác', 400)
 
     // Kiểm tra trạng thái tài khoản
-    if (!user.isActive) throw new ErrorHandler('Tài khoản của bạn đã bị khóa', 403);
+    if (!user.isActive) throw new ErrorHandler('Tài khoản của bạn đã bị khóa', 403)
 
     // Kiểm tra email đã được xác thực chưa
-    if (role === 'user' && !user.isEmailVerified) throw new ErrorHandler('Vui lòng xác thực email để đăng nhập', 400);
+    if (role === 'user' && !user.isEmailVerified)
+      throw new ErrorHandler('Vui lòng xác thực email để đăng nhập', 400)
 
     // Kiểm tra streak khi đăng nhập
     const streakCheck = await StreakService.checkAndResetStreak((user?._id as any).toString())
@@ -220,8 +223,8 @@ export class AuthService {
     if (!updatedUser) throw new ErrorHandler('User không tồn tại', 404)
 
     //Tạo JWT tokens
-    const accessToken = JWTUtils.generateAccessToken((updatedUser._id as any).toString());
-    const refreshToken = JWTUtils.generateRefreshToken((updatedUser._id as any).toString());
+    const accessToken = JWTUtils.generateAccessToken((updatedUser._id as any).toString())
+    const refreshToken = JWTUtils.generateRefreshToken((updatedUser._id as any).toString())
 
     //Trả về kết quả
     return {
@@ -242,22 +245,19 @@ export class AuthService {
       } as unknown as UserInfo,
       accessToken,
       refreshToken,
-      streakWarning: streakCheck.streakLost ? streakCheck.message : undefined
+      streakWarning: streakCheck.streakLost ? streakCheck.message : undefined,
     }
   }
 
   // ĐĂNG NHẬP VỚI GOOGLE
   static async loginGoogle(token: string): Promise<AuthResponse> {
-    const res = await axios.get(
-      'https://www.googleapis.com/oauth2/v3/userinfo',
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
 
-    const user = res.data;
+    const user = res.data
 
     let existingUser = await User.findOne({ email: user.email })
     if (!existingUser) {
@@ -268,22 +268,24 @@ export class AuthService {
         height: 96,
         format: 'png',
         size: 0,
-        publicId: `google-avatar-${Date.now()}`
+        publicId: `google-avatar-${Date.now()}`,
       })
 
       //Tạo user mới
       existingUser = await User.create({
         fullName: user.name,
         email: user.email,
-        avatar: avatar._id
+        avatar: avatar._id,
       })
     }
 
     // Kiểm tra streak khi đăng nhập
-    const streakCheck = await StreakService.checkAndResetStreak((existingUser?._id as any).toString())
+    const streakCheck = await StreakService.checkAndResetStreak(
+      (existingUser?._id as any).toString(),
+    )
 
-    const accessToken = JWTUtils.generateAccessToken((existingUser._id as any).toString());
-    const refreshToken = JWTUtils.generateRefreshToken((existingUser._id as any).toString());
+    const accessToken = JWTUtils.generateAccessToken((existingUser._id as any).toString())
+    const refreshToken = JWTUtils.generateRefreshToken((existingUser._id as any).toString())
 
     //Trả về kết quả
     return {
@@ -304,7 +306,7 @@ export class AuthService {
       } as unknown as UserInfo,
       accessToken,
       refreshToken,
-      streakWarning: streakCheck.streakLost ? streakCheck.message : undefined
+      streakWarning: streakCheck.streakLost ? streakCheck.message : undefined,
     }
   }
 
@@ -313,13 +315,13 @@ export class AuthService {
     //verify refesh token
     const decoded = JWTUtils.verifyRefreshToken(refreshToken)
 
-    if (!decoded) throw new ErrorHandler('Refresh token không hợp lệ', 401);
+    if (!decoded) throw new ErrorHandler('Refresh token không hợp lệ', 401)
 
     const user = await User.findById(decoded.userId)
-    if (!user) throw new ErrorHandler('User không tồn tại', 401);
+    if (!user) throw new ErrorHandler('User không tồn tại', 401)
 
     //Tạo access token mới
-    const accessToken = JWTUtils.generateAccessToken((user._id as any).toString());
+    const accessToken = JWTUtils.generateAccessToken((user._id as any).toString())
 
     return { accessToken }
   }
@@ -328,21 +330,21 @@ export class AuthService {
 
   // (ADMIN) TẠO USER MỚI
   static async createUser(userData: RegisterData): Promise<UserInfo> {
-    const { fullName, email, password, role } = userData;
+    const { fullName, email, password, role } = userData
 
     //Kiểm tra email đã tồn tại chưa
     const existingUser = await User.findOne({ email })
-    if (existingUser) throw new ErrorHandler('Email đã tồn tại', 400);
+    if (existingUser) throw new ErrorHandler('Email đã tồn tại', 400)
 
     //Tạo user mới
     const newUser = await User.create({
       fullName,
       email,
       password,
-      role
+      role,
     })
 
-    await newUser.save();
+    await newUser.save()
 
     return {
       _id: (newUser._id as any).toString(),
@@ -362,20 +364,24 @@ export class AuthService {
   }
 
   // LẤY THÔNG TIN USER THEO EMAIL
-  static async loginAdmin(email: string, password: string): Promise<{ user: UserInfo, accessToken: string; refreshToken: string }> {
-    const user = await User.findOne({ email }).select('+password');
-    if (!user) throw new ErrorHandler('Email không tồn tại', 400);
+  static async loginAdmin(
+    email: string,
+    password: string,
+  ): Promise<{ user: UserInfo; accessToken: string; refreshToken: string }> {
+    const user = await User.findOne({ email }).select('+password')
+    if (!user) throw new ErrorHandler('Email không tồn tại', 400)
 
-    if (user.role !== 'admin' && user.role !== 'content') throw new ErrorHandler('Tài khoản này không có quyền truy cập admin panel', 403);
+    if (user.role !== 'admin' && user.role !== 'content')
+      throw new ErrorHandler('Tài khoản này không có quyền truy cập admin panel', 403)
 
-    const isPasswordValid = await user?.comparePassword(password);
-    if (!isPasswordValid) throw new ErrorHandler('Mật khẩu không chính xác', 400);
+    const isPasswordValid = await user?.comparePassword(password)
+    if (!isPasswordValid) throw new ErrorHandler('Mật khẩu không chính xác', 400)
 
-    if (!user.isActive) throw new ErrorHandler('Tài khoản của bạn đã bị khóa', 403);
+    if (!user.isActive) throw new ErrorHandler('Tài khoản của bạn đã bị khóa', 403)
 
     //Tạo JWT tokens
-    const accessToken = JWTUtils.generateAccessToken((user._id as any).toString());
-    const refreshToken = JWTUtils.generateRefreshToken((user._id as any).toString());
+    const accessToken = JWTUtils.generateAccessToken((user._id as any).toString())
+    const refreshToken = JWTUtils.generateRefreshToken((user._id as any).toString())
 
     return { user: user as unknown as UserInfo, accessToken, refreshToken }
   }

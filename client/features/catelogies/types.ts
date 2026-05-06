@@ -1,3 +1,4 @@
+import { User } from "@/types";
 import { LucideIcon } from "lucide-react";
 
 export type CategoryType = 'kids' | 'teenager' | 'adult';
@@ -50,7 +51,7 @@ export interface IClass {
   lessonCount: number;
   category: CategoryType;
   startDate: string;
-  teacherName: string;
+  teacher: User;
   teacherId?: string;
   schedule: string;
   status?: 'opening' | 'ongoing' | 'finished';

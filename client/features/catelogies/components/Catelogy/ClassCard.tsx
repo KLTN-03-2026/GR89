@@ -40,7 +40,7 @@ export function ClassCard({ isLoading, classItem, onClick }: ClassCardProps) {
             </h3>
             <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5 font-medium">
               <User className="w-3.5 h-3.5" />
-              GV: {classItem.teacherName}
+              GV: {classItem.teacher.fullName}
             </p>
           </div>
         </CardHeader>

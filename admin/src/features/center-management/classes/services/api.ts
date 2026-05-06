@@ -113,18 +113,12 @@ export async function setDocumentsForClass(classId: string, documentIds: string[
  * DANH SÁCH API QUẢN LÝ BÀI TẬP (HOMEWORK)
  *============================================================================*/
 
-// Giao bài tập mới (Admin/Teacher)
-export async function createHomework(data: { centerClassId: string, title: string, description?: string, deadline: string, documentIds?: string[] }): Promise<ApiResponse<IHomework>> {
-  const response = await AuthorizedAxios.post<ApiResponse<IHomework>>('/center-classes/homework', data)
-  return response.data
-}
-
-export async function createHomeworkForClass(classId: string, data: { title: string, description?: string, deadline: string, documentIds?: string[] }): Promise<ApiResponse<IHomework>> {
+export async function createHomeworkForClass(classId: string, data: { title: string, description?: string, startTime: Date, deadline: Date, documentIds?: string[] }): Promise<ApiResponse<IHomework>> {
   const response = await AuthorizedAxios.post<ApiResponse<IHomework>>(`/center-classes/${classId}/homeworks`, data)
   return response.data
 }
 
-export async function updateHomework(homeworkId: string, data: { title?: string, description?: string, deadline?: string, documentIds?: string[] }): Promise<ApiResponse<IHomework>> {
+export async function updateHomework(homeworkId: string, data: { title?: string, description?: string, startTime: Date, deadline?: Date, documentIds?: string[] }): Promise<ApiResponse<IHomework>> {
   const response = await AuthorizedAxios.put<ApiResponse<IHomework>>(`/center-classes/homework/${homeworkId}`, data)
   return response.data
 }

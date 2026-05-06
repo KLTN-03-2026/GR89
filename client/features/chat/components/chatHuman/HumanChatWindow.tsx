@@ -5,7 +5,7 @@ import HumanChatHeader from './HumanChatHeader'
 import HumanChatMessageList from './HumanChatMessageList'
 import HumanChatInput from './HumanChatInput'
 import HumanChatMinimized from './HumanChatMinimized'
-import { useChat } from '../../context/ChatProvider'
+import { useChat } from '../../../../libs/contexts/ChatProvider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface HumanChatWindowProps {
@@ -17,62 +17,23 @@ export default function HumanChatWindow({ onClose, setOpenChat }: HumanChatWindo
   const [isMinimized, setIsMinimized] = useState(false)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { openChat } = useChat()
-
-  // Mock messages
-  const [messages, setMessages] = useState<any[]>([
-    {
-      id: '1',
-      senderId: 'admin',
-      content: 'Chào bạn! Tôi có thể hỗ trợ gì cho lộ trình học của bạn hôm nay?',
-      time: '10:00',
-      status: 'seen'
-    }
-  ])
+  const { openChat, humanMessages, sendHumanMessage } = useChat()
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [humanMessages, openChat])
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return
-
-    const newMessage = {
-      id: Date.now().toString(),
-      senderId: 'user',
-      content: input,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent'
+    try {
+      await sendHumanMessage(input)
+    } finally {
+      setInput('')
     }
-    setMessages([...messages, newMessage])
-    setInput('')
-
-    // Mock auto-reply
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        senderId: 'admin',
-        content: 'Cảm ơn bạn đã phản hồi. Đội ngũ hỗ trợ sẽ trả lời bạn trong ít phút.',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'seen'
-      }])
-    }, 2000)
   }
 
   const handleSendFile = (file: File) => {
-    const isImage = file.type.startsWith('image/')
-    const newMessage = {
-      id: Date.now().toString(),
-      senderId: 'user',
-      content: '',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sent',
-      type: isImage ? 'image' : 'file',
-      fileName: file.name,
-      fileSize: (file.size / 1024).toFixed(1) + ' KB',
-      fileUrl: isImage ? URL.createObjectURL(file) : '#'
-    }
-    setMessages([...messages, newMessage])
+    console.log(file)
   }
 
   if (isMinimized) {
@@ -91,7 +52,7 @@ export default function HumanChatWindow({ onClose, setOpenChat }: HumanChatWindo
       </div>
 
       <ScrollArea className="flex-1 overflow-auto bg-gray-50/30">
-        <HumanChatMessageList ref={messagesEndRef} messages={messages} />
+        <HumanChatMessageList ref={messagesEndRef} messages={humanMessages} />
       </ScrollArea>
 
       <div className="flex-shrink-0 border-t border-gray-100 bg-white px-4 py-1.5 text-[10px] text-gray-400 font-medium dark:border-gray-800 dark:bg-gray-900">

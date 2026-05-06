@@ -48,3 +48,46 @@ export interface ExerciseResult {
   percentage: number
   results: QuestionResult[]
 }
+
+export interface ChatUser {
+  _id: string
+  role: string
+  fullName?: string
+  email?: string
+  avatar?: string
+}
+
+export type ChatMessageType = 'text' | 'system'
+export type ChatAttachmentType = 'image' | 'file'
+
+export interface ChatAttachment {
+  type: ChatAttachmentType
+  url: string
+  name?: string
+  size?: number | null
+  mimeType?: string
+}
+
+export interface ChatMessage {
+  _id: string
+  sender: ChatUser
+  type?: ChatMessageType
+  content: string
+  createdAt: string | Date
+  attachments?: ChatAttachment[]
+}
+
+export interface ChatConversation {
+  _id: string
+  requester: ChatUser
+  assignedTo?: ChatUser | null
+  status?: 'open' | 'closed'
+  waitingFor?: 'assignee' | 'requester'
+  messages: ChatMessage[]
+  lastMessageAt?: string | Date | null
+  lastRequesterMessageAt?: string | Date | null
+  lastAssigneeMessageAt?: string | Date | null
+  requesterLastReadAt?: string | Date | null
+  countUnRead?: number
+  lastMessagePreview?: string
+}

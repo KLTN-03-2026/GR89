@@ -18,6 +18,7 @@ export default function HumanChatMinimized({ onExpand, onClose }: HumanChatMinim
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-400" />
         </div>
+        
         <div>
           <p className="text-sm font-black text-gray-900">Hỗ trợ trực tuyến</p>
           <p className="text-[10px] font-bold text-indigo-600/70 uppercase tracking-widest">Đang kết nối...</p>

@@ -68,6 +68,7 @@ export interface ICreateHomeworkData {
   centerClassId: string
   title: string
   description: string
+  startTime: Date
   deadline: Date
   documentIds?: string[] | null
   documentId?: string | null
@@ -288,8 +289,6 @@ export class CenterClassService {
         ],
       })
 
-    console.log(centerClass)
-
     if (!centerClass || !centerClass.isActive) {
       throw new ErrorHandler('Không tìm thấy lớp học', 404)
     }
@@ -326,7 +325,6 @@ export class CenterClassService {
         strictPopulate: false,
         populate: [
           { path: 'documents', strictPopulate: false },
-          { path: 'document', strictPopulate: false },
           { path: 'submissions.user', select: 'fullName email avatar', strictPopulate: false },
         ],
       })
@@ -502,20 +500,20 @@ export class CenterClassService {
   static async updateHomework(
     homeworkId: string,
     data: {
-      title?: string
-      description?: string
-      deadline?: Date
+      title: string
+      description: string
+      startTime: Date
+      deadline: Date
       documentIds?: string[] | null
-      documentId?: string | null
     },
   ): Promise<IHomework> {
+    console.log(data)
     const update: any = {}
     if (data.title != null) update.title = data.title
     if (data.description != null) update.description = data.description
     if (data.deadline != null) update.deadline = data.deadline
-    if (data.documentIds !== undefined || data.documentId !== undefined) {
-      const rawIds =
-        data.documentIds !== undefined ? data.documentIds : data.documentId ? [data.documentId] : []
+    if (data.documentIds !== undefined) {
+      const rawIds = data.documentIds !== undefined ? data.documentIds : []
       const uniqueIds = Array.from(new Set((rawIds || []).filter(Boolean)))
       if (uniqueIds.length > 0) {
         const count = await GlobalDocument.countDocuments({ _id: { $in: uniqueIds } })

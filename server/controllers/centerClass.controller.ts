@@ -286,7 +286,8 @@ export class CenterClassController {
   // Giao bài tập mới (Admin/Teacher)
   static createHomework = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
-      const { centerClassId, title, description, deadline, documentIds, documentId } = req.body
+      const { centerClassId, title, description, startTime, deadline, documentIds, documentId } =
+        req.body
       if (!centerClassId || !title || !deadline) {
         return next(new ErrorHandler('Vui lòng cung cấp đầy đủ thông tin bài tập', 400))
       }
@@ -295,6 +296,7 @@ export class CenterClassController {
         centerClassId,
         title,
         description,
+        startTime,
         deadline,
         documentIds,
         documentId,
@@ -311,7 +313,7 @@ export class CenterClassController {
   static createHomeworkForClass = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
       const { id: centerClassId } = req.params
-      const { title, description, deadline, documentIds, documentId } = req.body
+      const { title, description, startTime, deadline, documentIds, documentId } = req.body
       if (!title || !deadline) {
         return next(new ErrorHandler('Vui lòng cung cấp đầy đủ thông tin bài tập', 400))
       }
@@ -320,6 +322,7 @@ export class CenterClassController {
         centerClassId,
         title,
         description,
+        startTime,
         deadline,
         documentIds,
         documentId,
@@ -346,23 +349,17 @@ export class CenterClassController {
   static updateHomework = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
       const { id } = req.params
-      const { title, description, deadline, documentIds, documentId } = req.body
-      if (
-        !title &&
-        !description &&
-        !deadline &&
-        documentId === undefined &&
-        documentIds === undefined
-      ) {
+      const { title, description, startTime, deadline, documentIds } = req.body
+      if (!startTime && !title && !description && !deadline && documentIds === undefined) {
         return next(new ErrorHandler('Không có dữ liệu để cập nhật', 400))
       }
 
       const updated = await CenterClassService.updateHomework(id, {
         title,
         description,
+        startTime,
         deadline,
         documentIds,
-        documentId,
       })
 
       res.status(200).json({

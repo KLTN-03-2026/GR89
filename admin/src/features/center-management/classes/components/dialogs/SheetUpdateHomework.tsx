@@ -150,12 +150,18 @@ export function SheetUpdateHomework({ open, onOpenChange, homework, callback }: 
       return
     }
 
+    if (end < new Date()) {
+      toast.error('Thời gian kết thúc phải sau thời gian hiện tại')
+      return
+    }
+
     setIsSaving(true)
     try {
       const res = await updateHomework(homework._id, {
         title: title.trim(),
         description: description.trim(),
-        deadline: end.toISOString(),
+        startTime: start,
+        deadline: end,
         documentIds: selectedDocs.map(d => d._id),
       })
       if (res.success) {
