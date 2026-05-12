@@ -1,4 +1,5 @@
 import { Star, Quote } from 'lucide-react'
+import Image from 'next/image'
 
 export function TestimonialsSection() {
   const testimonials = [
@@ -7,7 +8,7 @@ export function TestimonialsSection() {
       role: 'Sinh viên',
       avatar: 'https://ui-avatars.com/api/?name=Nguyen+Van+A&background=3b82f6&color=fff',
       rating: 5,
-      content: 'English Mastery giúp mình cải thiện Speaking từ 5.0 lên 7.5 IELTS chỉ sau 3 tháng! AI chấm phát âm cực kỳ chính xác và chi tiết.',
+      content: 'ActiveLearning giúp mình cải thiện Speaking từ 5.0 lên 7.5 IELTS chỉ sau 3 tháng! AI chấm phát âm cực kỳ chính xác và chi tiết.',
       achievement: 'IELTS 7.5'
     },
     {
@@ -62,7 +63,7 @@ export function TestimonialsSection() {
 
               {/* Content */}
               <p className="text-gray-700 mb-6 leading-relaxed italic">
-                "{testimonial.content}"
+                `&quot;`{testimonial.content}`&quot;`
               </p>
 
               {/* Achievement Badge */}
@@ -72,10 +73,12 @@ export function TestimonialsSection() {
 
               {/* Author */}
               <div className="flex items-center gap-4 border-t pt-6">
-                <img
+                <Image
                   src={testimonial.avatar}
                   alt={testimonial.name}
                   className="w-12 h-12 rounded-full"
+                  width={48}
+                  height={48}
                 />
                 <div>
                   <p className="font-bold text-gray-900">{testimonial.name}</p>

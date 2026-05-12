@@ -94,17 +94,28 @@ export class SupportChatService {
       .populate('assignedTo', 'fullName email avatar role')
       .populate('requester', 'fullName email avatar role')
 
-    if (!ticket) throw new ErrorHandler('Không tìm thấy ticket', 404)
+    if (!ticket) {
+      const newTicket = await ChatConversation.create({ requester })
+      return {
+        ...newTicket.toObject(),
+        countUnRead: 0,
+      }
+    }
 
     const lastMessage = ticket.messages[ticket.messages.length - 1]
-    if (lastMessage.sender.role !== 'user') {
-      console.log(lastMessage)
-
+    if (lastMessage?.sender?.role !== 'user') {
       const lastRequesterReadAt = ticket.requesterLastReadAt
-      const countUnRead = ticket.messages.reduce((acc: number, message: IChatMessage) => {
-        if (!lastRequesterReadAt || message.createdAt > lastRequesterReadAt) return acc + 1
-        else return acc
-      }, 0)
+      const countUnRead = ticket.messages.reduce(
+        (acc: number, message: IChatMessage & { sender: { role: string } }) => {
+          if (
+            (!lastRequesterReadAt || message.createdAt > lastRequesterReadAt) &&
+            message?.sender?.role !== 'user'
+          )
+            return acc + 1
+          else return acc
+        },
+        0,
+      )
 
       return {
         ...ticket.toObject(),
@@ -143,7 +154,7 @@ export class SupportChatService {
       ...ticket.toObject(),
       unreadCount: ticket?.messages?.reduce(
         (count: number, msg: IChatMessage & { sender: { role: string } }) => {
-          if (msg.sender.role === 'user') return count + 1
+          if (msg?.sender?.role === 'user') return count + 1
           else count = 0
           return count
         },

@@ -23,6 +23,7 @@ import { dailySuggestionRoutes } from './dailySuggestion.routes'
 import { globalDocumentRoutes } from './globalDocument.routes'
 import { centerClassRoutes } from './centerClass.routes'
 import { supportChatRoutes } from './supportChat.routes'
+import { notificationRoutes } from './notification.routes'
 
 const router = express.Router()
 
@@ -51,6 +52,7 @@ router.use('/daily-suggestion', dailySuggestionRoutes)
 router.use('/global-documents', globalDocumentRoutes)
 router.use('/center-classes', centerClassRoutes)
 router.use('/support-chat', supportChatRoutes)
+router.use('/notifications', notificationRoutes)
 
 // ✅ ROOT ENDPOINT
 router.get('/', (req, res) => {

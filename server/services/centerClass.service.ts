@@ -2,7 +2,7 @@ import { CenterClass, ICenterClass } from '../models/centerClass.model'
 import { Homework, IHomework, ISubmission } from '../models/homework.model'
 import { GlobalDocument } from '../models/globalDocument.model'
 import ErrorHandler from '../utils/ErrorHandler'
-import mongoose, { Mongoose } from 'mongoose'
+import mongoose from 'mongoose'
 import { User } from '../models/user.model'
 
 export interface ICreateClassData {
@@ -75,6 +75,11 @@ export interface ICreateHomeworkData {
 }
 
 export class CenterClassService {
+  private static ensureObjectId(id: string, message: string) {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new ErrorHandler(message, 400)
+    return new mongoose.Types.ObjectId(id)
+  }
+
   // (ADMIN/CONTENT) Tạo lớp học
   static async createClass(data: ICreateClassData): Promise<ICenterClass> {
     const classesExist = await CenterClass.find({ name: data.name })
@@ -491,9 +496,16 @@ export class CenterClassService {
     const homework = await Homework.findById(homeworkId)
     if (!homework) throw new ErrorHandler('Không tìm thấy bài tập', 404)
 
-    const submission = homework.submissions.find((s) => s.user.toString() === userId)
-    if (!submission) return null
-    return submission
+    const submissions = homework.submissions.filter((s) => s.user.toString() === userId)
+    if (submissions.length === 0) return null
+
+    const latest = submissions.reduce((acc: any, cur: any) => {
+      const accTime = acc?.submittedAt ? new Date(acc.submittedAt).getTime() : 0
+      const curTime = cur?.submittedAt ? new Date(cur.submittedAt).getTime() : 0
+      return curTime >= accTime ? cur : acc
+    }, submissions[0] as any)
+
+    return latest
   }
 
   // (ADMIN/CONTENT) Cập nhật bài tập
@@ -556,21 +568,13 @@ export class CenterClassService {
     const homework = await Homework.findById(homeworkId)
     if (!homework) throw new ErrorHandler('Không tìm thấy bài tập', 404)
 
-    const submissionIndex = homework.submissions.findIndex((s) => s.user.toString() === userId)
-
-    if (submissionIndex !== -1) {
-      homework.submissions[submissionIndex].content = content
-      homework.submissions[submissionIndex].submittedAt = new Date()
-      homework.submissions[submissionIndex].status = 'pending'
-    } else {
-      homework.submissions.push({
-        user: new mongoose.Types.ObjectId(userId),
-        content,
-        feedback: '',
-        submittedAt: new Date(),
-        status: 'pending',
-      })
-    }
+    homework.submissions.push({
+      user: new mongoose.Types.ObjectId(userId),
+      content,
+      feedback: '',
+      submittedAt: new Date(),
+      status: 'pending',
+    })
 
     await homework.save()
     return homework
@@ -581,20 +585,43 @@ export class CenterClassService {
     homeworkId: string,
     userId: string,
     feedback: string,
+    correctedContent?: string,
+    reviewerId?: string,
   ): Promise<IHomework> {
     const homework = await Homework.findById(homeworkId)
     if (!homework) throw new ErrorHandler('Không tìm thấy bài tập', 404)
 
-    const submissionIndex = homework.submissions.findIndex((s) => s.user.toString() === userId)
-    if (submissionIndex === -1) {
+    const candidates = homework.submissions.filter((s) => s.user.toString() === userId)
+    if (candidates.length === 0) {
       throw new ErrorHandler('Học sinh này chưa nộp bài', 400)
     }
 
-    homework.submissions[submissionIndex].feedback = feedback
-    homework.submissions[submissionIndex].gradedAt = new Date()
-    homework.submissions[submissionIndex].status = 'graded'
+    const latest = candidates.reduce((acc: any, cur: any) => {
+      const accTime = acc?.submittedAt ? new Date(acc.submittedAt).getTime() : 0
+      const curTime = cur?.submittedAt ? new Date(cur.submittedAt).getTime() : 0
+      return curTime >= accTime ? cur : acc
+    }, candidates[0] as any)
+
+    latest.feedback = feedback
+    latest.gradedAt = new Date()
+    latest.status = 'graded'
 
     await homework.save()
+
+    if (reviewerId) {
+      const hw = this.ensureObjectId(homeworkId, 'Bài tập không hợp lệ')
+      const student = this.ensureObjectId(userId, 'Học sinh không hợp lệ')
+      const reviewer = this.ensureObjectId(reviewerId, 'Người chấm không hợp lệ')
+
+      const setPayload: any = {
+        reviewer,
+        comment: feedback || '',
+      }
+      if (typeof correctedContent === 'string') {
+        setPayload.correctedContent = correctedContent
+      }
+    }
+
     return homework
   }
 

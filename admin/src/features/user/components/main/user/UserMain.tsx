@@ -4,31 +4,34 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useEffect, useState, useCallback } from "react"
 import { columnsUser } from "../../table/user/UserColumn"
 import { User } from "@/features/user/types"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, Search, Users, Filter, X, UserPlus, Mail, Key, Shield, Info, CheckCircle2, UserCheck, UserMinus } from "lucide-react"
+import { Search, Users, Filter, X, UserPlus, UserCheck, UserMinus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { getAllUsersPaginated, createUser, type UserQueryParams } from "@/features/user/services/api"
-import { toast } from "react-toastify"
+import { getAllUsersPaginated } from "@/features/user/services/api"
 import { UserManagementSkeleton } from "@/components/common/Skeletons/UserManagementSkeleton"
 import { useDebounce } from "@/hooks/useDebounce"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { StatsGrid } from "@/components/common/shared/StatsGrid"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import SheetAddUser from "../../dialog/SheetAddUser"
 
-export function UserMain() {
+interface UserMainProps {
+  initialData: User[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
+}
+
+export function UserMain({ initialData, pagination }: UserMainProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -47,16 +50,15 @@ export function UserMain() {
   const urlRoleFilter = ['all', 'user', 'content'].includes(rawRoleFilter || '') ? rawRoleFilter || 'all' : 'all'
 
   const [isLoading, setIsLoading] = useState(false)
-  const [users, setUsers] = useState<User[]>([])
-  const [refresh, setRefresh] = useState(false)
+  const [users, setUsers] = useState<User[]>(initialData)
   const [searchTerm, setSearchTerm] = useState(urlSearch)
   const debouncedSearch = useDebounce(searchTerm, 500)
   const [openAdd, setOpenAdd] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
 
   // Pagination states
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [total, setTotal] = useState(pagination.total || 0)
+  const [pages, setPages] = useState(pagination.pages || 0)
 
   // Stats states
   const [totalActive, setTotalActive] = useState(0)
@@ -85,12 +87,6 @@ export function UserMain() {
     }
   }, [])
 
-  useEffect(() => {
-    if (urlSearch !== debouncedSearch) {
-      setSearchTerm(urlSearch)
-    }
-  }, [urlSearch, debouncedSearch])
-
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
     Object.entries(updates).forEach(([key, value]) => {
@@ -109,33 +105,17 @@ export function UserMain() {
     }
   }, [debouncedSearch, urlSearch, updateUrl])
 
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true)
-    const params: UserQueryParams = {
-      page: urlPage,
-      limit: urlLimit,
-      search: urlSearch || undefined,
-      isActive: urlIsActive,
-      role: urlRoleFilter !== 'all' ? urlRoleFilter : undefined,
-      sortBy: urlSortBy,
-      sortOrder: urlSortOrder
-    }
-
-    await getAllUsersPaginated(params)
-      .then(res => {
-        setUsers(res.data || [])
-        setTotal(res.pagination?.total || 0)
-        setPages(res.pagination?.pages || 0)
-        fetchStats()
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [urlPage, urlSearch, urlLimit, urlIsActive, urlRoleFilter, urlSortBy, urlSortOrder, fetchStats])
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setUsers(initialData)
+    setTotal(pagination.total || 0)
+    setPages(pagination.pages || 0)
+    setPrevInitialData(initialData)
+  }
 
   useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers, refresh])
+    fetchStats()
+  }, [fetchStats])
 
   const handleStatusFilter = (value: string) => {
     const newIsActive = value === 'all' ? undefined : value === 'active' ? true : false
@@ -187,7 +167,7 @@ export function UserMain() {
     },
   ]
 
-  if (isLoading) {
+  if (isLoading && users.length === 0) {
     return <UserManagementSkeleton />
   }
 
@@ -215,7 +195,10 @@ export function UserMain() {
       <SheetAddUser
         openAdd={openAdd}
         setOpenAdd={setOpenAdd}
-        callback={fetchUsers}
+        callback={() => {
+          fetchStats()
+          router.refresh()
+        }}
         isLoading={isLoading}
         setIsLoading={setIsLoading}
       />

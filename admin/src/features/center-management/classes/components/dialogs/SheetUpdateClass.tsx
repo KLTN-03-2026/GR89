@@ -150,7 +150,7 @@ export function SheetUpdateClass({ classData, onClose }: SheetUpdateClassProps) 
     }
 
     setLoading(true)
-    const { maxStudents: _maxStudents, ...rest } = formData
+    const { ...rest } = formData
     await updateCenterClass(classData._id, { ...rest, schedule: finalSchedule, maxStudents })
       .then(() => {
         toast.success('Cập nhật lớp học thành công')

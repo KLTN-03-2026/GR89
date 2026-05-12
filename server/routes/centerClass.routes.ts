@@ -163,6 +163,7 @@ router.post(
   requireRole(['admin', 'content']),
   CenterClassController.gradeHomework,
 )
+
 router.delete(
   '/homework/:id',
   authenticateTokenAdmin,

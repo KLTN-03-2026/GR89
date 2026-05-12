@@ -52,7 +52,14 @@ export interface ITopicListForAI {
   ipa: { _id: string; sound: string; soundType: string }[] // IPA không có orderIndex và title, dùng sound thay thế
 }
 
-type LessonCategory = 'grammar' | 'vocabulary' | 'reading' | 'listening' | 'speaking' | 'ipa' | 'writing'
+type LessonCategory =
+  | 'grammar'
+  | 'vocabulary'
+  | 'reading'
+  | 'listening'
+  | 'speaking'
+  | 'ipa'
+  | 'writing'
 
 export interface IRecentStudyHistoryForAI {
   lessonId: string
@@ -72,7 +79,9 @@ export class ChatbotService {
 
   static async getUserData(userId: string): Promise<IUserDataForAI> {
     const user = await User.findById(userId)
-      .select('_id fullName currentLevel isVip currentStreak longestStreak totalStudyTime totalPoints lastLearnDate')
+      .select(
+        '_id fullName currentLevel isVip currentStreak longestStreak totalStudyTime totalPoints lastLearnDate',
+      )
       .lean()
 
     if (!user) {
@@ -83,16 +92,16 @@ export class ChatbotService {
       _id: String(user._id),
       fullName: user.fullName,
       currentLevel: user.currentLevel,
-      isVip: user.vipStartDate && user.vipExpireDate && user.vipExpireDate > new Date() || false,
+      isVip: (user.vipStartDate && user.vipExpireDate && user.vipExpireDate > new Date()) || false,
       currentStreak: user.currentStreak || 0,
       longestStreak: user.longestStreak || 0,
       totalStudyTime: user.totalStudyTime || 0,
       totalPoints: user.totalPoints || 0,
-      lastLearnDate: user.lastLearnDate || undefined
+      lastLearnDate: user.lastLearnDate || undefined,
     }
   }
 
-  //2. Lấy Progress của toàn bộ kỹ năng theo người dùng 
+  //2. Lấy Progress của toàn bộ kỹ năng theo người dùng
   // Chỉ lấy progress của các bài học còn tồn tại và isActive: true
   static async getProgressData(
     userId: string,
@@ -104,7 +113,7 @@ export class ChatbotService {
       speaking?: number
       writing?: number
       ipa?: number
-    }
+    },
   ): Promise<IUserProgressForAI> {
     const userObjectId = new Types.ObjectId(userId)
 
@@ -116,7 +125,7 @@ export class ChatbotService {
       activeListeningIds,
       activeSpeakingIds,
       activeWritingIds,
-      activeIpaIds
+      activeIpaIds,
     ] = await Promise.all([
       VocabularyTopic.find({ isActive: true }).distinct('_id'),
       GrammarTopic.find({ isActive: true }).distinct('_id'),
@@ -124,24 +133,26 @@ export class ChatbotService {
       Listening.find({ isActive: true }).distinct('_id'),
       Speaking.find({ isActive: true }).distinct('_id'),
       writingModel.find({ isActive: true }).distinct('_id'),
-      Ipa.find({ isActive: true }).distinct('_id')
+      Ipa.find({ isActive: true }).distinct('_id'),
     ])
 
     // Chỉ lấy progress của các bài học active từ StudyHistory (lấy bản ghi tốt nhất cho mỗi lessonId)
     const allProgress = await StudyHistory.aggregate([
       { $match: { userId: userObjectId } },
       { $sort: { progress: -1, createdAt: -1 } },
-      { $group: { _id: "$lessonId", best: { $first: "$$ROOT" } } }
+      { $group: { _id: '$lessonId', best: { $first: '$$ROOT' } } },
     ])
 
-    const progresses = allProgress.map(p => ({
+    const progresses = allProgress.map((p) => ({
       ...p.best,
-      isCompleted: p.best.status === 'passed'
+      isCompleted: p.best.status === 'passed',
     }))
 
     const filterProgress = (category: string, activeIds: any[]) => {
-      const activeIdStrings = activeIds.map(id => String(id))
-      return progresses.filter(p => p.category === category && activeIdStrings.includes(String(p.lessonId)))
+      const activeIdStrings = activeIds.map((id) => String(id))
+      return progresses.filter(
+        (p) => p.category === category && activeIdStrings.includes(String(p.lessonId)),
+      )
     }
 
     return {
@@ -149,44 +160,44 @@ export class ChatbotService {
         filterProgress('vocabulary', activeVocabularyTopicIds),
         (p: any) => String(p.lessonId),
         (p: any) => p.progress || 0,
-        totals?.vocabulary ?? activeVocabularyTopicIds.length
+        totals?.vocabulary ?? activeVocabularyTopicIds.length,
       ),
       grammar: this.buildSkillProgress(
         filterProgress('grammar', activeGrammarTopicIds),
         (p: any) => String(p.lessonId),
         (p: any) => p.progress || 0,
-        totals?.grammar ?? activeGrammarTopicIds.length
+        totals?.grammar ?? activeGrammarTopicIds.length,
       ),
       reading: this.buildSkillProgress(
         filterProgress('reading', activeReadingIds),
         (p: any) => String(p.lessonId),
         (p: any) => p.progress || 0,
-        totals?.reading ?? activeReadingIds.length
+        totals?.reading ?? activeReadingIds.length,
       ),
       listening: this.buildSkillProgress(
         filterProgress('listening', activeListeningIds),
         (p: any) => String(p.lessonId),
         (p: any) => p.progress || 0,
-        totals?.listening ?? activeListeningIds.length
+        totals?.listening ?? activeListeningIds.length,
       ),
       speaking: this.buildSkillProgress(
         filterProgress('speaking', activeSpeakingIds),
         (p: any) => String(p.lessonId),
         (p: any) => p.progress || 0,
-        totals?.speaking ?? activeSpeakingIds.length
+        totals?.speaking ?? activeSpeakingIds.length,
       ),
       writing: this.buildSkillProgress(
         filterProgress('writing', activeWritingIds),
         (p: any) => String(p.lessonId),
         (p: any) => p.progress || 0,
-        totals?.writing ?? activeWritingIds.length
+        totals?.writing ?? activeWritingIds.length,
       ),
       ipa: this.buildSkillProgress(
         filterProgress('ipa', activeIpaIds),
         (p: any) => String(p.lessonId),
         (p: any) => p.progress || 0,
-        totals?.ipa ?? activeIpaIds.length
-      )
+        totals?.ipa ?? activeIpaIds.length,
+      ),
     }
   }
 
@@ -196,15 +207,16 @@ export class ChatbotService {
     progressList: T[],
     getTopicId: (p: T) => string,
     getScore: (p: T) => number,
-    totalTopics: number
+    totalTopics: number,
   ): ISkillProgressForAI {
     const completed = progressList.filter((p: any) => p.isCompleted).length
 
     // Calculate average score
     const scores = progressList.map(getScore)
-    const avgScore = scores.length > 0
-      ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100
-      : 0
+    const avgScore =
+      scores.length > 0
+        ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100
+        : 0
 
     // Identify weak topics (< 70) and strong topics (>= 90)
     const weakTopics: string[] = []
@@ -224,7 +236,7 @@ export class ChatbotService {
     // Get recent topics (last 10 từ progress list - vì học theo orderIndex)
     const recentTopics = progressList
       .slice(-10) // Lấy 10 cái cuối cùng
-      .map(p => getTopicId(p))
+      .map((p) => getTopicId(p))
 
     return {
       completed,
@@ -232,7 +244,7 @@ export class ChatbotService {
       avgScore,
       weakTopics,
       strongTopics,
-      recentTopics
+      recentTopics,
     }
   }
 
@@ -245,7 +257,7 @@ export class ChatbotService {
       listeningLessons,
       speakingLessons,
       writingLessons,
-      ipaLessons
+      ipaLessons,
     ] = await Promise.all([
       VocabularyTopic.find({ isActive: true })
         .select('_id name orderIndex')
@@ -267,56 +279,57 @@ export class ChatbotService {
         .select('_id title orderIndex')
         .sort({ orderIndex: 1 })
         .lean(),
-      writingModel.find({ isActive: true })
+      writingModel
+        .find({ isActive: true })
         .select('_id title orderIndex')
         .sort({ orderIndex: 1 })
         .lean(),
-      Ipa.find({ isActive: true })
-        .select('_id sound soundType')
-        .sort({ sound: 1 })
-        .lean()
+      Ipa.find({ isActive: true }).select('_id sound soundType').sort({ sound: 1 }).lean(),
     ])
 
     return {
-      vocabulary: vocabularyTopics.map(t => ({
+      vocabulary: vocabularyTopics.map((t) => ({
         _id: String(t._id),
         name: t.name,
-        orderIndex: t.orderIndex
+        orderIndex: t.orderIndex,
       })),
-      grammar: grammarTopics.map(t => ({
+      grammar: grammarTopics.map((t) => ({
         _id: String(t._id),
         title: t.title,
-        orderIndex: t.orderIndex
+        orderIndex: t.orderIndex,
       })),
-      reading: readingLessons.map(r => ({
+      reading: readingLessons.map((r) => ({
         _id: String(r._id),
         title: r.title,
-        orderIndex: r.orderIndex
+        orderIndex: r.orderIndex,
       })),
-      listening: listeningLessons.map(l => ({
+      listening: listeningLessons.map((l) => ({
         _id: String(l._id),
         title: l.title,
-        orderIndex: l.orderIndex
+        orderIndex: l.orderIndex,
       })),
-      speaking: speakingLessons.map(s => ({
+      speaking: speakingLessons.map((s) => ({
         _id: String(s._id),
         title: s.title,
-        orderIndex: s.orderIndex
+        orderIndex: s.orderIndex,
       })),
-      writing: writingLessons.map(w => ({
+      writing: writingLessons.map((w) => ({
         _id: String(w._id),
         title: w.title,
-        orderIndex: w.orderIndex
+        orderIndex: w.orderIndex,
       })),
       ipa: ipaLessons.map((i, index) => ({
         _id: String(i._id),
         sound: i.sound,
-        soundType: i.soundType
-      }))
+        soundType: i.soundType,
+      })),
     }
   }
 
-  static async getRecentStudyHistory(userId: string, limit = 20): Promise<IRecentStudyHistoryForAI[]> {
+  static async getRecentStudyHistory(
+    userId: string,
+    limit = 20,
+  ): Promise<IRecentStudyHistoryForAI[]> {
     const histories = await StudyHistory.find({ userId: new Types.ObjectId(userId) })
       .select('lessonId category progress status duration weakPoints createdAt')
       .sort({ createdAt: -1 })
@@ -330,34 +343,45 @@ export class ChatbotService {
       status: item.status || 'in_progress',
       duration: item.duration || 0,
       weakPoints: Array.isArray(item.weakPoints) ? item.weakPoints : [],
-      createdAt: item.createdAt || undefined
+      createdAt: item.createdAt || undefined,
     }))
   }
 
   static async buildSystemPrompt(
     userId: string,
     lessonId?: string,
-    lessonType?: 'grammar' | 'vocabulary' | 'reading' | 'writing' | 'speaking' | 'listening' | 'ipa'
+    lessonType?:
+      | 'grammar'
+      | 'vocabulary'
+      | 'reading'
+      | 'writing'
+      | 'speaking'
+      | 'listening'
+      | 'ipa',
   ): Promise<string> {
     let dataTopicCurrent: any = null
     switch (lessonType) {
       case 'ipa':
-        dataTopicCurrent = await Ipa.findById(lessonId).populate({
-          path: 'image',
-          select: 'url'
-        }).populate({
-          path: 'video',
-          select: 'url'
-        }).populate({
-          path: 'examples',
-          select: 'word phonetic vietnamese'
-        }).lean()
+        dataTopicCurrent = await Ipa.findById(lessonId)
+          .populate({
+            path: 'image',
+            select: 'url',
+          })
+          .populate({
+            path: 'video',
+            select: 'url',
+          })
+          .populate({
+            path: 'examples',
+            select: 'word phonetic vietnamese',
+          })
+          .lean()
         break
       case 'grammar':
         dataTopicCurrent = await GrammarTopic.findById(lessonId)
           .populate({
             path: 'quizzes',
-            select: 'question answer explanation'
+            select: 'question answer explanation',
           })
           .lean()
         break
@@ -376,7 +400,7 @@ export class ChatbotService {
           .populate({
             path: 'videoUrl',
             model: 'Media',
-            select: 'url subtitles'
+            select: 'url subtitles',
           })
           .lean()
         break
@@ -395,14 +419,14 @@ export class ChatbotService {
       listening: topicsList.listening.length,
       speaking: topicsList.speaking.length,
       writing: topicsList.writing.length,
-      ipa: topicsList.ipa.length
+      ipa: topicsList.ipa.length,
     }
 
     // Query user data, progress data và history gần nhất song song
     const [userData, progressData, recentStudyHistory] = await Promise.all([
       this.getUserData(userId),
       this.getProgressData(userId, totals),
-      this.getRecentStudyHistory(userId, 20)
+      this.getRecentStudyHistory(userId, 20),
     ])
 
     const baseURL = process.env.CLIENT_BASE_URL
@@ -424,49 +448,98 @@ export class ChatbotService {
           return {
             ...pick(lesson, ['_id', 'name', 'orderIndex', 'level', 'isVipRequired']),
             vocabularyCount: Array.isArray(lesson.vocabularies) ? lesson.vocabularies.length : 0,
-            quizCount: Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0
+            quizCount: Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0,
           }
         case 'grammar':
           return {
-            ...pick(lesson, ['_id', 'title', 'description', 'orderIndex', 'level', 'isVipRequired']),
+            ...pick(lesson, [
+              '_id',
+              'title',
+              'description',
+              'orderIndex',
+              'level',
+              'isVipRequired',
+            ]),
             sections: Array.isArray(lesson.sections)
               ? lesson.sections.slice(0, 5).map((x: any) => ({
-                ...pick(x, ['id', 'title', 'description', 'note', 'formula']),
-                examples: Array.isArray(x.examples)
-                  ? x.examples.slice(0, 3).map((e: any) => pick(e, ['en', 'vi']))
-                  : undefined
-              }))
+                  ...pick(x, ['id', 'title', 'description', 'note', 'formula']),
+                  examples: Array.isArray(x.examples)
+                    ? x.examples.slice(0, 3).map((e: any) => pick(e, ['en', 'vi']))
+                    : undefined,
+                }))
               : undefined,
             practice: Array.isArray(lesson.practice)
-              ? lesson.practice.slice(0, 8).map((x: any) => pick(x, ['id', 'type', 'question', 'hint']))
+              ? lesson.practice
+                  .slice(0, 8)
+                  .map((x: any) => pick(x, ['id', 'type', 'question', 'hint']))
               : undefined,
-            quizCount: Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0
+            quizCount: Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0,
           }
         case 'reading':
           return {
-            ...pick(lesson, ['_id', 'title', 'description', 'level', 'orderIndex', 'isVipRequired']),
+            ...pick(lesson, [
+              '_id',
+              'title',
+              'description',
+              'level',
+              'orderIndex',
+              'isVipRequired',
+            ]),
             vocabularyCount: Array.isArray(lesson.vocabulary) ? lesson.vocabulary.length : 0,
-            quizCount: Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0
+            quizCount: Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0,
           }
         case 'listening':
-          return pick(lesson, ['_id', 'title', 'description', 'level', 'orderIndex', 'isVipRequired', 'subtitle'])
+          return pick(lesson, [
+            '_id',
+            'title',
+            'description',
+            'level',
+            'orderIndex',
+            'isVipRequired',
+            'subtitle',
+          ])
         case 'speaking':
           return {
-            ...pick(lesson, ['_id', 'title', 'description', 'level', 'orderIndex', 'isVipRequired']),
-            videoUrl: lesson.videoUrl?.url ?? undefined
+            ...pick(lesson, [
+              '_id',
+              'title',
+              'description',
+              'level',
+              'orderIndex',
+              'isVipRequired',
+            ]),
+            videoUrl: lesson.videoUrl?.url ?? undefined,
           }
         case 'writing':
           return {
-            ...pick(lesson, ['_id', 'title', 'description', 'level', 'orderIndex', 'isVipRequired', 'minWords', 'maxWords', 'duration']),
-            suggestedVocabulary: Array.isArray(lesson.suggestedVocabulary) ? lesson.suggestedVocabulary.slice(0, 12) : undefined,
+            ...pick(lesson, [
+              '_id',
+              'title',
+              'description',
+              'level',
+              'orderIndex',
+              'isVipRequired',
+              'minWords',
+              'maxWords',
+              'duration',
+            ]),
+            suggestedVocabulary: Array.isArray(lesson.suggestedVocabulary)
+              ? lesson.suggestedVocabulary.slice(0, 12)
+              : undefined,
             suggestedStructure: Array.isArray(lesson.suggestedStructure)
-              ? lesson.suggestedStructure.slice(0, 6).map((x: any) => pick(x, ['step', 'title', 'description']))
-              : undefined
+              ? lesson.suggestedStructure
+                  .slice(0, 6)
+                  .map((x: any) => pick(x, ['step', 'title', 'description']))
+              : undefined,
           }
         case 'ipa':
           return {
             ...pick(lesson, ['_id', 'sound', 'soundType', 'description', 'isVipRequired']),
-            examples: Array.isArray(lesson.examples) ? lesson.examples.slice(0, 8).map((x: any) => pick(x, ['word', 'phonetic', 'vietnamese'])) : undefined,
+            examples: Array.isArray(lesson.examples)
+              ? lesson.examples
+                  .slice(0, 8)
+                  .map((x: any) => pick(x, ['word', 'phonetic', 'vietnamese']))
+              : undefined,
             imageUrl: lesson.image?.url ?? undefined,
             videoUrl: lesson.video?.url ?? undefined,
           }
@@ -493,22 +566,22 @@ export class ChatbotService {
 
     const lessonSummary = summarizeLesson(lessonType, dataTopicCurrent)
     const lessonTitleByCategoryAndId = {
-      vocabulary: new Map(topicsList.vocabulary.map(item => [item._id, item.name])),
-      grammar: new Map(topicsList.grammar.map(item => [item._id, item.title])),
-      reading: new Map(topicsList.reading.map(item => [item._id, item.title])),
-      listening: new Map(topicsList.listening.map(item => [item._id, item.title])),
-      speaking: new Map(topicsList.speaking.map(item => [item._id, item.title])),
-      writing: new Map(topicsList.writing.map(item => [item._id, item.title])),
-      ipa: new Map(topicsList.ipa.map(item => [item._id, item.sound]))
+      vocabulary: new Map(topicsList.vocabulary.map((item) => [item._id, item.name])),
+      grammar: new Map(topicsList.grammar.map((item) => [item._id, item.title])),
+      reading: new Map(topicsList.reading.map((item) => [item._id, item.title])),
+      listening: new Map(topicsList.listening.map((item) => [item._id, item.title])),
+      speaking: new Map(topicsList.speaking.map((item) => [item._id, item.title])),
+      writing: new Map(topicsList.writing.map((item) => [item._id, item.title])),
+      ipa: new Map(topicsList.ipa.map((item) => [item._id, item.sound])),
     } as const
 
-    const recentStudyHistoryWithTitle = recentStudyHistory.map(item => ({
+    const recentStudyHistoryWithTitle = recentStudyHistory.map((item) => ({
       ...item,
-      lessonTitle: lessonTitleByCategoryAndId[item.category]?.get(item.lessonId)
+      lessonTitle: lessonTitleByCategoryAndId[item.category]?.get(item.lessonId),
     }))
 
     let newPrompt = `
-You are an AI English learning tutor inside an app called "English Master".
+You are an AI English learning tutor inside an app called "ActiveLearning".
 You must respond in MARKDOWN. You MAY include small, safe HTML snippets when needed (especially <a href=\"...\"> links, and .ai-exercise blocks).
 
 PRIORITY POLICY (highest priority, must never be violated):
@@ -597,23 +670,23 @@ Recommendation rule (very important):
       currentLesson: lessonSummary ? { lessonType, ...lessonSummary } : undefined,
       appLinks: baseURL
         ? {
-          baseUrl: baseURL,
-          patterns: {
-            ipaLesson: `${baseURL}/study/ipa/learn/[id]`,
-            grammarList: `${baseURL}/study/grammar`,
-            grammarLesson: `${baseURL}/study/grammar/[id]`,
-            vocabularyList: `${baseURL}/study/vocabulary`,
-            vocabularyLesson: `${baseURL}/study/vocabulary/[id]`,
-            readingList: `${baseURL}/skills/reading`,
-            readingLesson: `${baseURL}/skills/reading/[id]`,
-            listeningList: `${baseURL}/skills/listening`,
-            listeningLesson: `${baseURL}/skills/listening/[id]`,
-            speakingList: `${baseURL}/skills/speaking`,
-            speakingLesson: `${baseURL}/skills/speaking/[id]`,
-            writingList: `${baseURL}/skills/writing`,
-            writingLesson: `${baseURL}/skills/writing/[id]`,
-          },
-        }
+            baseUrl: baseURL,
+            patterns: {
+              ipaLesson: `${baseURL}/study/ipa/learn/[id]`,
+              grammarList: `${baseURL}/study/grammar`,
+              grammarLesson: `${baseURL}/study/grammar/[id]`,
+              vocabularyList: `${baseURL}/study/vocabulary`,
+              vocabularyLesson: `${baseURL}/study/vocabulary/[id]`,
+              readingList: `${baseURL}/skills/reading`,
+              readingLesson: `${baseURL}/skills/reading/[id]`,
+              listeningList: `${baseURL}/skills/listening`,
+              listeningLesson: `${baseURL}/skills/listening/[id]`,
+              speakingList: `${baseURL}/skills/speaking`,
+              speakingLesson: `${baseURL}/skills/speaking/[id]`,
+              writingList: `${baseURL}/skills/writing`,
+              writingLesson: `${baseURL}/skills/writing/[id]`,
+            },
+          }
         : undefined,
     }
 
@@ -632,31 +705,31 @@ Recommendation rule (very important):
       listening: topicsList.listening.length,
       speaking: topicsList.speaking.length,
       writing: topicsList.writing.length,
-      ipa: topicsList.ipa.length
+      ipa: topicsList.ipa.length,
     }
 
     // Lấy thông tin user, tiến trình, và lịch sử học tập
     const [userData, progressData, recentStudyHistory] = await Promise.all([
       this.getUserData(userId),
       this.getProgressData(userId, totals),
-      this.getRecentStudyHistory(userId, 20)
+      this.getRecentStudyHistory(userId, 20),
     ])
 
     const baseURL = process.env.CLIENT_BASE_URL || ''
 
     const lessonTitleByCategoryAndId = {
-      vocabulary: new Map(topicsList.vocabulary.map(item => [item._id, item.name])),
-      grammar: new Map(topicsList.grammar.map(item => [item._id, item.title])),
-      reading: new Map(topicsList.reading.map(item => [item._id, item.title])),
-      listening: new Map(topicsList.listening.map(item => [item._id, item.title])),
-      speaking: new Map(topicsList.speaking.map(item => [item._id, item.title])),
-      writing: new Map(topicsList.writing.map(item => [item._id, item.title])),
-      ipa: new Map(topicsList.ipa.map(item => [item._id, item.sound]))
+      vocabulary: new Map(topicsList.vocabulary.map((item) => [item._id, item.name])),
+      grammar: new Map(topicsList.grammar.map((item) => [item._id, item.title])),
+      reading: new Map(topicsList.reading.map((item) => [item._id, item.title])),
+      listening: new Map(topicsList.listening.map((item) => [item._id, item.title])),
+      speaking: new Map(topicsList.speaking.map((item) => [item._id, item.title])),
+      writing: new Map(topicsList.writing.map((item) => [item._id, item.title])),
+      ipa: new Map(topicsList.ipa.map((item) => [item._id, item.sound])),
     } as const
 
-    const recentStudyHistoryWithTitle = recentStudyHistory.map(item => ({
+    const recentStudyHistoryWithTitle = recentStudyHistory.map((item) => ({
       ...item,
-      lessonTitle: lessonTitleByCategoryAndId[item.category]?.get(item.lessonId)
+      lessonTitle: lessonTitleByCategoryAndId[item.category]?.get(item.lessonId),
     }))
 
     const context: Record<string, any> = {
@@ -677,11 +750,11 @@ Recommendation rule (very important):
         listeningLesson: `${baseURL}/skills/listening/[id]`,
         speakingLesson: `${baseURL}/skills/speaking/[id]`,
         writingLesson: `${baseURL}/skills/writing/[id]`,
-      }
+      },
     }
 
     const prompt = `
-You are an AI learning assistant for "English Master". Your ONLY job is to suggest the next 5-8 daily study goals for the user based on their context.
+You are an AI learning assistant for "ActiveLearning". Your ONLY job is to suggest the next 5-8 daily study goals for the user based on their context.
 
 # INSTRUCTIONS:
 1. Analyze the user's \`recentStudyHistory\` to see what they learned recently.

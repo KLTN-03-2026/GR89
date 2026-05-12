@@ -446,6 +446,26 @@ export class MediaService {
     }
   }
 
+  static async uploadRawFile(filePath: string, folder: string): Promise<{ url: string; publicId: string }> {
+    try {
+      const result = await cloudinary.uploader.upload(filePath, {
+        folder,
+        resource_type: 'auto',
+      })
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+
+      return { url: result.secure_url, publicId: result.public_id }
+    } catch (error: any) {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath)
+      }
+      throw new ErrorHandler(`Lỗi upload file: ${error?.message || 'Lỗi không xác định'}`, 400)
+    }
+  }
+
   static async uploadMedia(uploadData: IUploadMedia): Promise<IMedia> {
     const { filePath, userId, originalName } = uploadData;
 

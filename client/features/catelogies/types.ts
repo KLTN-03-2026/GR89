@@ -29,6 +29,11 @@ export interface IHomeworkSubmission {
   studentId: string;
   content: string; // Rich text (HTML)
   createdAt: string;
+  submittedAt?: string;
+  correctedContent?: string;
+  comment?: string;
+  reviewer?: User;
+  reviewerId?: string;
 }
 
 

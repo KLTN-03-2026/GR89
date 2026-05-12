@@ -3,7 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useSocketStore } from '@/hooks/useSocketStore'
-import { SupportTicket } from '../type'
+import { SupportAttachment, SupportTicket } from '../type'
 import {
   claimSupportTicket,
   getSupportTicketDetailForStaff,
@@ -116,22 +116,19 @@ export function SupportChatProvider({ children }: { children: React.ReactNode })
     [],
   )
 
-  const claimSelectedTicket = useCallback(async () => {
+  const claimSelectedTicket = async () => {
     if (!selectedTicketId) return
     await claimSupportTicket(selectedTicketId, 5)
     await refreshTickets()
     await refreshTicketDetail(selectedTicketId)
-  }, [selectedTicketId, refreshTickets, refreshTicketDetail])
+  }
 
-  const sendMessageAsStaff = useCallback(
-    async (content: string) => {
-      if (!selectedTicketId) return
-      await sendSupportMessageAsStaff(selectedTicketId, content)
-      await refreshTickets()
-      await refreshTicketDetail(selectedTicketId)
-    },
-    [selectedTicketId, refreshTickets, refreshTicketDetail],
-  )
+  const sendMessageAsStaff = async (content: string, attachments?: SupportAttachment[]) => {
+    if (!selectedTicketId) return
+    await sendSupportMessageAsStaff(selectedTicketId, content, attachments)
+    await refreshTickets()
+    await refreshTicketDetail(selectedTicketId)
+  }
 
   const selectTicketId = useCallback((ticketId: string) => {
     setSelectedTicketId(ticketId)

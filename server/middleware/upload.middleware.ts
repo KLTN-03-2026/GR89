@@ -182,3 +182,42 @@ export const uploadSubtitle = multer({
   }
 });
 
+export const uploadChatAttachment = multer({
+  storage: multer.diskStorage({
+    destination: function (_req, _file, cb) {
+      const dir = 'uploads/chat'
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true })
+      }
+      cb(null, dir)
+    },
+    filename: function (_req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+      cb(null, 'chat-' + uniqueSuffix + path.extname(file.originalname))
+    },
+  }),
+  fileFilter: (_req: any, file: any, cb: any) => {
+    const allowed = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/zip',
+      'application/x-zip-compressed',
+      'text/plain',
+    ]
+
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true)
+    } else {
+      cb(new Error(`File type ${file.mimetype} không được hỗ trợ!`), false)
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+})

@@ -7,6 +7,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { DialogCleanupProvider } from "@/components/common/providers/DialogCleanupProvider";
 import { EmergencyCleanupButton } from "@/components/common/providers/EmergencyCleanupButton";
 import { SocketProvider } from "@/context/SocketProvider";
+import { NotificationProvider } from "@/context/NotificationProvider";
+import { ChatProvider } from "@/context/ChatProvider";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -39,9 +41,13 @@ export default function RootLayout({
         <AuthProvider>
           <DialogCleanupProvider>
             <SocketProvider>
-              <ToastContainer />
-              <EmergencyCleanupButton />
-              {children}
+              <NotificationProvider>
+                <ChatProvider>
+                  <ToastContainer />
+                  <EmergencyCleanupButton />
+                  {children}
+                </ChatProvider>
+              </NotificationProvider>
             </SocketProvider>
           </DialogCleanupProvider>
         </AuthProvider>

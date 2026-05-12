@@ -51,3 +51,10 @@ export async function getUnreadCountForUser() {
 
     return countResponse.data.data
 }
+
+export async function uploadSupportAttachment(file: File): Promise<ChatAttachment> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await authorizedAxios.post<ApiResponse<ChatAttachment>>('/support-chat/attachments', formData)
+  return res.data.data
+}

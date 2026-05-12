@@ -43,6 +43,7 @@ export function MessageInput({ onSendMessage, onSendFile, disabled = false }: Me
             size="icon" 
             className="w-9 h-9 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"
             onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
           >
             <Paperclip className="w-5 h-5" />
           </Button>
@@ -51,10 +52,11 @@ export function MessageInput({ onSendMessage, onSendFile, disabled = false }: Me
             size="icon" 
             className="w-9 h-9 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50"
             onClick={() => imageInputRef.current?.click()}
+            disabled={disabled}
           >
             <ImageIcon className="w-5 h-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50">
+          <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50" disabled={disabled}>
             <Smile className="w-5 h-5" />
           </Button>
         </div>

@@ -5,6 +5,7 @@ import { IPlan, Plan } from "../models/plan.model";
 import { CouponService } from "./coupon.service";
 import { User } from "../models/user.model";
 import { payOSProvider } from "../providers/payOS.provider";
+import { NotificationService } from "./notification.service";
 
 export interface IPaymentData {
   userId: string;
@@ -30,17 +31,6 @@ export interface IPaymentOptions {
   startDate?: Date;
   endDate?: Date;
 }
-
-// Helper function để format date theo định dạng VNPay
-const formatVNPayDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  return `${year}${month}${day}${hours}${minutes}${seconds}`;
-};
 
 export class PaymentService {
   /*============================ TIỆN ÍCH & THỐNG KÊ ============================*/
@@ -241,6 +231,26 @@ export class PaymentService {
       }
 
       await this.syncVipStatus(userId, planId)
+
+      await NotificationService.createOne({
+        recipientId: userId,
+        recipientRole: 'user',
+        type: 'payment',
+        title: 'Kích hoạt gói thành công',
+        body: `Gói "${plan.name}" đã được kích hoạt.`,
+        link: '/account',
+        data: { paymentId: String(newPayment._id), planId: String(plan._id) },
+      })
+
+      await NotificationService.createForRoles({
+        roles: ['admin', 'content'],
+        type: 'payment',
+        title: 'Giao dịch thành công',
+        body: `Một giao dịch đã hoàn tất cho gói "${plan.name}".`,
+        link: '/billing/payments',
+        data: { paymentId: String(newPayment._id), planId: String(plan._id) },
+      })
+
       return { paymentUrl: `${process.env.CLIENT_BASE_URL}/payment/success`, paymentId: String(newPayment._id) };
     }
   }
@@ -252,21 +262,59 @@ export class PaymentService {
     const payment = await Payment.findOne({ orderCode });
     if (!payment) throw new ErrorHandler("Giao dịch không tồn tại", 404);
 
-    if (payload.data.code === "00" && payload.code === "00") {
+    const isPaid = payload?.data?.code === "00" && payload?.code === "00";
+
+    if (isPaid) {
+      if (payment.status === "paid") return;
       payment.status = "paid";
       payment.paymentDate = new Date();
       await payment.save();
+
       await this.syncVipStatus(payment.userId.toString(), payment.planId.toString());
       const coupon = await CouponService.getCouponById(payment.couponId?.toString() || "");
       if (coupon) {
         coupon.usedCount = coupon.usedCount + 1;
         await coupon.save();
       }
+
+      const plan = await Plan.findById(payment.planId).select("name");
+      const planName = plan?.name || "gói VIP";
+      await NotificationService.createOne({
+        recipientId: payment.userId.toString(),
+        recipientRole: 'user',
+        type: 'payment',
+        title: 'Thanh toán thành công',
+        body: `Bạn đã thanh toán thành công cho "${planName}".`,
+        link: '/account',
+        data: { paymentId: String(payment._id), planId: String(payment.planId) },
+      });
+
+      await NotificationService.createForRoles({
+        roles: ['admin', 'content'],
+        type: 'payment',
+        title: 'Giao dịch thành công',
+        body: `Một giao dịch đã hoàn tất cho "${planName}".`,
+        link: '/billing/payments',
+        data: { paymentId: String(payment._id), planId: String(payment.planId) },
+      })
+      return;
     }
-    else {
-      payment.status = "failed";
-      await payment.save();
-    }
+
+    if (payment.status === "failed") return;
+    payment.status = "failed";
+    await payment.save();
+
+    const plan = await Plan.findById(payment.planId).select("name");
+    const planName = plan?.name || "gói VIP";
+    await NotificationService.createOne({
+      recipientId: payment.userId.toString(),
+      recipientRole: 'user',
+      type: 'payment',
+      title: 'Thanh toán thất bại',
+      body: `Giao dịch cho "${planName}" không thành công. Vui lòng thử lại.`,
+      link: '/account',
+      data: { paymentId: String(payment._id), planId: String(payment.planId) },
+    });
   }
 
 
@@ -284,4 +332,3 @@ export class PaymentService {
     return payment;
   }
 }
-

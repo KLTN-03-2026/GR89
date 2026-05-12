@@ -42,6 +42,8 @@ const HumanChatMessageList = forwardRef<HTMLDivElement, HumanChatMessageListProp
                       <Image
                         src={msg.attachments[0].url}
                         alt={msg.attachments[0].name || 'image'}
+                        width={360}
+                        height={240}
                         className="max-w-full h-auto object-cover cursor-pointer hover:opacity-90 transition-opacity"
                       />
                     </div>

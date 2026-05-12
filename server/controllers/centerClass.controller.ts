@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from 'express'
 import { CatchAsyncError } from '../middleware/CatchAsyncError'
 import { CenterClassService } from '../services/centerClass.service'
 import ErrorHandler from '../utils/ErrorHandler'
+import { NotificationService } from '../services/notification.service'
+import { CenterClass } from '../models/centerClass.model'
 
 export class CenterClassController {
   /* ============================ QUẢN LÝ LỚP HỌC ============================ */
@@ -302,6 +304,20 @@ export class CenterClassController {
         documentId,
       })
 
+      const centerClass = await CenterClass.findById(centerClassId).select('name category students')
+      const studentIds = (centerClass?.students || [])
+        .map((s: any) => String(s?.user || ''))
+        .filter(Boolean)
+      const classCategory = String(centerClass?.category || 'adult')
+      const link = `/catelogy/${classCategory}/${String(centerClassId)}?tab=homeworks&homeworkId=${String(homework._id)}`
+
+      await NotificationService.createForUsers({
+        userIds: studentIds,
+        type: 'homework',
+        title: 'Bài tập mới',
+        body: centerClass?.name,
+        link: link,
+      })
       res.status(201).json({
         success: true,
         message: 'Giao bài tập thành công',
@@ -326,6 +342,21 @@ export class CenterClassController {
         deadline,
         documentIds,
         documentId,
+      })
+
+      const centerClass = await CenterClass.findById(centerClassId).select('name category students')
+      const studentIds = (centerClass?.students || [])
+        .map((s: any) => String(s?.user || ''))
+        .filter(Boolean)
+      const classCategory = String(centerClass?.category || 'adult')
+      const link = `/catelogy/${classCategory}/${String(centerClassId)}?tab=homeworks&homeworkId=${String(homework._id)}`
+
+      await NotificationService.createForUsers({
+        userIds: studentIds,
+        type: 'homework',
+        title: 'Bài tập mới',
+        body: centerClass?.name,
+        link: link,
       })
 
       res.status(201).json({
@@ -391,6 +422,35 @@ export class CenterClassController {
       if (!content) return next(new ErrorHandler('Nội dung bài làm không được để trống', 400))
 
       const homework = await CenterClassService.submitHomework(homeworkId, userId, content)
+
+      const centerClass = await CenterClass.findOne({ homeworks: homeworkId })
+        .select('_id teacher name')
+        .populate({ path: 'teacher', select: '_id role fullName' })
+
+      const teacher: any = centerClass?.teacher
+      const teacherId = teacher?._id ? String(teacher._id) : ''
+      const teacherRole = teacher?.role ? String(teacher.role) : ''
+
+      if (teacherId && (teacherRole === 'admin' || teacherRole === 'content')) {
+        const teacherLink = centerClass?._id
+          ? `/center-management/classes/homework/${String(centerClass._id)}?homeworkId=${String(homeworkId)}&studentId=${String(userId)}`
+          : '/center-management/classes'
+
+        await NotificationService.createOne({
+          recipientId: teacherId,
+          recipientRole: teacherRole as any,
+          type: 'homework',
+          title: 'Có bài nộp mới',
+          body: `${req.user?.fullName || 'Học viên'} đã nộp bài "${homework.title || 'bài tập'}".`,
+          link: teacherLink,
+          data: {
+            centerClassId: String(centerClass?._id || ''),
+            homeworkId: String(homeworkId),
+            studentId: String(userId),
+          },
+        })
+      }
+
       res.status(200).json({
         success: true,
         message: 'Nộp bài tập thành công',
@@ -403,13 +463,45 @@ export class CenterClassController {
   static gradeHomework = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
       const { id: homeworkId } = req.params
-      const { userId, feedback } = req.body
+      const reviewerId = req.user?._id as string
+      const { userId, feedback, correctedContent } = req.body
 
-      if (!userId || !feedback) {
-        return next(new ErrorHandler('Vui lòng cung cấp ID học sinh và nội dung nhận xét', 400))
+      if (!userId) {
+        return next(new ErrorHandler('Vui lòng cung cấp ID học sinh', 400))
       }
 
-      const homework = await CenterClassService.gradeHomework(homeworkId, userId, feedback)
+      const feedbackValue = typeof feedback === 'string' ? feedback : ''
+      const correctedValue = typeof correctedContent === 'string' ? correctedContent : undefined
+
+      if (!feedbackValue && !correctedValue) {
+        return next(new ErrorHandler('Vui lòng cung cấp nội dung nhận xét hoặc bài sửa', 400))
+      }
+
+      const homework = await CenterClassService.gradeHomework(
+        homeworkId,
+        userId,
+        feedbackValue,
+        correctedValue,
+        reviewerId,
+      )
+
+      const classForHomework = await CenterClass.findOne({ homeworks: homeworkId }).select(
+        '_id category',
+      )
+      const classCategory = String(classForHomework?.category || 'adult')
+      const link = classForHomework?._id
+        ? `/catelogy/${classCategory}/${String(classForHomework._id)}?tab=homeworks&homeworkId=${String(homeworkId)}`
+        : '/notifications'
+
+      await NotificationService.createOne({
+        recipientId: userId,
+        recipientRole: 'user',
+        type: 'homework',
+        title: 'Bài tập đã được chấm',
+        body: homework?.title,
+        link,
+      })
+
       res.status(200).json({
         success: true,
         message: 'Chấm bài thành công',

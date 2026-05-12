@@ -42,7 +42,7 @@ export async function fetchServer<T = unknown>(path: string, options: RequestIni
   const raw = await response.text()
   const payload = raw ? (() => { try { return JSON.parse(raw) } catch { return { message: raw } } })() : {}
 
-  if (!payload.success) {
+  if (!payload?.data) {
     const message = payload?.message || payload?.error || `API Error: ${response.statusText}`
     const error = new Error(message) as Error & { status?: number }
     error.status = response.status

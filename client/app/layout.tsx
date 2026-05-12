@@ -7,6 +7,7 @@ import { AOSProvider } from "@/components/common/providers/AOSProvider";
 import { AuthProvider } from "@/libs/contexts/AuthContext";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { SocketProvider } from "@/libs/contexts/SocketProvider";
+import { NotificationProvider } from "@/libs/contexts/NotificationProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,23 +33,25 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={process.env.GOOGLE_API_CLIENT_ID || ''}>
           <AuthProvider>
             <SocketProvider>
-              <AOSProvider>
-                <ToastContainer
-                  position="top-right"
-                  autoClose={3000}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="light"
-                />
-                <div className="max-w-screen overflow-hidden">
-                  {children}
-                </div>
-              </AOSProvider>
+              <NotificationProvider>
+                <AOSProvider>
+                  <ToastContainer
+                    position="top-right"
+                    autoClose={3000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                  />
+                  <div className="max-w-screen overflow-hidden">
+                    {children}
+                  </div>
+                </AOSProvider>
+              </NotificationProvider>
             </SocketProvider>
             
           </AuthProvider>

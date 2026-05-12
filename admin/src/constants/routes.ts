@@ -53,7 +53,7 @@ const ROUTES_PATH = {
   // User Management
   USER_LIST: '/user/list',
   USER_SCORES: '/user/scores',
-  ROLES_PERMISSIONS: '/user/roles',
+  // ROLES_PERMISSIONS: '/user/roles',
 
   // Content Library
   GRAMMAR: '/content/grammar',
@@ -125,7 +125,7 @@ const ROUTES_NAME = {
   // User Management
   '/user/list': "Danh sách người dùng",
   '/user/scores': "Quản lý điểm số",
-  '/user/roles': "Vai trò & Phân quyền",
+  // '/user/roles': "Vai trò & Phân quyền",
 
   // Content Library
   '/content/grammar': "Ngữ pháp",
@@ -198,11 +198,11 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
         href: ROUTES_PATH.REPORTS,
         icon: FileText,
       },
-      {
-        title: "Phân tích",
-        href: ROUTES_PATH.ANALYTICS,
-        icon: TrendingUp,
-      }
+      // {
+      //   title: "Phân tích",
+      //   href: ROUTES_PATH.ANALYTICS,
+      //   icon: TrendingUp,
+      // }
     ],
   },
   // {
@@ -230,11 +230,11 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
         href: ROUTES_PATH.USER_SCORES,
         icon: Award,
       },
-      {
-        title: "Vai trò & Phân quyền",
-        href: ROUTES_PATH.ROLES_PERMISSIONS,
-        icon: Shield,
-      },
+      // {
+      //   title: "Vai trò & Phân quyền",
+      //   href: ROUTES_PATH.ROLES_PERMISSIONS,
+      //   icon: Shield,
+      // },
     ],
   },
   {

@@ -12,28 +12,34 @@ if (!process.env.SMTP_USER) throw new Error('SMTP_USER is required')
 if (!process.env.SMTP_PASS) throw new Error('SMTP_PASS is required')
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,        // vd: 'smtp.gmail.com' | 'smtp.office365.com'
+  host: process.env.SMTP_HOST, // vd: 'smtp.gmail.com' | 'smtp.office365.com'
   port,
-  secure,                             // 465 -> true, 587 -> false
-  requireTLS: port === 587,           // ép dùng STARTTLS cho 587
+  secure, // 465 -> true, 587 -> false
+  requireTLS: port === 587, // ép dùng STARTTLS cho 587
   auth: {
     user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
+    pass: process.env.SMTP_PASS,
   },
   tls: {
     minVersion: 'TLSv1.2',
     // rejectUnauthorized: false,     // chỉ bật nếu chắc chắn cần (môi trường có TLS inspection)
-  }
+  },
 })
 
-export async function sendMail(options: { to: string; subject: string; html: string; from?: string }) {
-  const from = options.from || process.env.EMAIL_FROM || '"English Master" <no-reply@english-master.com>'
+export async function sendMail(options: {
+  to: string
+  subject: string
+  html: string
+  from?: string
+}) {
+  const from =
+    options.from || process.env.EMAIL_FROM || '"ActiveLearning" <no-reply@english-master.com>'
   // await transporter.verify() // có thể bật lúc khởi động để test cấu hình
   await transporter.sendMail({
     from,
     to: options.to,
     subject: options.subject,
-    html: options.html
+    html: options.html,
   })
 }
 

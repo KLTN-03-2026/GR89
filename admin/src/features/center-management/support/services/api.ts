@@ -1,5 +1,5 @@
 import AuthorizedAxios from '@/lib/apis/authorizrAxios'
-import { SupportTicket } from '../type'
+import { SupportAttachment, SupportTicket } from '../type'
 
 interface ApiResponse<T> {
   success: boolean
@@ -37,13 +37,20 @@ export async function claimSupportTicket(ticketId: string, takeoverMinutes: numb
 export async function sendSupportMessageAsStaff(
   ticketId: string,
   content: string,
-  attachments?: Array<{ type: 'image' | 'file'; url: string; name?: string; size?: number | null; mimeType?: string }>,
+  attachments?: SupportAttachment[],
 ): Promise<ApiResponse<SupportTicket>> {
   const response = await AuthorizedAxios.post(`/support-chat/admin/tickets/${ticketId}/messages`, {
     content,
     attachments,
   })
   return response.data as ApiResponse<SupportTicket>
+}
+
+export async function uploadSupportAttachmentForStaff(file: File): Promise<ApiResponse<SupportAttachment[]>> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await AuthorizedAxios.post(`/support-chat/admin/attachments`, formData)
+  return response.data as ApiResponse<SupportAttachment[]>
 }
 
 export async function openClaimTicket(): Promise<ApiResponse<SupportTicket>> {

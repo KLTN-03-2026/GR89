@@ -9,7 +9,8 @@ import { Eye, Loader2, Send } from 'lucide-react'
 import { toast } from 'react-toastify'
 import { IHomework, ISubmission } from '../../../type'
 import { useRouter } from 'next/navigation'
-import { gradeHomework } from '../../../services/api'
+import { RichEditor } from '@/components/common/editor/RichEditor'
+import { getHomeworkSubmissionReview, gradeHomework } from '../../../services/api'
 
 interface HomeworkSubmissionActionsCellProps {
   homeworkId: IHomework['_id']
@@ -22,9 +23,11 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
   const [openGrade, setOpenGrade] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [feedback, setFeedback] = useState('')
+  const [correctedContent, setCorrectedContent] = useState('')
 
   useEffect(() => {
     setFeedback(submission?.feedback || '')
+    setCorrectedContent(submission?.content || '')
   }, [submission])
 
   const user = submission?.user
@@ -32,26 +35,36 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
   const userName = typeof user === 'object' && user?.fullName ? user.fullName : 'Học viên'
   const userEmail = typeof user === 'object' && user?.email ? user.email : ''
 
-  const plainText = useMemo(() => {
-    const content = submission?.content || ''
-    return content.replace(/<[^>]*>?/gm, '')
-  }, [submission?.content])
-
   if (!submission) return null
   const htmlContent = submission.content || ''
 
+  const toPlain = (html: string) => {
+    return String(html || '')
+      .replace(/<[^>]*>?/gm, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim()
+  }
+
   const handleSave = async () => {
-    if (!feedback.trim()) {
-      toast.error('Vui lòng nhập nhận xét')
-      return
-    }
     if (!userId) {
       toast.error('Không xác định được học viên')
       return
     }
+
+    const hasFeedback = toPlain(feedback).length > 0
+    const hasCorrected = toPlain(correctedContent).length > 0
+    if (!hasFeedback && !hasCorrected) {
+      toast.error('Vui lòng nhập nhận xét hoặc chỉnh sửa bài làm')
+      return
+    }
+
     setIsSaving(true)
     try {
-      const res = await gradeHomework(homeworkId, { userId, feedback: feedback.trim() })
+      const res = await gradeHomework(homeworkId, {
+        userId,
+        feedback,
+        correctedContent,
+      })
       if (res.success) {
         toast.success(submission.status === 'graded' ? 'Đã cập nhật nhận xét' : 'Đã chấm bài')
         router.refresh()
@@ -96,9 +109,21 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
 
       <Dialog
         open={openGrade}
-        onOpenChange={(next) => {
+        onOpenChange={async (next) => {
           setOpenGrade(next)
-          if (next) setFeedback(submission.feedback || '')
+          if (!next) return
+
+          setFeedback(submission.feedback || '')
+          setCorrectedContent(submission.content || '')
+
+          if (!userId) return
+          try {
+            const res = await getHomeworkSubmissionReview(homeworkId, userId)
+            const review = res.data || null
+            if (review?.comment) setFeedback(review.comment)
+            if (review?.correctedContent) setCorrectedContent(review.correctedContent)
+          } catch {
+          }
         }}
       >
         <DialogTrigger asChild>
@@ -120,10 +145,13 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
                 <div className="text-xs text-gray-500 font-medium">{userEmail}</div>
               </div>
               <div className="space-y-2">
-                <div className="text-xs font-black text-gray-400 uppercase tracking-widest">Bài làm</div>
-                <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-2xl font-medium">
-                  {plainText.slice(0, 600)}
-                  {plainText.length > 600 ? '...' : ''}
+                <div className="text-xs font-black text-gray-400 uppercase tracking-widest">Bài làm (có thể chỉnh sửa)</div>
+                <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
+                  <RichEditor
+                    value={correctedContent}
+                    onChange={setCorrectedContent}
+                    className="min-h-64 max-h-96"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
@@ -133,6 +161,7 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
                   disabled={isSaving}
+                  placeholder="Nhập nhận xét..."
                 />
               </div>
             </div>

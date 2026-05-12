@@ -3,8 +3,58 @@ import { CatchAsyncError } from '../middleware/CatchAsyncError'
 import ErrorHandler from '../utils/ErrorHandler'
 import { SupportChatService } from '../services/supportChat.service'
 import { io } from '../socket'
+import { NotificationService } from '../services/notification.service'
+import { MediaService } from '../services/media.service'
 
 export class SupportChatController {
+  static uploadAttachmentForUser = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const userId = req.user?._id as string
+      if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
+      if (!req.file) return next(new ErrorHandler('Vui lòng tải lên file', 400))
+
+      const { url } = await MediaService.uploadRawFile(req.file.path, 'english-chat')
+      const mimeType = req.file.mimetype || ''
+      const type = mimeType.startsWith('image/') ? 'image' : 'file'
+
+      res.status(201).json({
+        success: true,
+        message: 'Upload file thành công',
+        data: {
+          type,
+          url,
+          name: req.file.originalname,
+          size: req.file.size,
+          mimeType,
+        },
+      })
+    },
+  )
+
+  static uploadAttachmentForStaff = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const staffId = req.user?._id as string
+      if (!staffId) return next(new ErrorHandler('Vui lòng đăng nhập', 401))
+      if (!req.file) return next(new ErrorHandler('Vui lòng tải lên file', 400))
+
+      const { url } = await MediaService.uploadRawFile(req.file.path, 'english-chat')
+      const mimeType = req.file.mimetype || ''
+      const type = mimeType.startsWith('image/') ? 'image' : 'file'
+
+      res.status(201).json({
+        success: true,
+        message: 'Upload file thành công',
+        data: {
+          type,
+          url,
+          name: req.file.originalname,
+          size: req.file.size,
+          mimeType,
+        },
+      })
+    },
+  )
+
   /*============================ NGƯỜI DÙNG ============================*/
 
   // (USER) Lấy chi tiết ticket
@@ -34,6 +84,22 @@ export class SupportChatController {
 
       io.to(`ticket:${String(ticket._id)}`).emit('message:new', { ticketId: String(ticket._id) })
       io.to('staff').emit('ticket:updated', { ticketId: String(ticket._id) })
+
+      if (!ticket.assignedToId && ticket.status === 'assigned') {
+        const plain = String(content || '').trim()
+        await NotificationService.createForRoles({
+          roles: ['admin', 'content'],
+          type: 'support',
+          title: 'Tin nhắn hỗ trợ mới',
+          body: plain
+            ? plain.length > 120
+              ? `${plain.slice(0, 117)}...`
+              : plain
+            : 'Học viên đã gửi một tin nhắn mới',
+          link: `/center-management/support`,
+          data: { ticketId: String(ticket._id) },
+        })
+      }
 
       res.status(200).json({
         success: true,

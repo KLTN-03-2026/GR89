@@ -1,5 +1,5 @@
 import { CommonLoading } from "@/components/common/shared"
 
 export default function Loading() {
-  return <CommonLoading message="Đang tải dữ liệu Ngữ Pháp..." />
+  return <CommonLoading message="Đang tải danh sách người dùng..." />
 }

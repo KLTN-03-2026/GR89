@@ -5,10 +5,20 @@ import {
   authenticateTokenUser,
   requireRole,
 } from '../middleware/auth.middleware'
+import { handleUploadError, uploadChatAttachment } from '../middleware/upload.middleware'
 
 const router = express.Router()
 
 /*============================ NGƯỜI DÙNG ============================*/
+router.post(
+  '/attachments',
+  authenticateTokenUser,
+  requireRole(['user']),
+  uploadChatAttachment.single('file'),
+  handleUploadError,
+  SupportChatController.uploadAttachmentForUser,
+)
+
 // (USER) Chi tiết ticket
 router.get(
   '/tickets',
@@ -34,6 +44,14 @@ router.get(
 )
 
 /*============================ ADMIN/CONTENT ============================*/
+router.post(
+  '/admin/attachments',
+  authenticateTokenAdmin,
+  requireRole(['admin', 'content']),
+  uploadChatAttachment.single('file'),
+  handleUploadError,
+  SupportChatController.uploadAttachmentForStaff,
+)
 
 // (ADMIN/CONTENT) Danh sách ticket để xử lý
 router.get(

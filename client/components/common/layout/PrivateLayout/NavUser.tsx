@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/sidebar"
 
 import { useAuth } from "@/libs/contexts/AuthContext"
+import { useNotification } from "@/libs/contexts/NotificationProvider"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -39,6 +40,7 @@ export function NavUser() {
   const router = useRouter()
   const { isMobile } = useSidebar()
   const { logout, user, isLoading } = useAuth()
+  const { unreadCount } = useNotification()
 
   const [avatarError, setAvatarError] = useState(false)
 
@@ -151,6 +153,11 @@ export function NavUser() {
               <DropdownMenuItem onClick={() => router.push("/notifications")}>
                 <Bell />
                 Notifications
+                {unreadCount > 0 ? (
+                  <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                ) : null}
               </DropdownMenuItem>
             </DropdownMenuGroup>
 

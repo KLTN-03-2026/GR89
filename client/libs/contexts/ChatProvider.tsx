@@ -91,7 +91,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const onTicketUpdated = () => {
       if (openChat === 'human') {
         refreshHumanTicket().finally(() => setUnreadCount(0))
-        // playSound()
+        playSound()
         return
       }
       playSound()

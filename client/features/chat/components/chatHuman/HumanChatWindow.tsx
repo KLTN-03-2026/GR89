@@ -5,8 +5,10 @@ import HumanChatHeader from './HumanChatHeader'
 import HumanChatMessageList from './HumanChatMessageList'
 import HumanChatInput from './HumanChatInput'
 import HumanChatMinimized from './HumanChatMinimized'
-import { useChat } from '../../../../libs/contexts/ChatProvider'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { uploadSupportAttachment } from '@/features/chat/services/chatService'
+import { toast } from 'react-toastify'
+import { useChat } from '@/features/chat'
 
 interface HumanChatWindowProps {
   onClose: () => void
@@ -16,6 +18,7 @@ interface HumanChatWindowProps {
 export default function HumanChatWindow({ onClose, setOpenChat }: HumanChatWindowProps) {
   const [isMinimized, setIsMinimized] = useState(false)
   const [input, setInput] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { openChat, humanMessages, sendHumanMessage } = useChat()
 
@@ -33,7 +36,17 @@ export default function HumanChatWindow({ onClose, setOpenChat }: HumanChatWindo
   }
 
   const handleSendFile = (file: File) => {
-    console.log(file)
+    ;(async () => {
+      setIsUploading(true)
+      try {
+        const attachment = await uploadSupportAttachment(file)
+        await sendHumanMessage('', [attachment])
+      } catch {
+        toast.error('Không thể gửi tệp lúc này')
+      } finally {
+        setIsUploading(false)
+      }
+    })()
   }
 
   if (isMinimized) {
@@ -64,6 +77,7 @@ export default function HumanChatWindow({ onClose, setOpenChat }: HumanChatWindo
         onChange={setInput}
         onSend={handleSend}
         onSendFile={handleSendFile}
+        disabled={isUploading}
       />
     </div>
   )

@@ -84,6 +84,37 @@ export function QuizTab({
     setActiveQuizId(id)
   }
 
+  const handleMoveQuizUp = (index: number) => {
+    if (index <= 0) return
+
+    setDraft((prev) => {
+      const next = [...prev.quizzes]
+        ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
+      return { ...prev, quizzes: next }
+    })
+  }
+
+  const handleMoveQuizDown = (index: number) => {
+    if (index >= draft.quizzes.length - 1) return
+
+    setDraft((prev) => {
+      const next = [...prev.quizzes]
+        ;[next[index + 1], next[index]] = [next[index], next[index + 1]]
+      return { ...prev, quizzes: next }
+    })
+  }
+
+  const handleDeleteQuiz = (index: number) => {
+    const deleted = draft.quizzes[index]
+    const nextQuizzes = draft.quizzes.filter((_, i) => i !== index)
+    setDraft((prev) => ({ ...prev, quizzes: nextQuizzes }))
+
+    if (deleted?._id && deleted._id === activeQuizId) {
+      const nextActive = nextQuizzes[index] || nextQuizzes[index - 1] || null
+      setActiveQuizId(nextActive?._id || '')
+    }
+  }
+
   const handleSaveQuizContent = async () => {
     if (!activeQuiz) return
 
@@ -159,11 +190,14 @@ export function QuizTab({
   }
 
   return (
-    <TabsContent value="quiz" className="grid gap-4 lg:grid-cols-[280px_1fr]">
+    <TabsContent value="quiz" className="grid gap-4 lg:grid-cols-[320px_1fr]">
       <QuizListPanel
         quizzes={draft.quizzes}
         activeQuizId={activeQuizId}
         onSelectQuiz={setActiveQuizId}
+        onMoveQuizUp={handleMoveQuizUp}
+        onMoveQuizDown={handleMoveQuizDown}
+        onDeleteQuiz={handleDeleteQuiz}
         onAddQuiz={handleAddQuiz}
       />
 
@@ -179,4 +213,3 @@ export function QuizTab({
     </TabsContent>
   )
 }
-

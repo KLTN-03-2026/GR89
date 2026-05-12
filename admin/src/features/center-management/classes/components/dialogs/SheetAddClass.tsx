@@ -38,7 +38,6 @@ export function SheetAddClass({ onClose }: SheetAddClassProps) {
     teacher: '',
     startDate: '',
     password: '',
-    maxStudents: '',
     schedule: '',
   })
 
@@ -92,17 +91,8 @@ export function SheetAddClass({ onClose }: SheetAddClassProps) {
       return
     }
 
-    const maxStudents = formData.maxStudents.trim()
-      ? Number(formData.maxStudents.trim())
-      : null
-    if (maxStudents != null && (!Number.isInteger(maxStudents) || maxStudents <= 0)) {
-      toast.error('Số học viên tối đa phải là số nguyên dương')
-      return
-    }
-
     setLoading(true)
-    const { maxStudents: _maxStudents, ...rest } = formData
-    await createCenterClass({ ...rest, schedule: finalSchedule, maxStudents })
+    await createCenterClass({ ...formData, schedule: finalSchedule})
       .then((res) => {
         if (res.success) {
           toast.success('Tạo lớp học thành công')
@@ -252,31 +242,6 @@ export function SheetAddClass({ onClose }: SheetAddClassProps) {
                   </button>
                 </div>
                 
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 col-span-2">
-                <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">
-                  Số học viên tối đa
-                </Label>
-                <Input
-                  placeholder="Ví dụ: 30 (để trống = không giới hạn)"
-                  className="h-12 rounded-2xl border-gray-100 bg-gray-50 font-bold"
-                  inputMode="numeric"
-                  pattern="\d*"
-                  value={formData.maxStudents}
-                  onChange={(e) => {
-                    const nextValue = e.target.value.replace(/\D/g, '').slice(0, 4)
-                    setFormData((prev) => ({ ...prev, maxStudents: nextValue }))
-                  }}
-                  onPaste={(e) => {
-                    e.preventDefault()
-                    const pasted = e.clipboardData.getData('text')
-                    const nextValue = pasted.replace(/\D/g, '').slice(0, 4)
-                    setFormData((prev) => ({ ...prev, maxStudents: nextValue }))
-                  }}
-                />
               </div>
             </div>
 

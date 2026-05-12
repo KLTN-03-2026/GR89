@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import type { IClass, IDocument } from "../../types"
 import { DocumentDetailDialog } from "../Dialogs/DocumentDetailDialog"
 import { SolutionDetailDialog } from "../Dialogs/SolutionDetailDialog"
@@ -12,10 +13,18 @@ import TabClassDocuments from "@/features/catelogies/components/CatelogyDetail/T
 import TabClassHomework from "@/features/catelogies/components/CatelogyDetail/TabClassHomework"
 
 export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
+  const searchParams = useSearchParams()
   const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null)
   const [selectedSolution, setSelectedSolution] = useState<IDocument | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSolutionOpen, setIsSolutionOpen] = useState(false)
+  const tabParam = searchParams.get('tab')
+  const desiredTab = useMemo(() => (tabParam === 'homeworks' ? 'homeworks' : 'materials'), [tabParam])
+  const [activeTab, setActiveTab] = useState<'materials' | 'homeworks'>(desiredTab)
+
+  useEffect(() => {
+    setActiveTab(desiredTab)
+  }, [desiredTab])
 
   const handleViewDocument = (doc: IDocument) => {
     setSelectedDoc(doc)
@@ -83,8 +92,8 @@ export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-blue-100">Tiến độ</span>
               </div>
-              <p className="text-3xl font-bold mb-2">0 / {classItem.lessonCount}</p>
-              <p className="text-sm text-blue-100">Tài liệu đã học</p>
+              <p className="text-3xl font-bold mb-2">{classItem.homeworks.filter((h) => h.submissions?.length > 0).length} / {classItem.homeworks.length}</p>
+              <p className="text-sm text-blue-100">Bài tập đã hoàn thành</p>
               <div className="w-full h-2 bg-white/20 rounded-full mt-6 overflow-hidden">
                 <div className="h-full bg-white w-0 rounded-full" />
               </div>
@@ -94,7 +103,7 @@ export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Tabs defaultValue="materials" className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'materials' | 'homeworks')}  className="w-full">
           <TabsList className="bg-gray-100 p-1.5 rounded-2xl mb-8">
             <TabsTrigger value="materials" className="rounded-xl px-8 py-3 data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold">
               <FileText className="w-4 h-4 mr-2" />

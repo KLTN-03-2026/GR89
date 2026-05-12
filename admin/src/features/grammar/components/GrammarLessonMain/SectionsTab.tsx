@@ -218,7 +218,7 @@ export function SectionsTab({ draft, setDraft, activeSectionIndex, setActiveSect
   }
 
   return (
-    <TabsContent value="sections" className="grid gap-4 lg:grid-cols-[280px_1fr]">
+    <TabsContent value="sections" className="grid gap-4 lg:grid-cols-[320px_1fr]">
       <SectionListPanel
         sections={draft.sections}
         activeSectionIndex={activeSectionIndex}

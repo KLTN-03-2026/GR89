@@ -53,6 +53,7 @@ export default function HumanChatInput({ value, onChange, onSend, onSendFile, di
           size="icon" 
           className="h-9 w-9 text-gray-400 hover:text-indigo-600 rounded-full"
           onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
         >
           <Paperclip className="h-5 w-5" />
         </Button>
@@ -61,6 +62,7 @@ export default function HumanChatInput({ value, onChange, onSend, onSendFile, di
           size="icon" 
           className="h-9 w-9 text-gray-400 hover:text-indigo-600 rounded-full"
           onClick={() => imageInputRef.current?.click()}
+          disabled={disabled}
         >
           <ImageIcon className="h-5 w-5" />
         </Button>
@@ -72,7 +74,7 @@ export default function HumanChatInput({ value, onChange, onSend, onSendFile, di
           disabled={disabled}
           className="flex-1 rounded-2xl border-none bg-gray-50 px-4 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-100"
         />
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-gray-400 hover:text-indigo-600 rounded-full">
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-gray-400 hover:text-indigo-600 rounded-full" disabled={disabled}>
           <Smile className="h-5 w-5" />
         </Button>
         <Button

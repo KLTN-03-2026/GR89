@@ -12,14 +12,12 @@ import {
   Eye,
   Volume2,
   MessageSquare,
-  TrendingUp,
   Award,
   DollarSign,
   PlayCircle,
   Clock,
   CheckCircle,
   FileText,
-  Plus,
   ArrowRight,
   UserPlus,
   LayoutDashboard
@@ -29,11 +27,13 @@ import { useAuth } from '@/context/AuthContext'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function AdminOverview() {
   const { user } = useAuth()
   const [data, setData] = useState<AdminOverviewData | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -237,7 +237,7 @@ export default function AdminOverview() {
               {data.newUsers.map((user, index) => (
                 <div key={index} className="flex items-center space-x-4 p-2 hover:bg-gray-50 rounded-2xl transition-all">
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-100">
+                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-100">
                       {user.fullName.charAt(0)}
                     </div>
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full" title="Hoạt động" />
@@ -252,7 +252,11 @@ export default function AdminOverview() {
                 </div>
               ))}
             </div>
-            <Button variant="ghost" className="w-full mt-10 h-12 rounded-2xl bg-gray-50 text-gray-600 hover:text-blue-600 font-bold transition-all">
+            <Button 
+              variant="ghost" 
+              className="w-full mt-10 h-12 rounded-2xl bg-gray-50 text-gray-600 hover:text-blue-600 font-bold transition-all"
+              onClick={() => router.push('/user/list')}
+            >
               Quản lý tài khoản
             </Button>
           </CardContent>
@@ -274,7 +278,7 @@ export default function AdminOverview() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {skillCards.map((skill, index) => (
-            <Card key={index} className={`group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 rounded-[2rem] border-none bg-white shadow-sm overflow-hidden`}>
+            <Card key={index} className={`group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 rounded-4xl border-none bg-white shadow-sm overflow-hidden`}>
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center space-y-4">
                   <div className={`p-5 rounded-3xl ${skill.colorClass} text-white shadow-xl ${skill.shadowClass} transform group-hover:rotate-12 transition-transform duration-300`}>

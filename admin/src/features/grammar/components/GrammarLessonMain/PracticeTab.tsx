@@ -78,6 +78,42 @@ export function PracticeTab({
     setActivePracticeIndex(draft.practice.length)
   }
 
+  const handleMovePracticeUp = (index: number) => {
+    if (index <= 0) return
+
+    setDraft((prev) => {
+      const next = [...prev.practice]
+        ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
+      return { ...prev, practice: next }
+    })
+
+    if (activePracticeIndex === index) setActivePracticeIndex(index - 1)
+    else if (activePracticeIndex === index - 1) setActivePracticeIndex(index)
+  }
+
+  const handleMovePracticeDown = (index: number) => {
+    if (index >= draft.practice.length - 1) return
+
+    setDraft((prev) => {
+      const next = [...prev.practice]
+        ;[next[index + 1], next[index]] = [next[index], next[index + 1]]
+      return { ...prev, practice: next }
+    })
+
+    if (activePracticeIndex === index) setActivePracticeIndex(index + 1)
+    else if (activePracticeIndex === index + 1) setActivePracticeIndex(index)
+  }
+
+  const handleDeletePractice = (index: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      practice: prev.practice.filter((_, i) => i !== index)
+    }))
+
+    if (activePracticeIndex === index) setActivePracticeIndex(index > 0 ? index - 1 : 0)
+    if (activePracticeIndex > index) setActivePracticeIndex((prev) => prev - 1)
+  }
+
   const handleSavePracticeContent = async () => {
     if (!activePractice) return
 
@@ -137,11 +173,14 @@ export function PracticeTab({
   }
 
   return (
-    <TabsContent value="practice" className="grid gap-4 lg:grid-cols-[280px_1fr]">
+    <TabsContent value="practice" className="grid gap-4 lg:grid-cols-[320px_1fr]">
       <PracticeListPanel
         practiceItems={draft.practice}
         activePracticeIndex={activePracticeIndex}
         onSelectPractice={setActivePracticeIndex}
+        onMovePracticeUp={handleMovePracticeUp}
+        onMovePracticeDown={handleMovePracticeDown}
+        onDeletePractice={handleDeletePractice}
         onAddPractice={handleAddPractice}
       />
 
@@ -157,4 +196,3 @@ export function PracticeTab({
     </TabsContent>
   )
 }
-

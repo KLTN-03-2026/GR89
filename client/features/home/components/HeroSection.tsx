@@ -1,6 +1,6 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { ArrowRight, Play, Sparkles, Star, Quote } from 'lucide-react'
+import { ArrowRight, Play, Star, Quote } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -59,42 +59,51 @@ export function HeroSection() {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-[2fr_1fr] gap-12 items-center">
           {/* Left Content */}
           <div className="space-y-8">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-              <Sparkles className="w-4 h-4 text-yellow-300" />
-              <span className="text-sm font-medium">Nền tảng học tiếng Anh #1 Việt Nam</span>
-            </div>
-
             {/* Heading */}
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                Học Tiếng Anh Thông Minh với{' '}
+                Learn English{' '}
                 <span className="bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent">
-                  AI
+                  ActiveLearning
                 </span>
               </h1>
-              <p className="text-lg lg:text-xl text-blue-100 max-w-xl">
-                Nâng cao 6 kỹ năng tiếng Anh với lộ trình cá nhân hóa, AI hỗ trợ 24/7,
-                và phương pháp học tập khoa học. Từ A1 đến C2.
-              </p>
+              <div className="text-lg lg:text-xl text-blue-100">
+                <div className="text-xs font-bold uppercase tracking-widest text-white/70">Mission Statement</div>
+                <div className="mt-3 space-y-2 text-base lg:text-lg leading-relaxed text-blue-50/90">
+                As the founder of englishactivelearning.com, I would like this website 
+                  <p>
+                    (1) Firstly to serve as a place to save, store and display valuable resources either created or collected
+                  </p>
+                  <p>
+                    (2) Secondly to equip my students with necessary supplementary materials
+                  </p>
+                  <p>
+                    (3) Finally to make it easily accessible for EFL learners, especially those living in remote areas in Vietnam.
+                  </p>
+                  Although nowadays a number of English websites have mushroomed, this website, with its organization in logic sequences, is hoped to enable leaners to become actually active in their leaning process.
+                </div>
+              </div>
+
+              {/* <div className="max-w-xl rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
+                
+              </div> */}
             </div>
 
-            {/* Features List */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            {/* <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
               {[
-                '✅ Lộ trình cá nhân hóa',
-                '✅ AI chấm bài tức thì',
-                '✅ 6 kỹ năng toàn diện',
-                '✅ Miễn phí dùng thử'
+                '✅ Curated resources library',
+                '✅ Supplementary materials for students',
+                '✅ Logical learning sequences',
+                '✅ Accessible anywhere in Vietnam'
               ].map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-2 text-sm font-medium">
+                <div key={idx} className="flex items-center gap-2 text-sm font-medium text-blue-50/90">
                   {feature}
                 </div>
               ))}
-            </div>
+            </div> */}
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-4">
@@ -103,12 +112,12 @@ export function HeroSection() {
                 className="bg-white text-blue-600 hover:bg-blue-50 font-bold px-8 shadow-xl"
                 onClick={handleGetStarted}
               >
-                Bắt đầu ngay
+                Get Started
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
               <Button size="lg" variant="outline" className="border-2 bg-opacity-0 border-white text-white hover:bg-white/10 font-bold px-8">
                 <Play className="mr-2 w-5 h-5" />
-                Xem demo
+                Watch Demo
               </Button>
             </div>
 
@@ -128,7 +137,7 @@ export function HeroSection() {
                   <Star className="w-4 h-4 fill-current" />
                 </div>
                 <p className="text-sm text-blue-100 mt-1">
-                  <span className="font-bold">50,000+</span> học viên tin tưởng
+                  <span className="font-bold">50,000+</span> learners trust us
                 </p>
               </div>
             </div>
@@ -153,8 +162,8 @@ export function HeroSection() {
                     🎯
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Chuỗi ngày</p>
-                    <p className="font-bold text-blue-600">15 ngày</p>
+                    <p className="text-xs text-gray-500">Streak</p>
+                    <p className="font-bold text-blue-600">15 days</p>
                   </div>
                 </div>
               </div>
@@ -165,7 +174,7 @@ export function HeroSection() {
                     ⭐
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">Điểm số</p>
+                    <p className="text-xs text-gray-500">Score</p>
                     <p className="font-bold text-green-600">1,250</p>
                   </div>
                 </div>
@@ -186,7 +195,7 @@ export function HeroSection() {
                     className="min-h-[70px] flex flex-col justify-center"
                   >
                     <p className="text-base font-medium text-white italic leading-relaxed">
-                      "{QUOTES[currentQuote].text}"
+                      `&quot;`{QUOTES[currentQuote].text}`&quot;`
                     </p>
                     <p className="mt-2 text-sm text-yellow-300 font-semibold">
                       — {QUOTES[currentQuote].author}
@@ -222,4 +231,3 @@ export function HeroSection() {
     </section>
   )
 }
-
