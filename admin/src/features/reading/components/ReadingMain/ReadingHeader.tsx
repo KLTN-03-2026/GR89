@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { DialogAddReading } from "@/features/reading/components/dialogs";
 import { PageHeader, StatsGrid } from "@/components/common"
-import { BookOpen, Users, Eye, TrendingUp, LucideIcon, Download } from "lucide-react";
+import { BookOpen, Users, Eye, LucideIcon, Download } from "lucide-react";
 import { getReadingOverviewStats, exportReadingExcel } from "@/features/reading/services/api";
 import { ReadingStatsSkeleton } from "@/components/common/Skeletons/ReadingStatsSkeleton";
 import { ReadingSheetImport } from '@/features/reading/components/ReadingSheetImport'
@@ -14,10 +14,6 @@ interface props {
 interface IStatsOverviewProps {
   title: string;
   value: string;
-  change: {
-    value: string;
-    isPositive: boolean;
-  };
   icon: LucideIcon;
 }
 
@@ -35,38 +31,17 @@ export default function ReadingHeader({ callback }: props) {
             {
               title: "Tổng Bài Đọc",
               value: data?.totalLessons?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 5) + 1} so với tháng trước`,
-                isPositive: true
-              },
               icon: BookOpen
             },
             {
               title: "Tổng Người Học",
               value: data?.totalUsers?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 40) + 15} trong tháng này`,
-                isPositive: true
-              },
               icon: Users
             },
             {
               title: "Tỷ Lệ Hoàn Thành",
               value: `${data && data?.completionRate}%`,
-              change: {
-                value: `${data && data?.monthlyChange >= 0 ? '+' : ''}${data?.monthlyChange}% so với tháng trước`,
-                isPositive: data && data?.monthlyChange >= 0 || false
-              },
               icon: Eye
-            },
-            {
-              title: "Lượt Học Tháng",
-              value: `${data && (data?.monthlyLearns / 1000).toFixed(1)}K`,
-              change: {
-                value: `+${Math.floor(Math.random() * 12) + 8}%`,
-                isPositive: true
-              },
-              icon: TrendingUp
             }
           ]);
         })

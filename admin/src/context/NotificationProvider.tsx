@@ -76,7 +76,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       audioRef.current?.play().catch(() => {})
     }
 
-    const onNew = (payload: any) => {
+    const onNew = (payload: AdminNotification) => {
       if (!payload?._id) return
 
       const next: AdminNotification = {

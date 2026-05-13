@@ -15,25 +15,21 @@ export default function page() {
     {
       title: 'Phiên truy cập',
       value: '58,420',
-      change: { value: '+5.4% so với tuần trước', isPositive: true },
       icon: Activity,
     },
     {
       title: 'Người dùng duy nhất',
       value: '34,210',
-      change: { value: '+3.2% tuần này', isPositive: true },
       icon: Users,
     },
     {
       title: 'Thời gian phiên (TB)',
       value: '7m 12s',
-      change: { value: '+0.9% tuần này', isPositive: true },
       icon: Clock,
     },
     {
       title: 'Tỉ lệ thoát',
       value: '32.4%',
-      change: { value: '-1.2% tuần này', isPositive: true },
       icon: TrendingUp,
     },
   ]

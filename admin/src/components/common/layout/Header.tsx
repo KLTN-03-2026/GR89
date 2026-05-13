@@ -17,16 +17,6 @@ import { useAuth } from "@/context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useNotification } from "@/context/NotificationProvider"
 
-export interface INotification {
-  _id: string
-  type: string
-  title: string
-  body: string
-  link?: string
-  isRead: boolean
-  createdAt: string
-}
-
 export function Header() {
   const { logout, user } = useAuth()
   const router = useRouter()

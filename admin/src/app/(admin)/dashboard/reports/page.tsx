@@ -54,31 +54,21 @@ export default function Page() {
     {
       title: 'Doanh thu',
       value: formatVnd(report?.kpis.revenue || 0),
-      change: {
-        value: `${(report?.kpis.revenueGrowth || 0) >= 0 ? '+' : ''}${report?.kpis.revenueGrowth || 0}% so với kỳ trước`,
-        isPositive: (report?.kpis.revenueGrowth || 0) >= 0,
-      },
       icon: DollarSign,
     },
     {
       title: 'Người dùng hoạt động',
       value: report?.kpis.activeUsers || 0,
-      change: {
-        value: `${(report?.kpis.activeUsersGrowth || 0) >= 0 ? '+' : ''}${report?.kpis.activeUsersGrowth || 0}% so với kỳ trước`,
-        isPositive: (report?.kpis.activeUsersGrowth || 0) >= 0,
-      },
       icon: Users,
     },
     {
       title: 'Bài học hoàn thành',
       value: report?.kpis.completedLessons || 0,
-      change: { value: 'Theo bộ lọc hiện tại', isPositive: true },
       icon: BookOpen,
     },
     {
       title: 'Tổng giờ học',
       value: `${report?.kpis.studyHours || 0}h`,
-      change: { value: 'Theo bộ lọc hiện tại', isPositive: true },
       icon: Video,
     },
   ]

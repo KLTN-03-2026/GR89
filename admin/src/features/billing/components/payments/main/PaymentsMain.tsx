@@ -110,8 +110,8 @@ export function PaymentsMain({
       search: urlSearch,
       sortBy: urlSortBy,
       sortOrder: urlSortOrder,
-      status: urlStatus !== "all" ? urlStatus as any : undefined,
-      provider: urlProvider !== "all" ? urlProvider as any : undefined,
+      status: urlStatus as 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled',
+      provider: urlProvider !== "all" ? urlProvider as 'vnpay' | 'momo' | 'stripe' | 'paypal' : undefined,
     })
   }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlStatus, urlProvider, fetchPayments])
 
@@ -178,11 +178,11 @@ export function PaymentsMain({
                 placeholder="Mã giao dịch..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[200px] transition-all font-medium"
+                className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-50 transition-all font-medium"
               />
             </div>
             <Select value={urlStatus} onValueChange={(v) => updateUrl({ status: v, page: 1 })}>
-              <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-40 rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">
@@ -195,7 +195,7 @@ export function PaymentsMain({
               </SelectContent>
             </Select>
             <Select value={urlProvider} onValueChange={(v) => updateUrl({ provider: v, page: 1 })}>
-              <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-40 rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Cổng thanh toán" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">
@@ -207,7 +207,7 @@ export function PaymentsMain({
               </SelectContent>
             </Select>
             <Select value={urlSortBy} onValueChange={(value) => updateUrl({ sortBy: value, page: 1 })}>
-              <SelectTrigger className="h-11 w-[170px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-42.5 rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Sắp xếp theo" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">
@@ -218,7 +218,7 @@ export function PaymentsMain({
               </SelectContent>
             </Select>
             <Select value={urlSortOrder} onValueChange={(value) => updateUrl({ sortOrder: value, page: 1 })}>
-              <SelectTrigger className="h-11 w-[150px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-37.5 rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Thứ tự" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">

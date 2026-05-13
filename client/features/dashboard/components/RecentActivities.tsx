@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import RecentActivitiCard from "./RecentActivitiCard";
-import { IRecentActivity, ROUTES } from "@/constants/routes";
+import { IRecentActivity } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
 import { RecentActivity, RecentActivityCategory } from "../types";
 import { BookOpen, Eye, FileText, Headphones, Mic, PenTool, Volume2 } from "lucide-react";
@@ -34,7 +34,7 @@ const toRelativeTime = (date: string) => {
 }
 
 export const mapRecentActivitiesForUI = (activities: RecentActivity[]): IRecentActivity[] => {
-  if (!activities.length) return ROUTES.RECENT_ACTIVITIES
+  if (!activities.length) return []
 
   return activities.map((activity) => {
     const meta = categoryMeta[activity.category]
@@ -61,7 +61,9 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
       </div>
 
       <div className="space-y-3">
-        {displayActivities.map((activity: IRecentActivity, index: number) => (
+        {displayActivities.length ? displayActivities.map((activity: IRecentActivity, index: number) => (
+          <RecentActivitiCard key={index} {...activity} />
+        )) : displayActivities.map((activity: IRecentActivity, index: number) => (
           <RecentActivitiCard key={index} {...activity} />
         ))}
       </div>

@@ -16,7 +16,7 @@ interface Props {
 interface IStatsOverviewProps {
   title: string
   value: string
-  change: {
+  change?: {
     value: string
     isPositive: boolean
   }
@@ -90,10 +90,6 @@ export default function EntertainmentHeader({ callback, type, parentId }: Props)
         {
           title: `Tổng số ${typeLabels[type]}`,
           value: '0',
-          change: {
-            value: `+0 so với tháng trước`,
-            isPositive: true
-          },
           icon: Film
         },
         {

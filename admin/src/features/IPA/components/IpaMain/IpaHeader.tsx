@@ -14,10 +14,6 @@ interface props {
 interface IStatsOverviewProps {
   title: string;
   value: string;
-  change: {
-    value: string;
-    isPositive: boolean;
-  };
   icon: LucideIcon;
 }
 
@@ -35,38 +31,17 @@ export default function IpaHeader({ callback }: props) {
             {
               title: "Tổng số âm IPA",
               value: data?.totalLessons?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 3) + 1} so với tháng trước`,
-                isPositive: true
-              },
               icon: Volume2
             },
             {
               title: "Tổng số người học",
               value: data?.totalUsers?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 50) + 20} trong tháng này`,
-                isPositive: true
-              },
               icon: Users
             },
             {
               title: "Tỉ lệ hoàn thành",
               value: `${data && data?.completionRate}%`,
-              change: {
-                value: `${data && data?.monthlyChange >= 0 ? '+' : ''}${data?.monthlyChange}% so với tháng trước`,
-                isPositive: data && data?.monthlyChange >= 0 || false
-              },
               icon: Eye
-            },
-            {
-              title: "Lượt học tháng",
-              value: `${data && data?.monthlyLearns}`,
-              change: {
-                value: `+${Math.floor(Math.random() * 10) + 5}%`,
-                isPositive: true
-              },
-              icon: TrendingUp
             }
           ]);
         })
@@ -110,7 +85,7 @@ export default function IpaHeader({ callback }: props) {
       {loading ? (
         <IpaStatsSkeleton />
       ) : (
-        <StatsGrid stats={stats} />
+        <StatsGrid stats={stats} columns={3}/>
       )}
     </header>
   )

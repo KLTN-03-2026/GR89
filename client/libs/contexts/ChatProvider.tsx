@@ -118,7 +118,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         sendHumanMessage,
         unreadCount,
       }}
-    >
+       >
       {children}
     </ChatContext.Provider>
   )

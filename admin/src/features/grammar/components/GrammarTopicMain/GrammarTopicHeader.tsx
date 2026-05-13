@@ -14,10 +14,6 @@ interface Props {
 interface IStatsOverviewProps {
   title: string
   value: string
-  change: {
-    value: string
-    isPositive: boolean
-  }
   icon: LucideIcon
 }
 
@@ -35,37 +31,16 @@ export default function GrammarTopicHeader({ callback }: Props) {
             {
               title: 'Tổng Chủ Đề Ngữ Pháp',
               value: data?.totalTopics?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 5) + 1} so với tháng trước`,
-                isPositive: true
-              },
               icon: Bookmark
             },
             {
               title: 'Tổng Bài Học',
               value: data?.totalLessons?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 20) + 10} so với tháng trước`,
-                isPositive: true
-              },
               icon: Users
-            },
-            {
-              title: 'Lượt Học Tháng',
-              value: `${data && (data?.monthlyLearns / 1000).toFixed(1)}K`,
-              change: {
-                value: `${data && data?.monthlyChange >= 0 ? '+' : ''}${data?.monthlyChange}% so với tháng trước`,
-                isPositive: (data && data?.monthlyChange >= 0) || false
-              },
-              icon: Eye
             },
             {
               title: 'Tỷ Lệ Hoàn Thành',
               value: `${data && data?.completionRate}%`,
-              change: {
-                value: `+${Math.floor(Math.random() * 5) + 1}% so với tháng trước`,
-                isPositive: true
-              },
               icon: TrendingUp
             }
           ])
@@ -106,7 +81,7 @@ export default function GrammarTopicHeader({ callback }: Props) {
         </div>
       </div>
 
-      {loading ? <GrammarStatsSkeleton /> : <StatsGrid stats={stats} />}
+      {loading ? <GrammarStatsSkeleton /> : <StatsGrid stats={stats} columns={3}/>}
     </header>
   )
 }

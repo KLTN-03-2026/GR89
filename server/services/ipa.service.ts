@@ -403,11 +403,10 @@ export class IpaService {
   static async assessPronunciationIpa(
     referenceText: string,
     audioBuffer: Buffer,
-    userId: string,
     ipaId: string,
-    studyTimeSeconds: number = 0,
   ): Promise<any> {
     const ipa = await Ipa.findById(ipaId)
+
     if (!ipa) throw new ErrorHandler('IPA không tồn tại', 404)
 
     const speechAceProvider = new SpeechAceProvider()

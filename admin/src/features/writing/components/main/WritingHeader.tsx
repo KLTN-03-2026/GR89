@@ -14,10 +14,6 @@ interface props {
 interface IStatsOverviewProps {
   title: string
   value: string
-  change: {
-    value: string
-    isPositive: boolean
-  }
   icon: LucideIcon
 }
 
@@ -35,39 +31,18 @@ export default function WritingHeader({ callback }: props) {
             {
               title: 'Tổng Bài Viết',
               value: data?.totalLessons?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 4) + 1} so với tháng trước`,
-                isPositive: true,
-              },
               icon: PenTool,
             },
             {
               title: 'Tổng Người Học',
               value: data?.totalUsers?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 35) + 12} trong tháng này`,
-                isPositive: true,
-              },
               icon: Users,
             },
             {
               title: 'Tỷ Lệ Hoàn Thành',
               value: `${data && data?.completionRate}%`,
-              change: {
-                value: `${data && data?.monthlyChange >= 0 ? '+' : ''}${data?.monthlyChange}% so với tháng trước`,
-                isPositive: (data && data?.monthlyChange >= 0) || false,
-              },
               icon: Eye,
-            },
-            {
-              title: 'Điểm Trung Bình',
-              value: `${data && data?.avgWritingScore}%`,
-              change: {
-                value: `+${Math.floor(Math.random() * 10) + 5}%`,
-                isPositive: true,
-              },
-              icon: TrendingUp,
-            },
+            }
           ])
         })
         .finally(() => {
@@ -103,7 +78,7 @@ export default function WritingHeader({ callback }: props) {
         </div>
       </div>
 
-      {loading ? <WritingStatsSkeleton /> : <StatsGrid stats={stats} />}
+      {loading ? <WritingStatsSkeleton /> : <StatsGrid stats={stats} columns={3}/>}
     </header>
   )
 }

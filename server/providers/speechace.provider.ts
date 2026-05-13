@@ -1,6 +1,6 @@
-import axios from "axios"
-import ErrorHandler from "../utils/ErrorHandler"
-import FormData from "form-data"
+import axios from 'axios'
+import ErrorHandler from '../utils/ErrorHandler'
+import FormData from 'form-data'
 
 // Tham số đầu vào chấm điểm phát âm
 interface AssessParams {
@@ -13,13 +13,11 @@ export class SpeechAceProvider {
   private readonly API_KEY: string
   private readonly BASE_URL = process.env.SPEECHACE_BASE_URL || 'https://api.speechace.co'
 
-
   constructor() {
     const apiKey = process.env.SPEECHACE_API_KEY || ''
     if (!apiKey) {
       throw new ErrorHandler('Speechace api key không tồn tại', 500)
-    }
-    else {
+    } else {
       this.API_KEY = apiKey
     }
   }
@@ -41,16 +39,17 @@ export class SpeechAceProvider {
 
     const formData = new FormData()
     formData.append('user_audio_file', audioBuffer, {
-      filename: 'audio.wav', contentType: 'audio/wav'
+      filename: 'audio.wav',
+      contentType: 'audio/wav',
     })
     formData.append('text', referenceText)
     formData.append('detect_dialect', 1)
     formData.append('enforce_dialect', 1)
 
-
     const headers = formData.getHeaders()
-    return await axios.post(url.toString(), formData, { headers })
-      .then(response => {
+    return await axios
+      .post(url.toString(), formData, { headers })
+      .then((response) => {
         return response.data
       })
       .catch(() => {

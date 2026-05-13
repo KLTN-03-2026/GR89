@@ -14,10 +14,6 @@ interface props {
 interface IStatsOverviewProps {
   title: string;
   value: string;
-  change: {
-    value: string;
-    isPositive: boolean;
-  };
   icon: LucideIcon;
 }
 
@@ -35,38 +31,17 @@ export default function ListeningHeader({ callback }: props) {
             {
               title: "Tổng Bài Nghe",
               value: data?.totalLessons?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 5) + 1} so với tháng trước`,
-                isPositive: true
-              },
               icon: Headphones
             },
             {
               title: "Tổng Người Học",
               value: data?.totalUsers?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 30) + 10} trong tháng này`,
-                isPositive: true
-              },
               icon: Users
             },
             {
               title: "Tỉ Lệ Hoàn Thành",
               value: `${data && data?.completionRate}%`,
-              change: {
-                value: `${data && data?.monthlyChange >= 0 ? '+' : ''}${data?.monthlyChange}% so với tháng trước`,
-                isPositive: data && data?.monthlyChange >= 0 || false
-              },
               icon: Eye
-            },
-            {
-              title: "Lượt Học Tháng",
-              value: `${data && (data?.monthlyLearns / 1000).toFixed(1)}K`,
-              change: {
-                value: `+${Math.floor(Math.random() * 15) + 5}%`,
-                isPositive: true
-              },
-              icon: TrendingUp
             }
           ]);
         })
@@ -109,7 +84,7 @@ export default function ListeningHeader({ callback }: props) {
       {loading ? (
         <ListeningStatsSkeleton />
       ) : (
-        <StatsGrid stats={stats} />
+        <StatsGrid stats={stats} columns={3}/>
       )}
     </header>
   );

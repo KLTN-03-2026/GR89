@@ -6,7 +6,7 @@ import {
   exportVocabularyExcel,
 } from "@/features/vocabulary/services/api";
 import { VocabularySheetImport } from "@/features/vocabulary/components/VocabularySheetImport";
-import { BookOpen, Users, Eye, TrendingUp, LucideIcon, Download } from "lucide-react";
+import { BookOpen, Users, TrendingUp, LucideIcon, Download } from "lucide-react";
 import { VocabularyStatsSkeleton } from "@/components/common/Skeletons/VocabularyStatsSkeleton";
 import { SheetAddVocabularyTopic } from '../../dialog';
 
@@ -17,10 +17,6 @@ interface props {
 interface IStatsOverviewProps {
   title: string;
   value: string;
-  change: {
-    value: string;
-    isPositive: boolean;
-  };
   icon: LucideIcon;
 }
 
@@ -38,37 +34,16 @@ export default function VocabularyTopicHeader({ callback }: props) {
             {
               title: "Tổng Danh Mục",
               value: data?.totalTopics?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 5) + 1} so với tháng trước`,
-                isPositive: true
-              },
               icon: BookOpen
             },
             {
               title: "Tổng Từ Vựng",
               value: data?.totalWords?.toString() || '0',
-              change: {
-                value: `+${Math.floor(Math.random() * 100) + 50} so với tháng trước`,
-                isPositive: true
-              },
               icon: Users
-            },
-            {
-              title: "Lượt Học Tháng",
-              value: `${data && (data?.monthlyLearns / 1000).toFixed(1)}K`,
-              change: {
-                value: `${data && data?.monthlyChange >= 0 ? '+' : ''}${data?.monthlyChange}% so với tháng trước`,
-                isPositive: data && data?.monthlyChange >= 0 || false
-              },
-              icon: Eye
             },
             {
               title: "Tỷ Lệ Hoàn Thành",
               value: `${data && data?.completionRate}%`,
-              change: {
-                value: `+${Math.floor(Math.random() * 5) + 1}% so với tháng trước`,
-                isPositive: true
-              },
               icon: TrendingUp
             }
           ]);
@@ -113,7 +88,7 @@ export default function VocabularyTopicHeader({ callback }: props) {
       {loading ? (
         <VocabularyStatsSkeleton />
       ) : (
-        <StatsGrid stats={stats} />
+        <StatsGrid stats={stats} columns={3}/>
       )}
     </header>
   );
