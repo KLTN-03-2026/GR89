@@ -73,6 +73,13 @@ export function SpeakingLessonPage({ speaking }: SpeakingLessonPageInternalProps
       })
   }
 
+  const handleReplay = () => {
+    setSentenceResults(prevResults => prevResults.map((result, index) => ({
+      ...result,
+      words: index === currentSubtitleIndex ? [] : result.words
+    })))
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-4">
       <LessonVideoSection
@@ -99,6 +106,7 @@ export function SpeakingLessonPage({ speaking }: SpeakingLessonPageInternalProps
         setSentenceResults={setSentenceResults}
         setCurrentSubtitleIndex={setCurrentSubtitleIndex}
         submit={handleSubmit}
+        handleReplay={handleReplay}
         isSubmittingAll={isSubmittingAll}
       />
 

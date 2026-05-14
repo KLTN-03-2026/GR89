@@ -108,6 +108,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     onError: error => console.log(error)
   })
 
+  const clearLocalUserData = () => {
+    try {
+      localStorage.removeItem('user')
+      localStorage.removeItem('userData')
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('grammar_progress_') || key.startsWith('grammar_progess_')) {
+          localStorage.removeItem(key)
+        }
+      }
+    } catch {
+    }
+  }
+
   const logoutUser = async () => {
     setIsLoading(true)
     await logout()
@@ -115,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         router.push('/')
         setUser(null)
         localStorage.removeItem('user')
+        clearLocalUserData()
         toast.success('Đăng xuất thành công')
       })
       .finally(() => {

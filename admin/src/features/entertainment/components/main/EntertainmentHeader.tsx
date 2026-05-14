@@ -95,28 +95,16 @@ export default function EntertainmentHeader({ callback, type, parentId }: Props)
         {
           title: 'Tổng số người xem',
           value: '0',
-          change: {
-            value: `+0 trong tháng này`,
-            isPositive: true
-          },
           icon: Users
         },
         {
           title: 'Tỉ lệ hoàn thành',
           value: '0%',
-          change: {
-            value: `+0% so với tháng trước`,
-            isPositive: true
-          },
           icon: Eye
         },
         {
           title: 'Lượt xem tháng',
           value: '0',
-          change: {
-            value: `+0%`,
-            isPositive: true
-          },
           icon: TrendingUp
         }
       ])
@@ -136,7 +124,7 @@ export default function EntertainmentHeader({ callback, type, parentId }: Props)
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 shadow-sm transition-all"
               onClick={async () => {
                 try {
-                  const blob = await exportEntertainmentExcel(type as any)
+                  const blob = await exportEntertainmentExcel(type as 'movie' | 'music' | 'podcast')
                   const url = URL.createObjectURL(blob)
                   const a = document.createElement('a')
                   a.href = url
@@ -153,7 +141,7 @@ export default function EntertainmentHeader({ callback, type, parentId }: Props)
             </button>
           )}
 
-          {!parentId && <EntertainmentSheetImport callback={callback} type={type as any} />}
+          {!parentId && <EntertainmentSheetImport callback={callback} type={type as 'movie' | 'music' | 'podcast'} />}
 
           <SheetAddEntertainment callback={callback} defaultType={type} parentId={parentId} lockType={!!parentId} />
         </div>

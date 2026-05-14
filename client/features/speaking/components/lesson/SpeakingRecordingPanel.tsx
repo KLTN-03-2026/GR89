@@ -19,6 +19,7 @@ interface SpeakingRecordingPanelProps {
   setSentenceResults: Dispatch<SetStateAction<SentenceEvaluation[]>>
   setCurrentSubtitleIndex: (index: number | ((prev: number) => number)) => void
   submit: () => void
+  handleReplay: () => void
   isSubmittingAll: boolean
 }
 
@@ -31,6 +32,7 @@ export function SpeakingRecordingPanel({
   setSentenceResults,
   setCurrentSubtitleIndex,
   submit,
+  handleReplay,
   isSubmittingAll
 }: SpeakingRecordingPanelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -75,6 +77,8 @@ export function SpeakingRecordingPanel({
   // Hàm làm lại câu học
   const handleRetryAssessment = () => {
     setLocalAudioBlob(null)
+    handleReplay()
+    setIsSubmitting(false)
   }
 
   // Hàm nghe lại giọng của bạn

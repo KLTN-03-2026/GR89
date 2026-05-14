@@ -1,7 +1,7 @@
 'use client'
 
 import { SheetImport } from '@/components/common/sheetImport'
-import { importEntertainmentJson } from '../../services/api'
+import { Entertainment, importEntertainmentJson } from '../../services/api'
 import { buildExcelTemplateWorkbook, buildJsonTemplateData } from './templates'
 import { parseExcelToEntertainmentJson, validateEntertainmentImportJson } from './validateEntertainmentImport'
 import * as XLSX from 'xlsx'
@@ -41,7 +41,7 @@ export function EntertainmentSheetImport({ callback, type }: { callback?: () => 
       validateAfterReadJson={validateEntertainmentImportJson}
       validateAfterReadExcel={parseExcelToEntertainmentJson}
       onImport={async (payload: SheetImportOnImportPayload) => {
-        const res = await importEntertainmentJson(payload.jsonRoot, payload.skipErrors, type)
+        const res = await importEntertainmentJson(payload.jsonRoot as Entertainment[], payload.skipErrors, type)
 
         type ImportResponse = {
           success: boolean

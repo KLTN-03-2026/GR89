@@ -1,70 +1,78 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import AudioCard from './AudioCard';
 import { DialogAddAudio } from '@/components/common';
 import { Media } from '@/features/Media/types';
-import { getMediaList } from '@/features/Media/services/api';
-import { MediaAudioSkeletonGrid } from './MediaAudioSkeleton';
-import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-export function ListMediaAudio() {
-  const [audioes, setAudioes] = useState<Media[]>([])
-  const [refresh, setRefresh] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(12)
-  const [pages, setPages] = useState(0)
-  const [total, setTotal] = useState(0)
+interface Props {
+  initialData: Media[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
+}
 
-  useEffect(() => {
-    const fetchMedia = async (nextPage = page, nextLimit = limit) => {
-      setIsLoading(true)
-      await getMediaList({ page: nextPage, limit: nextLimit, type: 'audio', sortBy: 'createdAt', sortOrder: 'desc' })
-        .then((res) => {
-          setAudioes(res.data?.filter(item => item.type === 'audio') as Media[])
-          setPage(res.pagination.page || nextPage)
-          setPages(res.pagination.pages || 0)
-          setTotal(res.pagination.total || 0)
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
+const ALLOWED_LIMITS = [6, 12, 18, 24, 48, 96] as const
 
-    }
-    fetchMedia()
-  }, [limit, page, refresh])
+export function ListMediaAudio({ initialData, pagination }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  const handlePageChange = async (nextPage: number) => {
+  const [audioes, setAudioes] = useState<Media[]>(initialData)
+
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setAudioes(initialData)
+    setPrevInitialData(initialData)
+  }
+
+  const updateUrl = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '') params.delete(key)
+      else params.set(key, String(value))
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [pathname, router, searchParams])
+
+  const page = pagination.page
+  const limit = pagination.limit
+  const pages = pagination.pages
+  const total = pagination.total
+
+  const handlePageChange = (nextPage: number) => {
     if (nextPage < 1) return
     if (pages && nextPage > pages) return
-    setPage(nextPage)
-    setIsLoading(true)
-    try {
-      const res = await getMediaList({ page: nextPage, limit, type: 'audio', sortBy: 'createdAt', sortOrder: 'desc' })
-      setAudioes(res.data?.filter(item => item.type === 'audio') as Media[])
-      setPage(res.pagination.page || nextPage)
-      setPages(res.pagination.pages || pages)
-      setTotal(res.pagination.total || total)
-    } catch {
-      toast.error('Không thể tải danh sách audio')
-    } finally {
-      setIsLoading(false)
-    }
+    updateUrl({ page: nextPage })
   }
 
   const handleLimitChange = (nextLimit: number) => {
-    setLimit(nextLimit)
-    handlePageChange(1)
+    const safeLimit = (ALLOWED_LIMITS as readonly number[]).includes(nextLimit) ? nextLimit as typeof ALLOWED_LIMITS[number] : 12
+    updateUrl({ limit: safeLimit, page: 1 })
   }
 
   const onMeta = (id: string, duration?: number) => {
     if (!duration || isNaN(duration)) return
     setAudioes(prev => prev.map(a => a._id === id ? { ...a, duration: Math.round(duration) } : a))
   }
+
+  useEffect(() => {
+    if (!(ALLOWED_LIMITS as readonly number[]).includes(limit)) {
+      updateUrl({ limit: 12, page: 1 })
+    }
+  }, [limit, updateUrl])
 
   return (
     <div className="space-y-6">
@@ -84,7 +92,7 @@ export function ListMediaAudio() {
                 value={limit}
                 onChange={(e) => handleLimitChange(Number(e.target.value))}
               >
-                {[6, 12, 18, 24, 48, 96].map(size => (
+                {ALLOWED_LIMITS.map(size => (
                   <option key={size} value={size}>{size} / trang</option>
                 ))}
               </select>
@@ -101,17 +109,15 @@ export function ListMediaAudio() {
           </div>
 
           <div className="grid max-h-xs grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6 items-stretch">
-            <DialogAddAudio callback={() => setRefresh(!refresh)} />
-            {isLoading ? (
-              <MediaAudioSkeletonGrid count={6} />
-            ) : audioes.length > 0 ? (
+            <DialogAddAudio callback={() => router.refresh()} />
+            {audioes.length > 0 ? (
               audioes.map(a => (
                 <AudioCard
                   onLoading={() => { }}
                   key={a._id}
                   item={a}
                   onMeta={(d) => onMeta(a._id, d)}
-                  callback={() => setRefresh(!refresh)}
+                  callback={() => router.refresh()}
                 />
               ))
             ) : (

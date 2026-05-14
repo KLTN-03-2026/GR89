@@ -2,66 +2,67 @@
 import { DialogAddImageCard, DialogImageData } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { deleteMedias, getMediaList } from '@/features/Media/services/api';
+import { deleteMedias } from '@/features/Media/services/api';
 import { Media } from '@/features/Media/types';
 import { Check, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-toastify';
-import { MediaImageSkeletonGrid } from './MediaImageSkeleton';
 
-const parsePositiveInt = (value: string | null, fallback: number) => {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed) || parsed < 1) return fallback
-  return Math.floor(parsed)
+const ALLOWED_LIMITS = [6, 12, 18, 24, 48, 96] as const
+
+interface Props {
+  initialData: Media[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
 }
 
-export function ListMediaImage() {
+export function ListMediaImage({ initialData, pagination }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const queryPage = parsePositiveInt(searchParams.get('page'), 1)
-  const queryLimit = parsePositiveInt(searchParams.get('limit'), 12)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [preview, setPreview] = useState<Media | null>(null)
-  const [images, setImages] = useState<Media[]>([])
-  const [refresh, setRefresh] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
+  const [images, setImages] = useState<Media[]>(initialData)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [page, setPage] = useState(queryPage)
-  const [limit, setLimit] = useState(queryLimit)
-  const [pages, setPages] = useState(0)
-  const [total, setTotal] = useState(0)
 
-  const updateQuery = useCallback((nextPage: number, nextLimit: number) => {
+  const page = pagination.page
+  const limit = pagination.limit
+  const pages = pagination.pages
+  const total = pagination.total
+
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setImages(initialData)
+    setPrevInitialData(initialData)
+    setSelectedIds(new Set())
+    setPreview(null)
+  }
+
+  const updateUrl = useCallback((updates: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('page', String(nextPage))
-    params.set('limit', String(nextLimit))
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '') params.delete(key)
+      else params.set(key, String(value))
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }, [pathname, router, searchParams])
 
-  const fetchMedia = useCallback(async (nextPage: number, nextLimit: number) => {
-    setIsLoading(true)
-    await getMediaList({ page: nextPage, limit: nextLimit, type: 'image', sortBy: 'createdAt', sortOrder: 'desc' })
-      .then(res => {
-        setImages(res.data?.filter(item => item.type === 'image') as Media[])
-        setPages(res.pagination.pages || 0)
-        setTotal(res.pagination.total || 0)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
-  }, [])
-
   useEffect(() => {
-    if (queryPage !== page) setPage(queryPage)
-    if (queryLimit !== limit) setLimit(queryLimit)
-  }, [queryPage, queryLimit, page, limit])
-
-  useEffect(() => {
-    fetchMedia(page, limit)
-  }, [fetchMedia, page, limit, refresh])
+    const rawLimit = Number(searchParams.get('limit') || limit)
+    if (!ALLOWED_LIMITS.includes(rawLimit as any)) {
+      updateUrl({ limit: 12, page: 1 })
+    }
+  }, [limit, searchParams, updateUrl])
 
   const toggleSelect = (image: Media) => {
     setSelectedIds(prev => {
@@ -126,11 +127,9 @@ export function ListMediaImage() {
 
       // Nếu trang hiện tại trống sau khi xóa, lùi về trang trước; nếu không thì reload trang hiện tại
       if (nextImages.length === 0 && page > 1) {
-        const prevPage = page - 1
-        setPage(prevPage)
-        updateQuery(prevPage, limit)
+        updateUrl({ page: page - 1 })
       } else {
-        fetchMedia(page, limit)
+        router.refresh()
       }
     } catch (error) {
       console.error('[MediaImages] delete selected error', error)
@@ -141,18 +140,15 @@ export function ListMediaImage() {
   }
 
   const handlePageChange = async (nextPage: number) => {
-    if (isLoading) return
     if (nextPage < 1) return
     const maxPage = pages > 0 ? pages : Math.max(1, Math.ceil(total / limit))
     if (nextPage > maxPage) return
-    setPage(nextPage)
-    updateQuery(nextPage, limit)
+    updateUrl({ page: nextPage })
   }
 
   const handleLimitChange = (nextLimit: number) => {
-    setLimit(nextLimit)
-    setPage(1)
-    updateQuery(1, nextLimit)
+    const safeLimit = ALLOWED_LIMITS.includes(nextLimit as any) ? nextLimit : 12
+    updateUrl({ limit: safeLimit, page: 1 })
   }
 
   return (
@@ -194,19 +190,19 @@ export function ListMediaImage() {
               value={limit}
               onChange={(e) => handleLimitChange(Number(e.target.value))}
             >
-              {[6, 12, 18, 24, 48, 96].map(size => (
+              {ALLOWED_LIMITS.map(size => (
                 <option key={size} value={size}>{size} / trang</option>
               ))}
             </select>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page <= 1 || isLoading}>
+              <Button variant="outline" size="sm" onClick={() => handlePageChange(page - 1)} disabled={page <= 1}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <span className="text-sm">Trang {page} / {pages || 1}</span>
               <Button
                 variant="outline" size="sm"
-                onClick={() => !isLoading && handlePageChange(page + 1)}
-                disabled={page >= (pages > 0 ? pages : Math.max(1, Math.ceil(total / limit))) || isLoading}
+                onClick={() => handlePageChange(page + 1)}
+                disabled={page >= (pages > 0 ? pages : Math.max(1, Math.ceil(total / limit)))}
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
@@ -215,10 +211,8 @@ export function ListMediaImage() {
         </div>
 
         <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
-          <DialogAddImageCard onLoad={() => setRefresh(!refresh)} />
-          {isLoading ? (
-            <MediaImageSkeletonGrid count={12} />
-          ) : images && images.length > 0 ? (
+          <DialogAddImageCard onLoad={() => router.refresh()} />
+          {images && images.length > 0 ? (
             images.map(img => (
               <div
                 key={img._id}

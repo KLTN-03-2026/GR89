@@ -23,7 +23,7 @@ export default function DictationInput({ inputText, setInputText, handleKeyDown,
         value={inputText}
         onChange={e => setInputText(e.target.value)}
         onKeyDown={handleKeyDown}
-        onPaste={e => e.preventDefault()}
+        // onPaste={e => e.preventDefault()}
         autoComplete="off"
         spellCheck={false}
         disabled={isCompleted}

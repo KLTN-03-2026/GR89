@@ -1,69 +1,78 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import VideoCard from './VideoCard'
 import { DialogAddVideo } from '@/components/common'
 import { Media } from '@/features/Media/types';
-import { getMediaList } from '@/features/Media/services/api'
-import { MediaVideoSkeletonGrid } from './MediaVideoSkeleton'
-import { toast } from 'react-toastify'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-export function ListMediaVideo() {
-  const [videos, setVideoes] = useState<Media[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(12)
-  const [pages, setPages] = useState(0)
-  const [total, setTotal] = useState(0)
+interface Props {
+  initialData: Media[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+    hasNext: boolean
+    hasPrev: boolean
+    next: number | null
+    prev: number | null
+  }
+}
 
-  useEffect(() => {
-    const fetchMedia = async (nextPage = page, nextLimit = limit) => {
-      setIsLoading(true)
-      await getMediaList({ page: nextPage, limit: nextLimit, type: 'video', sortBy: 'createdAt', sortOrder: 'desc' })
-        .then((res) => {
-          setVideoes(res.data?.filter(item => item.type === 'video') as Media[])
-          setPage(res.pagination.page || nextPage)
-          setPages(res.pagination.pages || 0)
-          setTotal(res.pagination.total || 0)
-        })
-        .finally(() => {
-          setIsLoading(false)
-        })
-    }
-    fetchMedia()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+const ALLOWED_LIMITS = [6, 12, 18, 24, 48, 96] as const
 
-  const handlePageChange = async (nextPage: number) => {
+export function ListMediaVideo({ initialData, pagination }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const [videos, setVideoes] = useState<Media[]>(initialData)
+
+  const [prevInitialData, setPrevInitialData] = useState(initialData)
+  if (initialData !== prevInitialData) {
+    setVideoes(initialData)
+    setPrevInitialData(initialData)
+  }
+
+  const updateUrl = useCallback((updates: Record<string, string | number | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === '') params.delete(key)
+      else params.set(key, String(value))
+    })
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [pathname, router, searchParams])
+
+  const page = pagination.page
+  const limit = pagination.limit
+  const pages = pagination.pages
+  const total = pagination.total
+
+  const handlePageChange = (nextPage: number) => {
     if (nextPage < 1) return
     if (pages && nextPage > pages) return
-    setPage(nextPage)
-    setIsLoading(true)
-    try {
-      const res = await getMediaList({ page: nextPage, limit, type: 'video', sortBy: 'createdAt', sortOrder: 'desc' })
-      setVideoes(res.data?.filter(item => item.type === 'video') as Media[])
-      setPage(res.pagination.page || nextPage)
-      setPages(res.pagination.pages || pages)
-      setTotal(res.pagination.total || total)
-    } catch {
-      toast.error('Không thể tải danh sách video')
-    } finally {
-      setIsLoading(false)
-    }
+    updateUrl({ page: nextPage })
   }
 
   const handleLimitChange = (nextLimit: number) => {
-    setLimit(nextLimit)
-    handlePageChange(1)
+    const safeLimit = ALLOWED_LIMITS.includes(nextLimit as any) ? nextLimit : 12
+    updateUrl({ limit: safeLimit, page: 1 })
   }
 
   const onMeta = (id: string, duration?: number) => {
     if (!duration || isNaN(duration)) return
     setVideoes(prev => prev.map(v => v._id === id ? { ...v, duration: Math.round(duration) } : v))
   }
+
+  useEffect(() => {
+    if (!ALLOWED_LIMITS.includes(limit as any)) {
+      updateUrl({ limit: 12, page: 1 })
+    }
+  }, [limit, updateUrl])
 
   return (
     <div className="space-y-6">
@@ -83,7 +92,7 @@ export function ListMediaVideo() {
                 value={limit}
                 onChange={(e) => handleLimitChange(Number(e.target.value))}
               >
-                {[6, 12, 18, 24, 48, 96].map(size => (
+                {ALLOWED_LIMITS.map(size => (
                   <option key={size} value={size}>{size} / trang</option>
                 ))}
               </select>
@@ -99,11 +108,9 @@ export function ListMediaVideo() {
             </div>
           </div>
 
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 items-stretch min-h-[400px]">
-            <DialogAddVideo />
-            {isLoading ? (
-              <MediaVideoSkeletonGrid count={8} />
-            ) : videos.filter(v => v.type === 'video').length > 0 ? (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 items-stretch min-h-100">
+            <DialogAddVideo onLoad={() => router.refresh()} />
+            {videos.filter(v => v.type === 'video').length > 0 ? (
               videos.filter(v => v.type === 'video').map(v => (
                 <VideoCard
                   key={v._id}

@@ -110,7 +110,7 @@ export function PaymentsMain({
       search: urlSearch,
       sortBy: urlSortBy,
       sortOrder: urlSortOrder,
-      status: urlStatus as 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled',
+      status: urlProvider !== "all" ? urlStatus as 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled' : undefined,
       provider: urlProvider !== "all" ? urlProvider as 'vnpay' | 'momo' | 'stripe' | 'paypal' : undefined,
     })
   }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlStatus, urlProvider, fetchPayments])
