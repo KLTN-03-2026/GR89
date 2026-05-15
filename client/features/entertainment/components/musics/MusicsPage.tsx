@@ -27,7 +27,6 @@ export function MusicsPage({ musicStats, items }: MusicsPageProps) {
   const streakCard: IStreakCardProps = {
     icon: "🎵",
     title: "Bài hát đã nghe",
-    value: listenedTracks,
     valueText: `${listenedTracks} bài`,
     progress: totalTracks > 0 ? Math.min(100, completion) : 0,
     progressDescription: totalTracks > 0 ? `Mục tiêu: ${totalTracks} bài` : 'Thêm bài hát để bắt đầu',

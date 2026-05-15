@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DataTable, PageHeader } from '@/components/common'
 import { useRouter } from 'next/navigation'
-import { getListeningQuizzes, type ListeningQuizDoc } from '@/features/listening/services/api'
+import { type ListeningQuizDoc } from '@/features/listening/services/api'
 import type { Listening } from '@/features/listening/types'
 import { columnsListeningQuizDetail, type ListeningQuizRow } from '../../table/listening-quiz-detail/Columns'
 import { SheetListeningQuiz } from '@/features/listening/components/dialog/SheetListeningQuiz'
@@ -22,7 +22,6 @@ export function ListeningQuizDetailMain({ _id, initialListening, initialQuizzes 
   const router = useRouter()
   const [listening, setListening] = useState<Listening | null>(initialListening)
   const [quizzes, setQuizzes] = useState<ListeningQuizDoc[]>(initialQuizzes)
-  const [loading, setLoading] = useState(false)
   const [openAdd, setOpenAdd] = useState(false)
 
   // Syncing state with props
@@ -68,13 +67,12 @@ export function ListeningQuizDetailMain({ _id, initialListening, initialQuizzes 
 
       <Card>
         <CardContent className="pt-6">
-          {!listening && !loading ? (
+          {!listening ? (
             <p className="text-sm text-muted-foreground text-center py-8">Không tìm thấy bài nghe.</p>
           ) : (
             <DataTable
               columns={columnsListeningQuizDetail(_id, () => router.refresh())}
               data={rows}
-              isLoading={loading}
               columnNameSearch="question"
             />
           )}
@@ -92,7 +90,7 @@ export function ListeningQuizDetailMain({ _id, initialListening, initialQuizzes 
         />
       )}
 
-      {listening && rows.length === 0 && !loading && (
+      {listening && rows.length === 0 && (
         <p className="text-sm text-muted-foreground flex items-center gap-2 mt-4">
           <ListChecks className="h-4 w-4" />
           Chưa có câu quiz. Nhấn &quot;Thêm câu hỏi&quot; để tạo câu trắc nghiệm cho bước nghe ý chính.

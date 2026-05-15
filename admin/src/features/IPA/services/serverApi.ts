@@ -30,7 +30,7 @@ export async function getIpaServer(params?: IPAQueryParams): Promise<{
   if (params?.isActive !== undefined) queryParams.append('isActive', String(params.isActive))
 
   const url = `/ipa?${queryParams.toString()}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<Ipa[]>(url)
 
   return {
     data: response.data || [],
@@ -49,6 +49,6 @@ export async function getIpaServer(params?: IPAQueryParams): Promise<{
 
 export async function getIpaByIdServer(id: string): Promise<Ipa | null> {
   const url = `/ipa/${id}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<Ipa>(url)
   return response.data || null
 }

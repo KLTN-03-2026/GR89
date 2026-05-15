@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, RotateCcw, Volume2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { playAudio } from "@/libs/utils"
-import { VocabularyTopics } from "@/types/vocabulary"
+import { VocabularyTopics } from "@/features/vocabulary/types"
 
 interface VocabularyLearningProps {
   topic: VocabularyTopics

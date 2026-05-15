@@ -52,8 +52,8 @@ export type FileSubmit = {
   skipErrors: boolean
 }
 
-export type SheetImportOnImportPayload = FileSubmit & {
-  jsonRoot: unknown[],
+export type SheetImportOnImportPayload<T> = FileSubmit & {
+  jsonRoot: T[],
   file: File | null
 }
 
@@ -72,7 +72,7 @@ export type SheetImportValidateResult = ParseResult
  * Props của <SheetImport />. Mỗi feature (Listening, Vocabulary, …) chỉ cần
  * truyền title, gợi ý template, và hàm onImport trỏ tới API import tương ứng.
  */
-export type SheetImportProps = {
+export type SheetImportProps<T> = {
   title: string
   description?: string
   triggerLabel?: string
@@ -93,7 +93,7 @@ export type SheetImportProps = {
    * 2) JSON-driven: ({ file, fileType, jsonRoot, skipErrors })
    */
   onImport?:
-  | ((payload: SheetImportOnImportPayload) => Promise<SheetImportResult>)
+  | ((payload: SheetImportOnImportPayload<T>) => Promise<SheetImportResult>)
   | ((file: File, skipErrors: boolean) => Promise<SheetImportResult>)
   /** Callback (legacy) - SheetImport hiện chưa dùng, nhưng giữ để tránh TS lỗi khi feature truyền vào. */
   onImported?: (result: SheetImportResult) => void

@@ -1,25 +1,13 @@
 import 'server-only'
-import { fetchServer } from '@/lib/apis/fetch-server'
-import { ListeningQueryParams } from './api'
+import { ApiResponse, fetchServer } from '@/lib/apis/fetch-server'
+import { ListeningQueryParams, ListeningQuizDoc } from './api'
 import { Listening } from '../types'
 
 /*=============================================================================
  * DANH SÁCH API SERVER-SIDE CHO LISTENING
  *============================================================================*/
 
-export async function getListeningListServer(params?: ListeningQueryParams): Promise<{
-  data: Listening[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    pages: number
-    hasNext: boolean
-    hasPrev: boolean
-    next: number | null
-    prev: number | null
-  }
-}> {
+export async function getListeningListServer(params?: ListeningQueryParams): Promise<ApiResponse<Listening[]>> {
   const queryParams = new URLSearchParams()
   if (params?.page != null) queryParams.append('page', String(params.page))
   if (params?.limit != null) queryParams.append('limit', String(params.limit))
@@ -29,31 +17,19 @@ export async function getListeningListServer(params?: ListeningQueryParams): Pro
   if (params?.isActive !== undefined) queryParams.append('isActive', String(params.isActive))
 
   const url = `/listening?${queryParams.toString()}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<Listening[]>(url)
 
-  return {
-    data: response.data || [],
-    pagination: response.pagination || {
-      page: 1,
-      limit: 10,
-      total: 0,
-      pages: 0,
-      hasNext: false,
-      hasPrev: false,
-      next: null,
-      prev: null
-    }
-  }
+  return response as ApiResponse<Listening[]>
 }
 
 export async function getListeningByIdServer(id: string): Promise<Listening | null> {
   const url = `/listening/${id}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<Listening>(url)
   return response.data || null
 }
 
-export async function getListeningQuizzesServer(id: string): Promise<any[]> {
+export async function getListeningQuizzesServer(id: string): Promise<ListeningQuizDoc[]> {
   const url = `/listening-quiz/admin/${id}`
-  const response = await fetchServer<any>(url)
+  const response = await fetchServer<ListeningQuizDoc[]>(url)
   return response.data || []
 }

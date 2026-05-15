@@ -61,7 +61,6 @@ export function ListeningMain({ initialData, pagination }: ListeningMainProps) {
   const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
-  const [isLoading, setIsLoading] = useState(false)
   const [items, setItems] = useState<Listening[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
@@ -97,7 +96,7 @@ export function ListeningMain({ initialData, pagination }: ListeningMainProps) {
     if (urlSearch !== search) {
       setSearch(urlSearch)
     }
-  }, [urlSearch])
+  }, [search, urlSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -288,7 +287,6 @@ export function ListeningMain({ initialData, pagination }: ListeningMainProps) {
           <DataTable
             columns={columnsListening(() => router.refresh(), items, handleSwapOrder)}
             data={items}
-            isLoading={isLoading}
             columnNameSearch="Tiêu đề bài nghe"
             handleDeleteMultiple={handleDeleteMultipleListening}
             handlePublishMultiple={handlePublishMany}

@@ -1,7 +1,7 @@
 'use client'
 
 import { SheetImport } from '@/components/common/sheetImport'
-import { exportReadingExcel, importReadingJson } from '@/features/reading/services/api'
+import { importReadingJson } from '@/features/reading/services/api'
 import { buildExcelTemplateWorkbook, buildJsonTemplateData } from './templates'
 import { parseExcelToReadingJson, validateReadingImportJson } from './validateReadingImport'
 import * as XLSX from 'xlsx'
@@ -40,8 +40,8 @@ export function ReadingSheetImport({ callback }: { callback?: () => void }) {
       }}
       validateAfterReadJson={validateReadingImportJson}
       validateAfterReadExcel={parseExcelToReadingJson}
-      onImport={async (payload: SheetImportOnImportPayload) => {
-        const res = await importReadingJson(payload.jsonRoot as Reading[], payload.skipErrors)
+      onImport={async (payload: SheetImportOnImportPayload<Reading>) => {
+        const res = await importReadingJson(payload.jsonRoot, payload.skipErrors)
 
         type ImportResponse = {
           success: boolean

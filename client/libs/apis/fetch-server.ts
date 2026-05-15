@@ -5,7 +5,8 @@ import { cookies } from 'next/headers'
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 export async function fetchServer<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
-  const cookieStore = await cookies()
+  try {
+const cookieStore = await cookies()
 
   //nếu backend dùng cookie session, bạn cần lấy toàn bộ chuỗi cookie
   const cookieString = cookieStore.toString()
@@ -30,4 +31,7 @@ export async function fetchServer<T = unknown>(path: string, options: RequestIni
   }
 
   return data.data as T
+  }catch (error) {
+    throw error
+  }
 }

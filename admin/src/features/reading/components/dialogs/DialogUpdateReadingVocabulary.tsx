@@ -46,8 +46,8 @@ export function DialogUpdateReadingVocabulary({ readingId, vocab, callback }: Pr
       toast.success('Cập nhật từ vựng thành công')
       callback()
       setOpen(false)
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Cập nhật từ vựng thất bại')
+    } catch  {
+      console.error('Cập nhật từ vựng thất bại')
     } finally {
       setIsLoading(false)
     }

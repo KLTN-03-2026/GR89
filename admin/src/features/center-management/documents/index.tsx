@@ -94,7 +94,7 @@ export default function DocumentsMain({ initialData, pagination }: DocumentsMain
       toast.success('Xóa tài liệu thành công')
       handleRefresh()
       setDeleteConfirm({ open: false, id: null })
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi xóa tài liệu')
     }
   }
@@ -136,7 +136,7 @@ export default function DocumentsMain({ initialData, pagination }: DocumentsMain
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm(prev => ({ ...prev, open }))}
       >
-        <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl p-8">
+        <AlertDialogContent className="rounded-4xl border-none shadow-2xl p-8">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-black text-gray-900">Xác nhận xóa tài liệu?</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-500 font-medium text-base">
@@ -179,7 +179,7 @@ export default function DocumentsMain({ initialData, pagination }: DocumentsMain
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <DocumentFilters />
-          <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-1.5 border border-gray-200/50 shadow-inner flex-shrink-0">
+          <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-1.5 border border-gray-200/50 shadow-inner shrink-0">
             <Button
               size="sm"
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -218,7 +218,7 @@ export default function DocumentsMain({ initialData, pagination }: DocumentsMain
             ))}
           </div>
         ) : (
-          <Card className="rounded-[2rem] border-zinc-100 shadow-xl overflow-hidden bg-white">
+          <Card className="rounded-4xl border-zinc-100 shadow-xl overflow-hidden bg-white">
             <CardContent className="p-0">
               <DataTable
                 columns={columnsDocument(handleRefresh)}

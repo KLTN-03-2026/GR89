@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { DataTable } from '@/components/common'
 import { columnsEntertainment } from '@/features/entertainment'
-import { getEntertainmentPaginated, deleteManyEntertainment, updateMultipleEntertainmentStatus } from '../../services/api'
+import { getEntertainmentPaginated, updateMultipleEntertainmentStatus } from '../../services/api'
 import type { Entertainment } from '../../types'
 import { toast } from 'react-toastify'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, Trash2, Eye, EyeOff, Filter, ChevronDown } from 'lucide-react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import FiltersPanel from './FiltersPanel'
+import { deleteManyEntertainment } from '@/lib/apis/api'
 
 // Custom hook for debouncing
 function useDebounce<T>(value: T, delay: number): T {
@@ -97,7 +98,7 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
   const fetchData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const params: any = {
+      const params = {
         page: urlPage,
         limit: urlLimit,
         search: urlSearch || undefined,
@@ -106,7 +107,6 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
         status: urlIsActive,
         type: type === 'series' || type === 'episode' ? undefined : type
       }
-      if (parentId) params.parentId = parentId
 
       const res = await getEntertainmentPaginated(params)
       setItems(res.data || [])
@@ -118,11 +118,10 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
     } finally {
       setIsLoading(false)
     }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, type, parentId])
+  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, type])
 
   useEffect(() => {
     fetchData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchData, refresh])
 
   useEffect(() => {

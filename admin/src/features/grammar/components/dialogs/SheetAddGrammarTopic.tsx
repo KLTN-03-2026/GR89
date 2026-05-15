@@ -15,21 +15,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { 
   Plus, 
-  Book, 
-  Type, 
-  Info, 
-  Layers, 
   Save, 
-  X,
   Loader2,
-  Sparkles,
-  Zap
 } from "lucide-react"
-import { createGrammarTopic } from "../../services/api"
+import { createGrammarTopic, DataCreateGrammarTopic } from "../../services/api"
 import { toast } from "react-toastify"
 
 interface Props {
@@ -39,7 +30,7 @@ interface Props {
 export function SheetAddGrammarTopic({ callback }: Props) {
   const [open, setOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [data, setData] = useState({
+  const [data, setData] = useState<DataCreateGrammarTopic>({
     title: '',
     description: '',
     level: 'A1'
@@ -53,12 +44,12 @@ export function SheetAddGrammarTopic({ callback }: Props) {
 
     setIsLoading(true)
     try {
-      const res = await createGrammarTopic(data as any)
+      const res = await createGrammarTopic(data as DataCreateGrammarTopic)
       toast.success('Đã tạo chủ đề ' + res?.data?.title)
       callback()
       setOpen(false)
       setData({ title: '', description: '', level: 'A1' })
-    } catch (error) {
+    } catch {
       toast.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
@@ -96,7 +87,7 @@ export function SheetAddGrammarTopic({ callback }: Props) {
 
           <div className="space-y-2">
             <Label htmlFor="level-add">Trình độ <span className="text-destructive">*</span></Label>
-            <Select value={data.level} onValueChange={(value) => setData({ ...data, level: value })}>
+            <Select value={data.level} onValueChange={(value) => setData({ ...data, level: value as DataCreateGrammarTopic['level'] })}>
               <SelectTrigger id="level-add">
                 <SelectValue placeholder="Chọn trình độ" />
               </SelectTrigger>

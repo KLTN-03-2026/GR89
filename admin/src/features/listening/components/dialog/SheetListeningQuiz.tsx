@@ -34,7 +34,6 @@ const emptyItem = (): ListeningQuizItem => ({
 })
 
 export function SheetListeningQuiz({
-  listening,
   listeningId,
   open,
   onOpenChange,

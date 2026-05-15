@@ -27,7 +27,6 @@ export function PodcastsPage({ podcastStats, items }: PodcastsPageProps) {
   const streakCard: IStreakCardProps = {
     icon: "🎙️",
     title: "Tập đã nghe",
-    value: listenedEpisodes,
     valueText: `${listenedEpisodes} tập`,
     progress: totalEpisodes > 0 ? Math.min(100, completion) : 0,
     progressDescription: totalEpisodes > 0 ? `Tổng ${totalEpisodes} tập` : 'Chưa có dữ liệu',

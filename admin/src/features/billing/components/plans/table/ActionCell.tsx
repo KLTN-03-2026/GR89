@@ -37,7 +37,7 @@ export default function ActionCell({ plan, callback }: ActionCellProps) {
     <>
       <SheetUpdatePlan
         callback={callback}
-        plan={plan as any}
+        plan={plan as PlanRow}
         open={isOpenUpdatePlan}
         setOpen={setIsOpenUpdatePlan}
       />

@@ -1,8 +1,8 @@
 'use client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import CardWritingTopic from "./CardWritingTopic";
-import { writingTopics } from "@/types";
 import { PenSquare } from "lucide-react";
+import { writingTopics } from "@/features/writing/types";
 
 interface WritingTopicProps {
   topics: writingTopics[]

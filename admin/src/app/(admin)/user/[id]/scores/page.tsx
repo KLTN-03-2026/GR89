@@ -2,15 +2,14 @@ import React from 'react'
 import { UserDetailScoresMain } from '@/features/user'
 
 interface PageProps {
-  params: {
-    id: string
-  }
+  params: Promise<{id: string}>
 }
 
-export default function Page({ params }: PageProps) {
+export default async function Page({ params }: PageProps) {
+  const { id } = await params
   return (
     <div className="space-y-4">
-      <UserDetailScoresMain userId={params.id} />
+      <UserDetailScoresMain userId={id} />
     </div>
   )
 }

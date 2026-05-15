@@ -2,7 +2,7 @@
 import { DataTable, PageHeader } from "@/components/common";
 import { SheetAddVocabulary } from "../../dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { columnsVocabulary } from "../../table/vocabulary-words/VocabularyColumn";
 import { VocabularyTopic } from "@/features/vocabulary/types";
 import { deleteManyVocabularies } from "@/features/vocabulary/services/api";
@@ -21,7 +21,6 @@ import { useRouter } from "next/navigation";
 
 export function VocabularyMain({ _id, initialData }: { _id: string, initialData: VocabularyTopic | null }) {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
   const [vocabularyTopic, setVocabularyTopic] = useState<VocabularyTopic | null>(initialData)
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -68,21 +67,20 @@ export function VocabularyMain({ _id, initialData }: { _id: string, initialData:
         <SheetAddVocabulary topicId={_id} callback={() => router.refresh()} />
       </div>
 
-      <Card className="rounded-[2rem] border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
+      <Card className="rounded-4xl border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
         <CardContent className="p-0">
-          {(!vocabularyTopic?.vocabularies || vocabularyTopic.vocabularies.length === 0) && !isLoading ? (
+          {(!vocabularyTopic?.vocabularies || vocabularyTopic.vocabularies.length === 0) ? (
             <div className="text-center py-20 text-gray-500">
               <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 mx-auto mb-4">
                 <Trash2 className="w-8 h-8" />
               </div>
               <p className="text-lg font-bold text-gray-900">Chưa có từ vựng nào</p>
-              <p className="text-sm mt-1">Nhấn "Thêm từ vựng mới" để bắt đầu xây dựng kho tàng.</p>
+              <p className="text-sm mt-1">Nhấn `&quot;`Thêm từ vựng mới`&quot;` để bắt đầu xây dựng kho tàng.</p>
             </div>
           ) : (
             <DataTable
               columns={columnsVocabulary(() => router.refresh())}
               data={vocabularyTopic?.vocabularies || []}
-              isLoading={isLoading}
               columnNameSearch="Từ vựng"
               handleDeleteMultiple={handleDeleteMultiple}
             />
@@ -92,7 +90,7 @@ export function VocabularyMain({ _id, initialData }: { _id: string, initialData:
 
       {/* Dialog xác nhận xóa nhiều */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-        <DialogContent className="rounded-[2rem] border-none shadow-2xl">
+        <DialogContent className="rounded-4xl border-none shadow-2xl">
           <DialogHeader className="pt-8 px-8">
             <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 mb-4 shadow-inner">
               <Trash2 className="w-6 h-6" />
@@ -103,7 +101,7 @@ export function VocabularyMain({ _id, initialData }: { _id: string, initialData:
               Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-[2rem]">
+          <DialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-4xl">
             <Button
               variant="outline"
               onClick={() => {

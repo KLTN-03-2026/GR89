@@ -44,8 +44,8 @@ export function ListeningSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadJson={validateListeningImportJson}
       validateAfterReadExcel={parseExcelToListeningJson}
       defaultSkipErrors={true}
-      onImport={async (payload: SheetImportOnImportPayload): Promise<SheetImportResult> => {
-        const res = await importListeningJson(payload.jsonRoot as Listening[], payload.skipErrors)
+      onImport={async (payload: SheetImportOnImportPayload<Listening>): Promise<SheetImportResult> => {
+        const res = await importListeningJson(payload.jsonRoot, payload.skipErrors)
 
         type ImportListeningJsonResponse = {
           success: boolean

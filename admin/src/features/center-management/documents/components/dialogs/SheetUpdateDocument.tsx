@@ -30,7 +30,7 @@ import {
   updateGlobalDocument,
   CreateGlobalDocumentRequest
 } from '../../services/api'
-import { IDocumentCategory, IGlobalDocument } from '../../type'
+import { IDocumentCategory } from '../../type'
 
 interface SheetUpdateDocumentProps {
   documentId: string | null
@@ -70,7 +70,7 @@ export function SheetUpdateDocument({ documentId, open, onOpenChange, callback }
               content: docRes.data.content
             })
           }
-        } catch (error) {
+        } catch {
           toast.error('Không thể tải dữ liệu')
         } finally {
           setIsLoading(false)
@@ -111,7 +111,7 @@ export function SheetUpdateDocument({ documentId, open, onOpenChange, callback }
       setCategories(prev => [...prev, res.data as IDocumentCategory])
       setFormData(prev => ({ ...prev, category: (res.data as IDocumentCategory)._id }))
       setIsCreatingCategory(false)
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi tạo danh mục')
     } finally {
       setIsLoading(false)
@@ -122,7 +122,7 @@ export function SheetUpdateDocument({ documentId, open, onOpenChange, callback }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[1000px] w-full p-0 flex flex-col h-full border-none shadow-2xl">
+      <SheetContent className="sm:max-w-250 w-full p-0 flex flex-col h-full border-none shadow-2xl">
         <SheetHeader className="p-8 pb-6 bg-blue-50/50 border-b border-blue-100/50 shrink-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
@@ -178,7 +178,7 @@ export function SheetUpdateDocument({ documentId, open, onOpenChange, callback }
                             <ChevronDown className="w-4 h-4 text-gray-400" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-[300px] rounded-2xl p-2 shadow-xl border-gray-50">
+                        <DropdownMenuContent className="w-75 rounded-2xl p-2 shadow-xl border-gray-50">
                           {categories.map((cat) => (
                             <DropdownMenuItem
                               key={cat._id}
@@ -205,7 +205,7 @@ export function SheetUpdateDocument({ documentId, open, onOpenChange, callback }
 
               {/* New Category Input */}
               {isCreatingCategory && (
-                <div className="bg-blue-50/30 flex-1 p-6 rounded-[2rem] border border-blue-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="bg-blue-50/30 flex-1 p-6 rounded-4xl border border-blue-100 animate-in fade-in slide-in-from-top-4 duration-300">
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <Label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-1 mb-2 block">Tạo danh mục mới</Label>
@@ -232,12 +232,12 @@ export function SheetUpdateDocument({ documentId, open, onOpenChange, callback }
               <Separator className="bg-gray-100" />
 
               {/* Content Section */}
-              <div className="space-y-4 flex-1 flex flex-col min-h-[400px]">
+              <div className="space-y-4 flex-1 flex flex-col min-h-100">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Nội dung tài liệu</Label>
                 </div>
 
-                <div className="flex-1 min-h-0 border border-gray-100 rounded-[2rem] overflow-hidden bg-gray-50/30 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                <div className="flex-1 min-h-0 border border-gray-100 rounded-4xl overflow-hidden bg-gray-50/30 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                   <RichEditor
                     value={formData.content || ''}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e || '' }))}

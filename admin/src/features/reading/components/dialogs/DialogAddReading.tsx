@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createReading } from '@/features/reading/services/api'
-import { Plus, BookOpen, FileText, Info, Layers, Image as ImageIcon, CheckCircle2, X, Save, Sparkles } from 'lucide-react'
+import { Plus, BookOpen, FileText, Info, Layers, Image as ImageIcon, CheckCircle2, Save, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { DialogImageToMedia } from '@/components/common'
@@ -14,6 +14,7 @@ import { Media } from "@/features/Media/types";
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { SheetFooter } from '@/components/ui/sheet'
+import { DataReading } from '@/features/reading/types'
 
 
 interface Vocabulary {
@@ -52,7 +53,7 @@ export function DialogAddReading({ callback }: { callback: () => void }) {
     }
 
     try {
-      await createReading(payload as any)
+      await createReading(payload as DataReading)
       callback()
       toast.success('Tạo bài đọc thành công')
       setOpen(false)
@@ -67,8 +68,8 @@ export function DialogAddReading({ callback }: { callback: () => void }) {
         quizzes: [],
         isActive: true
       })
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
+    } catch {
+      console.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
     }
@@ -108,7 +109,7 @@ export function DialogAddReading({ callback }: { callback: () => void }) {
                 <Info className="h-4 w-4" />
                 Thông Tin Cơ Bản
               </div>
-              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5 col-span-2 md:col-span-1">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tiêu đề bài đọc <span className="text-rose-500 text-lg">*</span>
@@ -145,7 +146,7 @@ export function DialogAddReading({ callback }: { callback: () => void }) {
                     placeholder="Nhập mô tả ngắn gọn giúp người dùng biết được nội dung chính của bài đọc..."
                     value={data.description}
                     onChange={(e) => setData({ ...data, description: e.target.value })}
-                    className="bg-white border-gray-200 rounded-2xl focus:ring-primary font-medium px-4 py-3 min-h-[80px] resize-none shadow-sm"
+                    className="bg-white border-gray-200 rounded-2xl focus:ring-primary font-medium px-4 py-3 min-h-20 resize-none shadow-sm"
                   />
                 </div>
               </div>
@@ -157,7 +158,7 @@ export function DialogAddReading({ callback }: { callback: () => void }) {
                 <ImageIcon className="h-4 w-4" />
                 Hình Ảnh Minh Họa
               </div>
-              <div className="p-8 bg-blue-50/30 rounded-[2rem] border border-dashed border-blue-200/50 flex flex-col items-center gap-4 group hover:bg-blue-50 transition-all">
+              <div className="p-8 bg-blue-50/30 rounded-4xl border border-dashed border-blue-200/50 flex flex-col items-center gap-4 group hover:bg-blue-50 transition-all">
                 <DialogImageToMedia onSelect={(img: Media) => setData({ ...data, image: img._id })} />
                 {data.image ? (
                   <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-2xl text-xs font-black shadow-lg shadow-emerald-200 animate-in zoom-in-95">
@@ -189,7 +190,7 @@ export function DialogAddReading({ callback }: { callback: () => void }) {
                     placeholder="Paste English content here..."
                     value={data.paragraphEn}
                     onChange={(e) => setData({ ...data, paragraphEn: e.target.value })}
-                    className="min-h-[200px] bg-white border-gray-200 rounded-3xl focus:ring-amber-500 font-medium px-6 py-5 shadow-sm leading-relaxed text-base"
+                    className="min-h-50 bg-white border-gray-200 rounded-3xl focus:ring-amber-500 font-medium px-6 py-5 shadow-sm leading-relaxed text-base"
                   />
                 </div>
 
@@ -202,7 +203,7 @@ export function DialogAddReading({ callback }: { callback: () => void }) {
                     placeholder="Nhập bản dịch tiếng Việt tương ứng giúp học viên đối chiếu..."
                     value={data.paragraphVi}
                     onChange={(e) => setData({ ...data, paragraphVi: e.target.value })}
-                    className="min-h-[200px] bg-white border-gray-200 rounded-3xl focus:ring-amber-500 font-medium px-6 py-5 shadow-sm leading-relaxed text-base"
+                    className="min-h-50 bg-white border-gray-200 rounded-3xl focus:ring-amber-500 font-medium px-6 py-5 shadow-sm leading-relaxed text-base"
                   />
                 </div>
               </div>

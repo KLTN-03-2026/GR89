@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { DialogAddSpeaking, PageHeader, StatsGrid } from "@/components/common";
-import { Mic, Users, Eye, TrendingUp, LucideIcon, Download } from "lucide-react";
+import { Mic, Users, Eye, LucideIcon, Download } from "lucide-react";
 import { exportSpeakingExcel, SpeakingOverviewStats } from "@/features/speaking/services/api";
 import { SpeakingSheetImport } from '../SpeakingSheetImport'
 

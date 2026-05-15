@@ -20,14 +20,10 @@ import { toast } from 'react-toastify'
 import { 
   CheckCircle2, 
   Search, 
-  BookOpen, 
   Layers, 
-  X, 
   Save, 
   Loader2, 
-  Info,
   Sparkles,
-  Zap,
   Target
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -78,8 +74,8 @@ export function SheetAddLesson({
           toast.error(res.message || 'Không thể tải danh sách bài học')
           setLessons([])
         }
-      } catch (error) {
-        toast.error('Lỗi khi tải dữ liệu bài học')
+      } catch {
+        console.error('Lỗi khi tải dữ liệu bài học')
       } finally {
         setIsFetchingLessons(false)
       }
@@ -104,8 +100,8 @@ export function SheetAddLesson({
       toast.success(res.message || 'Thêm bài học thành công')
       onOpenChange(false)
       onLessonsChange?.()
-    } catch (error) {
-      toast.error('Lỗi khi thêm bài học')
+    } catch {
+      console.error('Lỗi khi thêm bài học')
     } finally {
       setIsLoading(false)
     }
@@ -160,7 +156,7 @@ export function SheetAddLesson({
             </div>
 
             {/* Lessons List area */}
-            <div className="flex-1 bg-gray-50/50 rounded-[2rem] border border-gray-100 overflow-hidden flex flex-col min-h-0">
+            <div className="flex-1 bg-gray-50/50 rounded-4xl border border-gray-100 overflow-hidden flex flex-col min-h-0">
               <ScrollArea className="flex-1 min-h-0">
                 <div className="p-6 space-y-3">
                   {isFetchingLessons ? (

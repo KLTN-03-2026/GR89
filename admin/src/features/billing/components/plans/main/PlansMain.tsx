@@ -122,8 +122,8 @@ export function PlansMain({ initialData, pagination: initialPagination }: PlansM
       sortBy: urlSortBy,
       sortOrder: urlSortOrder,
       isActive: urlIsActive,
-      displayType: urlDisplayType !== "all" ? urlDisplayType as any : undefined,
-      billingCycle: urlBillingCycle !== "all" ? urlBillingCycle as any : undefined,
+      displayType: urlDisplayType !== "all" ? urlDisplayType as "default" | "vip" | "premium" : undefined,
+      billingCycle: urlBillingCycle !== "all" ? urlBillingCycle as "monthly" | "yearly" | "lifetime" : undefined,
     })
   }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, urlDisplayType, urlBillingCycle, fetchPlans, refreshKey])
 
@@ -235,7 +235,7 @@ export function PlansMain({ initialData, pagination: initialPagination }: PlansM
                 >
                   <EyeOff className="w-4 h-4 mr-2" /> Ẩn
                 </Button>
-                <div className="h-4 w-[1px] bg-gray-200 mx-1" />
+                <div className="h-4 w-px bg-gray-200 mx-1" />
                 <span className="text-xs font-black text-gray-400 px-3 uppercase tracking-tighter">Đã chọn {selectedRows.length}</span>
               </div>
             )}
@@ -245,11 +245,11 @@ export function PlansMain({ initialData, pagination: initialPagination }: PlansM
                 placeholder="Tìm tên gói..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-[250px] transition-all font-medium"
+                className="h-11 pl-11 pr-4 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white w-62.5 transition-all font-medium"
               />
             </div>
             <Select value={urlIsActive === undefined ? "all" : urlIsActive ? "active" : "inactive"} onValueChange={(v) => updateUrl({ isActive: v === "all" ? undefined : v === "active", page: 1 })}>
-              <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-40 rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">
@@ -259,7 +259,7 @@ export function PlansMain({ initialData, pagination: initialPagination }: PlansM
               </SelectContent>
             </Select>
             <Select value={urlDisplayType} onValueChange={(v) => updateUrl({ displayType: v, page: 1 })}>
-              <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-40 rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Loại hiển thị" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">
@@ -270,7 +270,7 @@ export function PlansMain({ initialData, pagination: initialPagination }: PlansM
               </SelectContent>
             </Select>
             <Select value={urlBillingCycle} onValueChange={(v) => updateUrl({ billingCycle: v, page: 1 })}>
-              <SelectTrigger className="h-11 w-[160px] rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
+              <SelectTrigger className="h-11 w-40 rounded-xl border-gray-200 bg-gray-50/50 font-bold text-gray-600">
                 <SelectValue placeholder="Chu kỳ" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-gray-100 shadow-xl">

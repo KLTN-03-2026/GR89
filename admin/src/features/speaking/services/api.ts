@@ -182,14 +182,14 @@ export async function exportSpeakingExcel(): Promise<Blob> {
 }
 
 export async function importSpeakingJson(
-  speakings: any[],
+  speakings: Speaking[],
   skipErrors: boolean = false
-): Promise<ApiResponse<any>> {
+): Promise<ApiResponse<Speaking[]>> {
   const response = await AuthorizedAxios.post('/speaking/import-json', {
     speakings,
     skipErrors,
   })
-  return response.data as ApiResponse<any>
+  return response.data as ApiResponse<Speaking[]>
 }
 
 /*=============== SPEAKING STATISTICS ==============*/

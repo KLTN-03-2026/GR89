@@ -27,7 +27,6 @@ export function MoviesPage({ movieStats, items }: MoviesPageProps) {
   const streakCard: IStreakCardProps = {
     icon: "🎬",
     title: "Phim đã xem",
-    value: watchedMovies,
     valueText: `${watchedMovies} bộ`,
     progress: totalMovies > 0 ? Math.min(100, completion) : 0,
     progressDescription: totalMovies > 0 ? `Tổng ${totalMovies} phim` : 'Chưa có dữ liệu',

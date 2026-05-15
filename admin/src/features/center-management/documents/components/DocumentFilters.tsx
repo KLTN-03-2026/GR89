@@ -71,7 +71,6 @@ export function DocumentFilters() {
 
   const clearFilters = () => {
     setSearchValue('')
-    const params = new URLSearchParams()
     router.push(pathname)
   }
 

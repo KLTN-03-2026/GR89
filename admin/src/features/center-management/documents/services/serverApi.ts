@@ -1,7 +1,7 @@
 import 'server-only'
 import { fetchServer } from '@/lib/apis/fetch-server'
 import { DocumentQueryParams } from './api'
-import { IDocumentCategory, IGlobalDocument } from '../type'
+import { IGlobalDocument } from '../type'
 
 // Interface chung cho phản hồi từ API Server
 interface ApiResponse<T> {

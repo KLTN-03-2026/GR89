@@ -10,6 +10,8 @@ export type RoadmapTopic = {
   isActive: boolean;
   orderIndex: number;
   lessons?: RoadmapLesson[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export type RoadmapLesson = {

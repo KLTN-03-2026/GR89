@@ -29,8 +29,8 @@ export function DialogAddReadingVocabulary({ readingId, callback }: { readingId:
       callback()
       setOpen(false)
       setData({ _id: '', word: '', phonetic: '', definition: '', vietnamese: '', example: '' })
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
+    } catch {
+      console.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
     }

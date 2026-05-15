@@ -1,13 +1,13 @@
 import 'server-only'
-import { fetchServer } from '@/lib/apis/fetch-server'
-import { CouponQueryParams, Payment, PaymentPaginationMeta, PaymentQueryParams, PlanQueryParams } from '@/lib/apis/api'
+import { ApiResponse, fetchServer } from '@/lib/apis/fetch-server'
+import { Coupon, CouponQueryParams, Payment, PaymentPaginationMeta, PaymentQueryParams, Plan, PlanQueryParams } from '@/lib/apis/api'
 
 /*=============================================================================
  * DANH SÁCH API SERVER-SIDE CHO BILLING
  *============================================================================*/
 
 // 1. Coupons (Mã giảm giá)
-export async function getCouponsServer(params?: CouponQueryParams) {
+export async function getCouponsServer(params?: CouponQueryParams): Promise<ApiResponse<Coupon[]>> {
   const queryParams = new URLSearchParams()
   if (params?.page) queryParams.append('page', String(params.page))
   if (params?.limit) queryParams.append('limit', String(params.limit))
@@ -17,7 +17,7 @@ export async function getCouponsServer(params?: CouponQueryParams) {
   if (params?.isActive !== undefined) queryParams.append('isActive', String(params.isActive))
 
   const url = `/coupon?${queryParams.toString()}`
-  return await fetchServer<any>(url)
+  return await fetchServer<Coupon[]>(url)
 }
 
 // 2. Payments (Thanh toán)
@@ -29,6 +29,7 @@ interface PaginatedPaymentResponse {
   paidCount: number
   totalRevenue: number
 }
+
 export async function getPaymentsServer(params?: PaymentQueryParams): Promise<PaginatedPaymentResponse> {
   const queryParams = new URLSearchParams()
   if (params?.page) queryParams.append('page', String(params.page))
@@ -52,7 +53,7 @@ export async function getPaymentsServer(params?: PaymentQueryParams): Promise<Pa
 }
 
 // 3. Plans (Gói dịch vụ)
-export async function getPlansServer(params?: PlanQueryParams): Promise<any> {
+export async function getPlansServer(params?: PlanQueryParams): Promise<ApiResponse<Plan[]>> {
   const queryParams = new URLSearchParams()
   if (params?.page) queryParams.append('page', String(params.page))
   if (params?.limit) queryParams.append('limit', String(params.limit))
@@ -64,5 +65,5 @@ export async function getPlansServer(params?: PlanQueryParams): Promise<any> {
   if (params?.billingCycle) queryParams.append('billingCycle', params.billingCycle)
 
   const url = `/plan?${queryParams.toString()}`
-  return await fetchServer<any>(url)
+  return await fetchServer<Plan[]>(url)
 }

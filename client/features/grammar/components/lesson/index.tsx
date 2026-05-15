@@ -45,7 +45,7 @@ export function GrammarLessonFlow({ lesson, topicId }: GrammarLessonFlowProps) {
       if (saved) {
         try {
           return JSON.parse(saved).practiceAnswers || {}
-        } catch (e) { }
+        } catch { }
       }
     }
     return {}
@@ -57,7 +57,7 @@ export function GrammarLessonFlow({ lesson, topicId }: GrammarLessonFlowProps) {
       if (saved) {
         try {
           return JSON.parse(saved).practiceStatus || {}
-        } catch (e) { }
+        } catch { }
       }
     }
     return {}

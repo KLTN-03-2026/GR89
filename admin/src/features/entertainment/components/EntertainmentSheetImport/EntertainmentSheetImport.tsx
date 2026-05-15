@@ -40,8 +40,8 @@ export function EntertainmentSheetImport({ callback, type }: { callback?: () => 
       }}
       validateAfterReadJson={validateEntertainmentImportJson}
       validateAfterReadExcel={parseExcelToEntertainmentJson}
-      onImport={async (payload: SheetImportOnImportPayload) => {
-        const res = await importEntertainmentJson(payload.jsonRoot as Entertainment[], payload.skipErrors, type)
+      onImport={async (payload: SheetImportOnImportPayload<Entertainment>) => {
+        const res = await importEntertainmentJson(payload.jsonRoot, payload.skipErrors, type)
 
         type ImportResponse = {
           success: boolean

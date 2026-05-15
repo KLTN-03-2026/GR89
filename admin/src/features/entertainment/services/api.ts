@@ -166,9 +166,16 @@ export async function importEntertainmentJson(items: Entertainment[], skipErrors
 }
 
 /*=============== ENTERTAINMENT STATISTICS ==============*/
-export async function getEntertainmentStats(type?: string): Promise<Response<any>> {
+interface EntertainmentStats {
+  activeItems: number, 
+  interactions: {total: number, liked: number, watched: number}
+  totalItems: number
+  typeBreakdown: {movie: number, music: number, podcast: number}
+  vipItems: number
+}
+export async function getEntertainmentStats(type?: string): Promise<Response<EntertainmentStats>> {
   const query = type ? `?type=${type}` : ''
   const res = await AuthorizedAxios.get(`/entertainment/overview${query}`)
-  return res.data as Response<any>
+  return res.data as Response<EntertainmentStats>
 }
 

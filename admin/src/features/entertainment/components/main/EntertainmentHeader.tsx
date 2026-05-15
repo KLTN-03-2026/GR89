@@ -40,6 +40,7 @@ export default function EntertainmentHeader({ callback, type, parentId }: Props)
         const res = await getEntertainmentStats(type)
         if (res.success && res.data) {
           const { totalItems, interactions } = res.data
+          console.log(res.data)
 
           setStats([
             {

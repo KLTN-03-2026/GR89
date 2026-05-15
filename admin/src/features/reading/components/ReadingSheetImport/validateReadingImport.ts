@@ -1,5 +1,31 @@
 import type { ParseResult, Sheet } from '@/components/common/sheetImport/types'
 
+interface ReadingImportItem {
+  title: string
+  description: string
+  paragraphEn: string
+  paragraphVi: string
+  level?: string
+  vocabulary?: ReadingImportVocabItem[]
+  quizzes?: ReadingImportQuizItem[]
+}
+
+interface ReadingImportVocabItem {
+  word: string
+  phonetic: string
+  definition: string
+  vietnamese: string
+  example: string
+}
+
+interface ReadingImportQuizItem {
+  question: string
+  type: string
+  options: string[]
+  answer: string
+  explanation: string
+}
+
 export function validateReadingImportJson(input: unknown): ParseResult {
   if (!Array.isArray(input)) {
     return { ok: false, errors: ['JSON phải là mảng các bài đọc.'] }
@@ -13,7 +39,7 @@ export function validateReadingImportJson(input: unknown): ParseResult {
       return
     }
 
-    const it = item as any
+    const it = item as ReadingImportItem
     if (!it.title) errors.push(`Dòng [${i}]: thiếu "title"`)
     if (!it.description) errors.push(`Dòng [${i}]: thiếu "description"`)
     if (!it.paragraphEn) errors.push(`Dòng [${i}]: thiếu "paragraphEn"`)
@@ -32,7 +58,7 @@ export function validateReadingImportJson(input: unknown): ParseResult {
   })
 
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, data: input as any[] }
+  return { ok: true, data: input as ReadingImportItem[] }
 }
 
 export function parseExcelToReadingJson(sheets: Sheet[]): ParseResult {
@@ -45,9 +71,9 @@ export function parseExcelToReadingJson(sheets: Sheet[]): ParseResult {
     return { ok: false, errors: ['Thiếu sheet Readings'] }
   }
 
-  const vocabByReading: Record<string, any[]> = {}
+  const vocabByReading: Record<string, ReadingImportVocabItem[]> = {}
   if (vocabSheet) {
-    vocabSheet.rows.forEach((row, i) => {
+    vocabSheet.rows.forEach((row) => {
       const rid = String(row.ReadingID || '').trim()
       if (!rid) return
       if (!vocabByReading[rid]) vocabByReading[rid] = []
@@ -61,9 +87,9 @@ export function parseExcelToReadingJson(sheets: Sheet[]): ParseResult {
     })
   }
 
-  const quizzesByReading: Record<string, any[]> = {}
+  const quizzesByReading: Record<string, ReadingImportQuizItem[]> = {}
   if (quizzesSheet) {
-    quizzesSheet.rows.forEach((row, i) => {
+    quizzesSheet.rows.forEach((row) => {
       const rid = String(row.ReadingID || '').trim()
       if (!rid) return
       if (!quizzesByReading[rid]) quizzesByReading[rid] = []

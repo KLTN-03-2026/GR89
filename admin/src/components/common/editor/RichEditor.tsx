@@ -1,6 +1,6 @@
 "use client"
 
-import { useEditor, EditorContent } from "@tiptap/react"
+import { useEditor, EditorContent, Editor } from "@tiptap/react"
 import { BubbleMenu } from "@tiptap/react/menus"
 import { Toolbar } from "./Toolbar"
 import { useEffect } from "react"
@@ -171,7 +171,7 @@ export function RichEditor({ value, onChange, placeholder, className }: RichEdit
       {editor && (
         <BubbleMenu
           editor={editor}
-          shouldShow={({ editor }: { editor: any }) => editor.isActive("table")}
+          shouldShow={({ editor }: { editor: Editor }) => editor.isActive("table")}
         >
           <div className="flex items-center gap-0.5 border bg-background shadow-md rounded-md p-1 overflow-x-auto max-w-[90vw]">
             <Button
@@ -181,7 +181,7 @@ export function RichEditor({ value, onChange, placeholder, className }: RichEdit
               onClick={() => editor.chain().focus().addColumnBefore().run()}
               title="Thêm cột bên trái"
             >
-              <Plus className="h-3.5 w-3.5 mr-[-4px]" />
+              <Plus className="h-3.5 w-3.5 -mr-1" />
               <Columns className="h-3.5 w-3.5" />
             </Button>
             <Button
@@ -192,7 +192,7 @@ export function RichEditor({ value, onChange, placeholder, className }: RichEdit
               title="Thêm cột bên phải"
             >
               <Columns className="h-3.5 w-3.5" />
-              <Plus className="h-3.5 w-3.5 ml-[-4px]" />
+              <Plus className="h-3.5 w-3.5 -ml-1" />
             </Button>
             <Button
               variant="ghost"
@@ -213,7 +213,7 @@ export function RichEditor({ value, onChange, placeholder, className }: RichEdit
               onClick={() => editor.chain().focus().addRowBefore().run()}
               title="Thêm hàng phía trên"
             >
-              <Plus className="h-3.5 w-3.5 mr-[-4px]" />
+              <Plus className="h-3.5 w-3.5 -mr-1" />
               <Rows className="h-3.5 w-3.5" />
             </Button>
             <Button
@@ -224,7 +224,7 @@ export function RichEditor({ value, onChange, placeholder, className }: RichEdit
               title="Thêm hàng phía dưới"
             >
               <Rows className="h-3.5 w-3.5" />
-              <Plus className="h-3.5 w-3.5 ml-[-4px]" />
+              <Plus className="h-3.5 w-3.5 -ml-1" />
             </Button>
             <Button
               variant="ghost"
@@ -254,7 +254,7 @@ export function RichEditor({ value, onChange, placeholder, className }: RichEdit
               onClick={() => editor.chain().focus().deleteTable().run()}
               title="Xóa toàn bộ bảng"
             >
-              <TableIcon className="h-3.5 w-3.5 mr-[-4px]" />
+              <TableIcon className="h-3.5 w-3.5 -mr-1" />
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>

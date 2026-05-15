@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, HelpCircle, Save, X, Type, ListChecks, FileQuestion, Sparkles, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, HelpCircle, Save, ListChecks, FileQuestion, Sparkles, CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { createReadingQuiz } from '@/features/reading/services/api'
@@ -54,8 +54,8 @@ export function DialogAddReadingQuiz({ readingId, onSuccess }: DialogAddProps) {
       onSuccess()
       setOpen(false)
       setData({ question: "", type: "Multiple Choice", options: [], answer: "", explanation: "" })
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
+    } catch {
+      console.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
     }
@@ -126,7 +126,7 @@ export function DialogAddReadingQuiz({ readingId, onSuccess }: DialogAddProps) {
                 Nội Dung Câu Hỏi
               </div>
 
-              <div className="grid gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Câu hỏi <span className="text-rose-500 text-lg">*</span>
@@ -135,7 +135,7 @@ export function DialogAddReadingQuiz({ readingId, onSuccess }: DialogAddProps) {
                     placeholder="VD: What is the main idea of the paragraph?..."
                     value={data.question}
                     onChange={(e) => setData({ ...data, question: e.target.value })}
-                    className="bg-white border-gray-200 rounded-2xl focus:ring-emerald-500 font-bold px-4 py-3 min-h-[100px] resize-none shadow-sm"
+                    className="bg-white border-gray-200 rounded-2xl focus:ring-emerald-500 font-bold px-4 py-3 min-h-25 resize-none shadow-sm"
                   />
                 </div>
 
@@ -202,7 +202,7 @@ export function DialogAddReadingQuiz({ readingId, onSuccess }: DialogAddProps) {
                       </div>
                     ))}
                     {data.options.length === 0 && (
-                      <div className="py-10 text-center border-2 border-dashed border-blue-200 rounded-[2rem] bg-white/50">
+                      <div className="py-10 text-center border-2 border-dashed border-blue-200 rounded-4xl bg-white/50">
                         <Sparkles className="h-8 w-8 text-blue-200 mx-auto mb-2" />
                         <p className="text-xs font-bold text-blue-400 uppercase tracking-wider text-center">Chưa có lựa chọn nào</p>
                       </div>
@@ -219,7 +219,7 @@ export function DialogAddReadingQuiz({ readingId, onSuccess }: DialogAddProps) {
                 Đáp Án Chính Xác
               </div>
 
-              <div className="bg-amber-50/30 p-6 rounded-[2rem] border border-amber-100/50 space-y-4">
+              <div className="bg-amber-50/30 p-6 rounded-4xl border border-amber-100/50 space-y-4">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Đáp án đúng <span className="text-rose-500 text-lg">*</span>
@@ -251,7 +251,7 @@ export function DialogAddReadingQuiz({ readingId, onSuccess }: DialogAddProps) {
                     placeholder="Giải thích tại sao đáp án này đúng để giúp học viên hiểu bài tốt hơn..."
                     value={data.explanation}
                     onChange={(e) => setData({ ...data, explanation: e.target.value })}
-                    className="bg-white border-gray-200 rounded-2xl focus:ring-amber-500 font-medium px-4 py-3 min-h-[100px] resize-none shadow-sm"
+                    className="bg-white border-gray-200 rounded-2xl focus:ring-amber-500 font-medium px-4 py-3 min-h-25 resize-none shadow-sm"
                   />
                 </div>
               </div>

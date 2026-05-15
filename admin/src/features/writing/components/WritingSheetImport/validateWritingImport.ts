@@ -1,5 +1,21 @@
 import type { ParseResult, Sheet } from '@/components/common/sheetImport/types'
 
+interface WritingImport {
+  title: string
+  description: string
+  minWords: number
+  maxWords: number
+  duration: number
+  level?: string
+  suggestedStructure?: suggestedStructure[]
+}
+
+interface suggestedStructure {
+  title: string
+  step: number,
+  description: string,
+}
+
 export function validateWritingImportJson(input: unknown): ParseResult {
   if (!Array.isArray(input)) {
     return { ok: false, errors: ['JSON phải là mảng các bài viết.'] }
@@ -13,7 +29,7 @@ export function validateWritingImportJson(input: unknown): ParseResult {
       return
     }
 
-    const it = item as any
+    const it = item as WritingImport
     if (!it.title) errors.push(`Dòng [${i}]: thiếu "title"`)
     if (!it.description) errors.push(`Dòng [${i}]: thiếu "description"`)
     if (!it.minWords || isNaN(Number(it.minWords))) errors.push(`Dòng [${i}]: "minWords" không hợp lệ`)
@@ -27,13 +43,13 @@ export function validateWritingImportJson(input: unknown): ParseResult {
       errors.push(`Dòng [${i}]: "suggestedStructure" phải là mảng`)
     }
 
-    it.suggestedStructure?.forEach((s: any, j: number) => {
+    it.suggestedStructure?.forEach((s: suggestedStructure, j: number) => {
       if (!s.title) errors.push(`Dòng [${i}] Structure [${j}]: thiếu "title"`)
     })
   })
 
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, data: input as any[] }
+  return { ok: true, data: input as WritingImport[] }
 }
 
 export function parseExcelToWritingJson(sheets: Sheet[]): ParseResult {
@@ -45,7 +61,7 @@ export function parseExcelToWritingJson(sheets: Sheet[]): ParseResult {
     return { ok: false, errors: ['Thiếu sheet Writings'] }
   }
 
-  const writingMap = new Map<string, any>()
+  const writingMap = new Map<string, WritingImport>()
 
   writingSheet.rows.forEach((row, i) => {
     const writingId = String(row.writingId || '')
@@ -85,7 +101,7 @@ export function parseExcelToWritingJson(sheets: Sheet[]): ParseResult {
       return
     }
 
-    writing.suggestedStructure.push({
+    writing?.suggestedStructure?.push({
       step: Number(row.step || 0),
       title: String(row.title || ''),
       description: String(row.description || ''),

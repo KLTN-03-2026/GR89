@@ -32,7 +32,6 @@ export function SheetImportResultStep({ result }: SheetImportResultStepProps) {
 
   const successCount = created + updated
   const successRate = total > 0 ? Math.round((successCount / total) * 100) : 0
-  const errorRate = total > 0 ? Math.round((errors.length / total) * 100) : 0
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -117,14 +116,14 @@ export function SheetImportResultStep({ result }: SheetImportResultStepProps) {
               Cần chú ý
             </span>
           </div>
-          <div className="max-h-[240px] overflow-auto p-2 space-y-1 custom-scrollbar">
+          <div className="max-h-60 overflow-auto p-2 space-y-1 custom-scrollbar">
             {errors.map((err, i) => {
               const index = typeof err !== 'string' && typeof err.index === 'number' ? err.index : undefined
               const reason = typeof err === 'string' ? err : typeof err.reason === 'string' ? err.reason : 'Lỗi không xác định'
 
               return (
                 <div key={i} className="group flex gap-3 p-2 rounded-lg hover:bg-white transition-colors border border-transparent hover:border-red-100">
-                  <div className="flex-shrink-0 w-6 h-6 rounded-md bg-red-100 flex items-center justify-center text-[10px] font-bold text-red-700">
+                  <div className="shrink-0 w-6 h-6 rounded-md bg-red-100 flex items-center justify-center text-[10px] font-bold text-red-700">
                     {index !== undefined ? index + 1 : i + 1}
                   </div>
                   <div className="flex-1">
@@ -149,7 +148,7 @@ export function SheetImportResultStep({ result }: SheetImportResultStepProps) {
       {/* Advice/Next Steps */}
       {!hasErrors && (
         <div className="flex gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100 text-blue-800">
-          <Info className="w-5 h-5 flex-shrink-0" />
+          <Info className="w-5 h-5 shrink-0" />
           <div className="space-y-1">
             <p className="text-xs font-bold uppercase tracking-tight">Mẹo nhỏ</p>
             <p className="text-xs leading-relaxed">

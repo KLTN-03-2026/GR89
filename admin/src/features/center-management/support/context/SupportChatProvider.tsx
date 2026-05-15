@@ -22,7 +22,7 @@ interface SupportChatContextType {
   refreshTickets: () => Promise<void>
   refreshTicketDetail: (ticketId: string) => Promise<void>
   claimSelectedTicket: () => Promise<void>
-  sendMessageAsStaff: (content: string) => Promise<void>
+  sendMessageAsStaff: (content: string, attachments?: SupportAttachment) => Promise<void>
 }
 
 const SupportChatContext = createContext<SupportChatContextType | undefined>(undefined)
@@ -123,7 +123,7 @@ export function SupportChatProvider({ children }: { children: React.ReactNode })
     await refreshTicketDetail(selectedTicketId)
   }
 
-  const sendMessageAsStaff = async (content: string, attachments?: SupportAttachment[]) => {
+  const sendMessageAsStaff = async (content: string, attachments?: SupportAttachment) => {
     console.log('content: ', content, 'attachments: ', attachments)
     if (!selectedTicketId) return
     await sendSupportMessageAsStaff(selectedTicketId, content, attachments)

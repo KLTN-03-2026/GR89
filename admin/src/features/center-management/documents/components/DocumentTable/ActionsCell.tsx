@@ -47,11 +47,11 @@ export default function ActionsCell({ document, callback }: Props) {
   return (
     <>
       <Dialog open={openDelete} onOpenChange={setOpenDelete}>
-        <DialogContent className="rounded-[2rem] border-zinc-100 shadow-2xl">
+        <DialogContent className="rounded-4xl border-zinc-100 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-zinc-900">Xác nhận xóa tài liệu</DialogTitle>
             <DialogDescription className="text-zinc-500 font-medium">
-              Bạn có chắc chắn muốn xóa tài liệu <strong>"{document.name}"</strong>?
+              Bạn có chắc chắn muốn xóa tài liệu <strong>`&quot;`{document.name}`&quot;`</strong>?
               Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
@@ -84,7 +84,7 @@ export default function ActionsCell({ document, callback }: Props) {
             <MoreHorizontal className="h-4 w-4 text-zinc-500" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[180px] rounded-xl border-zinc-100 shadow-xl p-1.5">
+        <DropdownMenuContent align="end" className="w-45 rounded-xl border-zinc-100 shadow-xl p-1.5">
           <DropdownMenuLabel className="text-[11px] font-black uppercase text-zinc-400 tracking-wider px-2 py-1.5">
             Thao tác
           </DropdownMenuLabel>

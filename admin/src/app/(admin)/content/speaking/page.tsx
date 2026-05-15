@@ -1,4 +1,5 @@
 import { SpeakingMain } from '@/features/speaking'
+import { SpeakingOverviewStats } from '@/features/speaking/services/api'
 import { getSpeakingListServer, getSpeakingOverviewStatsServer } from '@/features/speaking/services/serverApi'
 import React from 'react'
 
@@ -28,8 +29,8 @@ export default async function page({ searchParams }: PageProps) {
       page: Number(page),
       limit: Number(limit),
       search,
-      sortBy: sortBy as any,
-      sortOrder: sortOrder as any,
+      sortBy: sortBy as 'orderIndex' | 'createdAt' | 'updatedAt',
+      sortOrder: sortOrder as 'asc' | 'desc',
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined
     }),
     getSpeakingOverviewStatsServer()
@@ -40,7 +41,7 @@ export default async function page({ searchParams }: PageProps) {
       <SpeakingMain 
         initialData={response.data}
         pagination={response.pagination}
-        initialStats={stats}
+        initialStats={stats || {} as SpeakingOverviewStats}
       />
     </div>
   )

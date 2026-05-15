@@ -59,7 +59,7 @@ export function ListMediaImage({ initialData, pagination }: Props) {
 
   useEffect(() => {
     const rawLimit = Number(searchParams.get('limit') || limit)
-    if (!ALLOWED_LIMITS.includes(rawLimit as any)) {
+    if (!ALLOWED_LIMITS.includes(rawLimit as 6 | 12 | 18 | 24 | 48 | 96)) {
       updateUrl({ limit: 12, page: 1 })
     }
   }, [limit, searchParams, updateUrl])
@@ -147,7 +147,7 @@ export function ListMediaImage({ initialData, pagination }: Props) {
   }
 
   const handleLimitChange = (nextLimit: number) => {
-    const safeLimit = ALLOWED_LIMITS.includes(nextLimit as any) ? nextLimit : 12
+    const safeLimit = ALLOWED_LIMITS.includes(nextLimit as 6 | 12 | 18 | 24 | 48 | 96) ? nextLimit : 12
     updateUrl({ limit: safeLimit, page: 1 })
   }
 
@@ -237,7 +237,7 @@ export function ListMediaImage({ initialData, pagination }: Props) {
                   />
                 </button>
 
-                <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-medium">
+                <div className="absolute inset-x-0 bottom-0 p-2 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity text-white text-[10px] font-medium">
                   <div className="flex items-center justify-between">
                     <span className="uppercase">{img.format || 'UNK'}</span>
                     <span>{img.createdAt ? new Date(img.createdAt).toLocaleDateString('vi-VN') : ''}</span>

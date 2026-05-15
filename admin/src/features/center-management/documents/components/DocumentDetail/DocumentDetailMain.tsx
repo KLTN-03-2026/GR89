@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { AdminPageShell } from '@/components/common/shared/AdminPageShell'
 import { AdminPageHeader } from '@/components/common/shared/AdminPageHeader'
-import { FileText, ArrowLeft, Clock, User, Calendar, Tag, Pencil, Download, Loader2 } from 'lucide-react'
+import { FileText, ArrowLeft, Clock, Calendar, Tag, Pencil, Download, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
@@ -36,7 +36,7 @@ export default function DocumentDetailMain({ document }: DocumentDetailMainProps
     try {
       await downloadGlobalDocumentDocx(document._id, document.name)
       toast.success('Đã tải xuống file .docx')
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi xuất file')
     } finally {
       setIsExporting(false)
@@ -81,7 +81,7 @@ export default function DocumentDetailMain({ document }: DocumentDetailMainProps
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-blue-50/50 overflow-hidden min-h-[600px]">
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-blue-50/50 overflow-hidden min-h-150">
             <div className="p-8 md:p-16 prose prose-blue max-w-none prose-headings:font-black prose-p:text-gray-600 prose-p:leading-relaxed prose-img:rounded-3xl prose-img:shadow-lg">
               <div dangerouslySetInnerHTML={{ __html: document.content }} />
             </div>
@@ -90,7 +90,7 @@ export default function DocumentDetailMain({ document }: DocumentDetailMainProps
 
         {/* Sidebar Info */}
         <div className="space-y-6">
-          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-blue-50/20 p-8 space-y-8 sticky top-8">
+          <div className="bg-white rounded-4xl border border-gray-100 shadow-xl shadow-blue-50/20 p-8 space-y-8 sticky top-8">
             <h4 className="font-black text-gray-900 uppercase tracking-[0.15em] text-[11px] border-b border-gray-50 pb-5">Siêu dữ liệu</h4>
 
             <div className="space-y-6">

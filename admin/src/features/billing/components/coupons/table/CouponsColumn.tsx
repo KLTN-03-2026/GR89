@@ -1,7 +1,6 @@
 "use client"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Coupon } from "@/lib/apis/api"
 import { ActionCell } from "./ActionCell"

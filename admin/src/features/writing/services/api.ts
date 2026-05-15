@@ -226,12 +226,12 @@ export async function importWritingData(
 export async function importWritingJson(
   writings: Writing[],
   skipErrors: boolean = false
-): Promise<ApiResponse<any>> {
+): Promise<ApiResponse<Writing[]>> {
   const response = await AuthorizedAxios.post('/writing/import-json', {
     writings,
     skipErrors,
   })
-  return response.data as ApiResponse<any>
+  return response.data as ApiResponse<Writing[]>
 }
 
 export async function getWritingOverviewStats(): Promise<ApiResponse<WritingOverviewStats>> {

@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import SpeakingContent from "./SpeakingContent";
 import SpeakingHeader from "./SpeakingHeader";
 import { Speaking } from "@/features/speaking/types";
+import { SpeakingOverviewStats } from "@/features/speaking/services/api";
 
 interface SpeakingMainProps {
   initialData: Speaking[]
@@ -16,7 +17,7 @@ interface SpeakingMainProps {
     next: number | null
     prev: number | null
   }
-  initialStats: any
+  initialStats: SpeakingOverviewStats
 }
 
 export function SpeakingMain({ initialData, pagination, initialStats }: SpeakingMainProps) {

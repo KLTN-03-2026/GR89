@@ -158,7 +158,7 @@ export function SheetAddEntertainment({
                 Thông Tin Tác Phẩm
               </div>
 
-              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5 col-span-2">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     <Type className="w-3.5 h-3.5" /> Tiêu Đề <span className="text-rose-500">*</span>
@@ -251,7 +251,7 @@ export function SheetAddEntertainment({
                 Dữ Liệu Đa Phương Tiện
               </div>
 
-              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 {/* Video/Audio Picker */}
                 <div className="space-y-4">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
@@ -301,7 +301,7 @@ export function SheetAddEntertainment({
             </section>
 
             {/* Note Section */}
-            <div className={`bg-${theme}-50/50 border border-${theme}-100 p-6 rounded-[2rem] flex gap-4 items-start pb-10`}>
+            <div className={`bg-${theme}-50/50 border border-${theme}-100 p-6 rounded-4xl flex gap-4 items-start pb-10`}>
               <div className="p-2 bg-white rounded-xl shadow-sm">
                 <Sparkles className={`w-5 h-5 text-${theme}-500`} />
               </div>

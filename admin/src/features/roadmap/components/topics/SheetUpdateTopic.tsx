@@ -19,11 +19,9 @@ import { useRouter } from 'next/navigation'
 import { updateRoadmapTopic } from '@/features/roadmap/services/api'
 import { 
   Map, 
-  Type, 
   Info, 
   Smile, 
   Save, 
-  X,
   Loader2,
   Sparkles,
   Zap,
@@ -69,8 +67,8 @@ export function SheetUpdateTopic({ isOpen, onOpenChange, topic }: TopicDialogPro
       toast.success('Đã cập nhật chặng: ' + title)
       onOpenChange(false)
       router.refresh()
-    } catch (error) {
-      toast.error('Không thể cập nhật chủ đề')
+    } catch {
+      console.error('Không thể cập nhật chủ đề')
     } finally {
       setIsLoading(false)
     }
@@ -104,7 +102,7 @@ export function SheetUpdateTopic({ isOpen, onOpenChange, topic }: TopicDialogPro
                 Thông Tin Chặng Đường
               </div>
               
-              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label htmlFor="title-roadmap-update" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tên Chặng <span className="text-rose-500">*</span>
@@ -121,7 +119,7 @@ export function SheetUpdateTopic({ isOpen, onOpenChange, topic }: TopicDialogPro
 
                 <div className="space-y-2.5">
                   <Label htmlFor="description-roadmap-update" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                    <Info className="h-3.5 h-3.5" /> Mô Tả Mục Tiêu
+                    <Info className="h-3.5" /> Mô Tả Mục Tiêu
                   </Label>
                   <Input
                     id="description-roadmap-update"
@@ -135,7 +133,7 @@ export function SheetUpdateTopic({ isOpen, onOpenChange, topic }: TopicDialogPro
 
                 <div className="space-y-2.5">
                   <Label htmlFor="icon-roadmap-update" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
-                    <Smile className="h-3.5 h-3.5" /> Biểu Tượng Nhận Diện
+                    <Smile className="h-3.5" /> Biểu Tượng Nhận Diện
                   </Label>
                   <div className="flex items-center gap-4 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
                     <Popover>
@@ -187,7 +185,7 @@ export function SheetUpdateTopic({ isOpen, onOpenChange, topic }: TopicDialogPro
                 Lịch Sử Chặng
               </div>
               
-              <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
+              <div className="bg-slate-50/80 p-6 rounded-4xl border border-slate-100 grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     <UserIcon className="w-3 h-3" /> Người tạo

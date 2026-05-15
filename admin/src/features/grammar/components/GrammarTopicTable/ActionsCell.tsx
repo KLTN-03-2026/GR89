@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, Info, Loader2, MoreHorizontal, Pencil, Trash2, Crown, BookOpen } from 'lucide-react'
+import { Eye, EyeOff, Loader2, MoreHorizontal, Pencil, Trash2, Crown, BookOpen } from 'lucide-react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { deleteGrammarTopic, updateIsActiveGrammarTopic, toggleGrammarTopicVipStatus } from '../../services/api'
@@ -86,7 +86,7 @@ export default function ActionsCell({ topic, allTopics, callback, onSwap }: Prop
           <DialogHeader>
             <DialogTitle>Xác nhận xóa chủ đề</DialogTitle>
             <DialogDescription>
-              Bạn có chắc chắn muốn xóa chủ đề ngữ pháp <strong>"{topic.title}"</strong>?
+              Bạn có chắc chắn muốn xóa chủ đề ngữ pháp <strong>`&quot;`{topic.title}`&quot;`</strong>?
               Hành động này sẽ xóa tất cả bài học trong chủ đề và không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>

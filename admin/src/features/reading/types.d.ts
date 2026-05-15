@@ -1,7 +1,7 @@
 import { User } from "../user/types";
 import { Quiz } from "./quiz"
 
-interface DataReading {
+export interface DataReading {
   title: string
   description: string
   paragraphEn: string

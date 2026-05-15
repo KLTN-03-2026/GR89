@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { createSpeaking } from '@/features/speaking/services/api'
-import { Video, Plus, Mic2, Info, Film, CheckCircle2, X, Save, Sparkles } from 'lucide-react'
+import { createSpeaking, DataSpeaking } from '@/features/speaking/services/api'
+import { Video, Plus, Mic2, Info, Film, CheckCircle2, X, Save } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { DialogVideoToMedia } from '@/components/common/dialog/DialogVideoToMedia'
@@ -36,7 +36,7 @@ export function DialogAddSpeaking({ callback }: { callback: () => void }) {
 
     setIsLoading(true)
     try {
-      await createSpeaking(data as any)
+      await createSpeaking(data as DataSpeaking)
       callback()
       toast.success('Tạo bài nói thành công')
       setOpen(false)
@@ -48,8 +48,8 @@ export function DialogAddSpeaking({ callback }: { callback: () => void }) {
         isActive: true
       })
       setSelectedVideoUrl(null)
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
+    } catch {
+      console.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
     }
@@ -89,7 +89,7 @@ export function DialogAddSpeaking({ callback }: { callback: () => void }) {
                 <Info className="h-4 w-4" />
                 Thông Tin Cơ Bản
               </div>
-              <div className="grid grid-cols-4 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-4 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="col-span-3 space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tiêu đề bài nói <span className="text-rose-500 text-lg">*</span>
@@ -126,7 +126,7 @@ export function DialogAddSpeaking({ callback }: { callback: () => void }) {
                     placeholder="Nhập yêu cầu hoặc hướng dẫn chi tiết cho bài tập nói này..."
                     value={data.description}
                     onChange={(e) => setData({ ...data, description: e.target.value })}
-                    className="bg-white border-gray-200 rounded-2xl focus:ring-primary font-medium px-4 py-3 min-h-[100px] resize-none shadow-sm"
+                    className="bg-white border-gray-200 rounded-2xl focus:ring-primary font-medium px-4 py-3 min-h-25 resize-none shadow-sm"
                   />
                 </div>
               </div>
@@ -169,13 +169,13 @@ export function DialogAddSpeaking({ callback }: { callback: () => void }) {
                         Gỡ bỏ
                       </Button>
                     </div>
-                    <div className="relative aspect-video rounded-[2rem] overflow-hidden border-4 border-white shadow-2xl bg-black group/video">
+                    <div className="relative aspect-video rounded-4xl overflow-hidden border-4 border-white shadow-2xl bg-black group/video">
                       <video
                         src={selectedVideoUrl}
                         className="w-full h-full object-contain"
                         controls
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent pointer-events-none" />
                     </div>
                   </div>
                 ) : (

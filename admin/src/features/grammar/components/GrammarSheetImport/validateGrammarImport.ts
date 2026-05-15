@@ -2,14 +2,6 @@ import type { ParseResult, Sheet } from '@/components/common/sheetImport/types'
 import { GrammarSection, GrammarTopic, PracticeQuestion } from '../../types'
 import { Quiz } from '@/types'
 
-type GrammarImportQuiz = {
-  question: string
-  type: string
-  options: string[]
-  answer: string
-  explanation: string
-}
-
 export function validateGrammarImportJson(input: unknown): ParseResult {
   if (!Array.isArray(input)) {
     return { ok: false, errors: ['JSON phải là mảng các chủ đề ngữ pháp.'] }

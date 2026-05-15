@@ -29,8 +29,8 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     page: Number(page),
     limit: Number(limit),
     search,
-    status: status as any,
-    provider: provider as any,
+    status: status as "paid" | "pending" | "failed" | "refunded" | "cancelled" | undefined,
+    provider: provider as 'stripe' | 'paypal',
     sortBy,
     sortOrder: sortOrder as 'asc' | 'desc'
   });

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Headphones, Users, Eye, TrendingUp, LucideIcon, Download } from "lucide-react";
+import { Headphones, Users, Eye, LucideIcon, Download } from "lucide-react";
 import { exportListeningExcel, getListeningOverviewStats } from '@/features/listening/services/api'
 import { ListeningStatsSkeleton } from "@/components/common/Skeletons/ListeningStatsSkeleton";
 import { ListeningSheetImport } from '../ListeningSheetImport';

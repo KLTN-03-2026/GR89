@@ -37,7 +37,7 @@ export async function claimSupportTicket(ticketId: string, takeoverMinutes: numb
 export async function sendSupportMessageAsStaff(
   ticketId: string,
   content: string,
-  attachments?: SupportAttachment[],
+  attachments?: SupportAttachment,
 ): Promise<ApiResponse<SupportTicket>> {
   const response = await AuthorizedAxios.post(`/support-chat/admin/tickets/${ticketId}/messages`, {
     content,
@@ -46,11 +46,11 @@ export async function sendSupportMessageAsStaff(
   return response.data as ApiResponse<SupportTicket>
 }
 
-export async function uploadSupportAttachmentForStaff(file: File): Promise<ApiResponse<SupportAttachment[]>> {
+export async function uploadSupportAttachmentForStaff(file: File): Promise<SupportAttachment> {
   const formData = new FormData()
   formData.append('file', file)
   const response = await AuthorizedAxios.post(`/support-chat/admin/attachments`, formData)
-  return response.data as ApiResponse<SupportAttachment[]>
+  return response.data as SupportAttachment
 }
 
 export async function openClaimTicket(): Promise<ApiResponse<SupportTicket>> {

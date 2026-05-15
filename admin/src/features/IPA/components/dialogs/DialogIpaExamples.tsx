@@ -10,6 +10,7 @@ import { Ipa } from '@/features/IPA/types'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 interface Example {
   _id?: string
@@ -51,7 +52,7 @@ export function DialogIpaExamples({ ipa, callback }: DialogIpaExamplesProps) {
       toast.success('Thêm ví dụ thành công')
       callback()
       setNewExample({ word: "", phonetic: "", vietnamese: "" })
-    } catch (error) {
+    } catch {
       toast.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
@@ -64,7 +65,7 @@ export function DialogIpaExamples({ ipa, callback }: DialogIpaExamplesProps) {
       await updateExampleIpa(ipa._id, exampleId, updatedExample)
       toast.success('Cập nhật ví dụ thành công')
       callback()
-    } catch (error) {
+    } catch {
       toast.error('Cập nhật thất bại')
     } finally {
       setIsLoading(false)
@@ -79,7 +80,7 @@ export function DialogIpaExamples({ ipa, callback }: DialogIpaExamplesProps) {
       await deleteExampleIpa(ipa._id, exampleId)
       toast.success('Xóa ví dụ thành công')
       callback()
-    } catch (error) {
+    } catch {
       toast.error('Xóa thất bại')
     } finally {
       setIsLoading(false)
@@ -197,7 +198,7 @@ export function DialogIpaExamples({ ipa, callback }: DialogIpaExamplesProps) {
 
         <div className="p-6 bg-muted/10 flex justify-end">
           <SheetClose asChild>
-            <Button variant="outline" className="min-w-[100px] shadow-sm">
+            <Button variant="outline" className="min-w-25 shadow-sm">
               <X className="h-4 w-4 mr-2" />
               Đóng
             </Button>

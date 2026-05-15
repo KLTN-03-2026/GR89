@@ -8,6 +8,7 @@ import type { SheetImportOnImportPayload, SheetImportResult } from '@/components
 import { importSpeakingJson } from '../../services/api'
 import { buildExcelTemplateWorkbook, buildJsonTemplateData } from './templates'
 import { parseExcelToSpeakingJson, validateSpeakingImportJson } from './validateSpeakingImport'
+import { Speaking } from '@/features/speaking/types'
 
 export function SpeakingSheetImport({ callback }: { callback?: () => void }) {
   return (
@@ -42,7 +43,7 @@ export function SpeakingSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadJson={validateSpeakingImportJson}
       validateAfterReadExcel={parseExcelToSpeakingJson}
       defaultSkipErrors={true}
-      onImport={async (payload: SheetImportOnImportPayload): Promise<SheetImportResult> => {
+      onImport={async (payload: SheetImportOnImportPayload<Speaking>): Promise<SheetImportResult> => {
         const res = await importSpeakingJson(payload.jsonRoot, payload.skipErrors)
 
         type ImportResponse = {

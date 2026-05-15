@@ -120,7 +120,7 @@ export async function exportGrammarExcel(): Promise<Blob> {
   return new Blob([res?.data as ArrayBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 }
 
-interface DataCreateGrammarTopic {
+export interface DataCreateGrammarTopic {
   title: string
   description: string
   level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'

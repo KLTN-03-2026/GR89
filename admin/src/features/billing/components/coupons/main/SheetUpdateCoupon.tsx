@@ -8,7 +8,6 @@ import {
   SheetTitle,
   SheetFooter,
   SheetDescription,
-  SheetClose
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,7 +18,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { 
-  Ticket, 
   Tag, 
   FileText, 
   BadgePercent, 
@@ -28,7 +26,6 @@ import {
   Briefcase, 
   CheckCircle2, 
   Save, 
-  X,
   Loader2,
   Edit3
 } from "lucide-react"
@@ -98,12 +95,12 @@ export function SheetUpdateCoupon({ open, setOpen, coupon, plans, callback }: Sh
         validTo: new Date(draft.validTo!).toISOString(),
       }
 
-      await updateCoupon(coupon._id, couponData as any)
+      await updateCoupon(coupon._id, couponData as Coupon)
       toast.success('Cập nhật mã giảm giá thành công')
       setOpen(false)
       callback()
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Không thể cập nhật mã giảm giá')
+    } catch {
+      console.error('Cập nhật mã giảm giá thất bại')
     } finally {
       setLoading(false)
     }
@@ -120,7 +117,7 @@ export function SheetUpdateCoupon({ open, setOpen, coupon, plans, callback }: Sh
             <div>
               <SheetTitle className="text-2xl font-black text-gray-900 tracking-tight">Cập Nhật Mã Giảm Giá</SheetTitle>
               <SheetDescription className="text-gray-500 font-medium mt-1">
-                Chỉnh sửa thông tin cho mã "{coupon?.code}"
+                Chỉnh sửa thông tin cho mã `&quot;`{coupon?.code}`&quot;`
               </SheetDescription>
             </div>
           </div>
@@ -137,7 +134,7 @@ export function SheetUpdateCoupon({ open, setOpen, coupon, plans, callback }: Sh
                 Thông Tin Định Danh
               </div>
               
-              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Mã Giảm Giá <span className="text-rose-500">*</span>
@@ -168,7 +165,7 @@ export function SheetUpdateCoupon({ open, setOpen, coupon, plans, callback }: Sh
                     <FileText className="w-3.5 h-3.5" /> Mô Tả
                   </Label>
                   <Textarea
-                    className="bg-white border-gray-200 rounded-2xl focus:ring-rose-500 font-medium px-4 py-3 min-h-[80px] resize-none shadow-sm"
+                    className="bg-white border-gray-200 rounded-2xl focus:ring-rose-500 font-medium px-4 py-3 min-h-20 resize-none shadow-sm"
                     value={draft.description || ""}
                     onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                     placeholder="Mô tả ngắn gọn về chương trình này..."
@@ -184,12 +181,12 @@ export function SheetUpdateCoupon({ open, setOpen, coupon, plans, callback }: Sh
                 Cấu Hình Giảm Giá
               </div>
 
-              <div className="grid grid-cols-2 gap-6 bg-blue-50/30 p-6 rounded-[2rem] border border-blue-100/50">
+              <div className="grid grid-cols-2 gap-6 bg-blue-50/30 p-6 rounded-4xl border border-blue-100/50">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1">Loại Giảm Giá</Label>
                   <Select
                     value={draft.discountType}
-                    onValueChange={(v: any) => setDraft({ ...draft, discountType: v })}
+                    onValueChange={(v: string) => setDraft({ ...draft, discountType: v as 'percentage' | 'fixed' })}
                   >
                     <SelectTrigger className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-blue-500 font-bold px-4 shadow-sm">
                       <SelectValue />
@@ -250,7 +247,7 @@ export function SheetUpdateCoupon({ open, setOpen, coupon, plans, callback }: Sh
                 Thời Gian Hiệu Lực
               </div>
 
-              <div className="grid grid-cols-2 gap-6 bg-emerald-50/30 p-6 rounded-[2rem] border border-emerald-100/50">
+              <div className="grid grid-cols-2 gap-6 bg-emerald-50/30 p-6 rounded-4xl border border-emerald-100/50">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Ngày Bắt Đầu <span className="text-rose-500">*</span>
@@ -322,7 +319,7 @@ export function SheetUpdateCoupon({ open, setOpen, coupon, plans, callback }: Sh
                 Áp Dụng Cho Gói
               </div>
               
-              <div className="space-y-4 bg-indigo-50/30 p-6 rounded-[2rem] border border-indigo-100/50">
+              <div className="space-y-4 bg-indigo-50/30 p-6 rounded-4xl border border-indigo-100/50">
                 <Label className="text-xs font-black text-gray-500 uppercase ml-1">Chọn Gói Dịch Vụ (Mặc định = Tất cả)</Label>
                 <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                   {plans.length === 0 ? (

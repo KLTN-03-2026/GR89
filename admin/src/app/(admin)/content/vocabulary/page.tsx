@@ -1,5 +1,6 @@
 import { VocabularyTopicMain } from "@/features/vocabulary";
 import { getVocabularyTopicsServer } from "@/features/vocabulary/services/serverApi";
+import { Pagination } from "@/lib/apis/fetch-server";
 
 interface PageProps {
   searchParams: Promise<{
@@ -26,15 +27,15 @@ export default async function page({ searchParams }: PageProps) {
     page: Number(page),
     limit: Number(limit),
     search,
-    sortBy: sortBy as any,
-    sortOrder: sortOrder as any,
+    sortBy: sortBy as 'orderIndex' | 'createdAt' | 'updatedAt',
+    sortOrder: sortOrder as 'asc' | 'desc',
     isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined
   })
 
   return (
     <VocabularyTopicMain
-      initialData={response.data}
-      pagination={response.pagination}
+      initialData={response?.data || []}
+      pagination={response?.pagination || {} as Pagination}
     />
   );
 }

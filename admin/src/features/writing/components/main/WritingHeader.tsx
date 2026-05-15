@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { PageHeader, StatsGrid } from '@/components/common'
 import { DialogAddWriting } from '@/features/writing'
-import { PenTool, Users, Eye, TrendingUp, LucideIcon, Download } from 'lucide-react'
+import { PenTool, Users, Eye, LucideIcon, Download } from 'lucide-react'
 import { getWritingOverviewStats, exportWritingExcel } from '@/features/writing/services/api'
 import { WritingStatsSkeleton } from '@/components/common/Skeletons/WritingStatsSkeleton'
 import { WritingSheetImport } from '../WritingSheetImport'

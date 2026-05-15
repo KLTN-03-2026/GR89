@@ -1,7 +1,7 @@
 'use client'
 
+import { resultWriting } from '@/features/writing/types'
 import authorizedAxios from '@/libs/apis/authorizedAxios'
-import type { resultWriting } from '@/types'
 import type { StudySessionPayload } from '@/libs/apis/types'
 
 interface ApiResponse<T = unknown> {

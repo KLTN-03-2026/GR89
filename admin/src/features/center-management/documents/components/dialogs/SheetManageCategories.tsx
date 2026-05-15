@@ -62,7 +62,7 @@ export function SheetManageCategories({ open, onOpenChange, callback }: SheetMan
     try {
       const res = await getGlobalDocumentCategories()
       setCategories(res.data || [])
-    } catch (error) {
+    } catch {
       toast.error('Không thể tải danh mục')
     } finally {
       setIsLoading(false)
@@ -92,8 +92,8 @@ export function SheetManageCategories({ open, onOpenChange, callback }: SheetMan
       setNewCategoryName('')
       fetchCategories()
       callback?.()
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Lỗi khi thêm danh mục')
+    } catch{
+      console.error('Lỗi khi thêm danh mục')
     } finally {
       setIsLoading(false)
     }
@@ -114,8 +114,8 @@ export function SheetManageCategories({ open, onOpenChange, callback }: SheetMan
       setEditingId(null)
       fetchCategories()
       callback?.()
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Lỗi khi cập nhật danh mục')
+    } catch {
+      console.error('Lỗi khi cập nhật danh mục')
     } finally {
       setIsLoading(false)
     }
@@ -130,8 +130,8 @@ export function SheetManageCategories({ open, onOpenChange, callback }: SheetMan
       setDeleteId(null)
       fetchCategories()
       callback?.()
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể xóa danh mục đang chứa tài liệu')
+    } catch {
+      console.error('Lỗi khi xóa danh mục')
     } finally {
       setIsLoading(false)
     }
@@ -140,7 +140,7 @@ export function SheetManageCategories({ open, onOpenChange, callback }: SheetMan
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="sm:max-w-[500px] w-full p-0 flex flex-col h-full border-none shadow-2xl">
+        <SheetContent className="sm:max-w-125 w-full p-0 flex flex-col h-full border-none shadow-2xl">
           <SheetHeader className="p-8 pb-6 bg-blue-50/50 border-b border-blue-100/50">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200">
@@ -180,7 +180,7 @@ export function SheetManageCategories({ open, onOpenChange, callback }: SheetMan
 
             <div className="flex-1 overflow-hidden flex flex-col">
               <Label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1 mb-4">Danh sách hiện có</Label>
-              <ScrollArea className="h-[400px] pr-4">
+              <ScrollArea className="h-100 pr-4">
                 <div className="space-y-3">
                   {categories.length === 0 && !isLoading && (
                     <div className="text-center py-10 text-gray-400 font-bold text-sm italic">
@@ -256,7 +256,7 @@ export function SheetManageCategories({ open, onOpenChange, callback }: SheetMan
       </Sheet>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl p-8">
+        <AlertDialogContent className="rounded-4xl border-none shadow-2xl p-8">
           <AlertDialogHeader>
             <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mb-4">
               <AlertCircle className="w-8 h-8" />

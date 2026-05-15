@@ -1,4 +1,5 @@
 import type { ParseResult, Sheet } from '@/components/common/sheetImport/types'
+import { Entertainment } from '@/features/entertainment/types'
 
 export function validateEntertainmentImportJson(input: unknown): ParseResult {
   if (!Array.isArray(input)) {
@@ -13,18 +14,18 @@ export function validateEntertainmentImportJson(input: unknown): ParseResult {
       return
     }
 
-    const it = item as any
+    const it = item as Entertainment
     if (!it.title) errors.push(`Dòng [${i}]: thiếu "title"`)
     if (!it.type) {
       errors.push(`Dòng [${i}]: thiếu "type"`)
     } else if (!['movie', 'music', 'podcast'].includes(it.type)) {
       errors.push(`Dòng [${i}]: "type" không hợp lệ (movie/music/podcast)`)
     }
-    if (!it.videoUrl && !it.videoID) errors.push(`Dòng [${i}]: thiếu "videoUrl" hoặc "videoID" (media ID)`)
+    if (!it.videoUrl && !it.thumbnailUrl) errors.push(`Dòng [${i}]: thiếu "videoUrl" (media ID)`)
   })
 
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, data: input as any[] }
+  return { ok: true, data: input as Entertainment[] }
 }
 
 export function parseExcelToEntertainmentJson(sheets: Sheet[]): ParseResult {

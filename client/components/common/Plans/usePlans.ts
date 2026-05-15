@@ -11,7 +11,7 @@ export function usePlans(autoFetch: boolean = true) {
     try {
       const res = await getActivePlans()
       setPlans(res.data)
-    } catch (error) {
+    } catch  {
       toast.error('Không thể tải danh sách gói dịch vụ')
       setPlans([])
     } finally {
@@ -23,7 +23,6 @@ export function usePlans(autoFetch: boolean = true) {
     if (autoFetch) {
       fetchPlans()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFetch])
 
   const sortedPlans = useMemo(

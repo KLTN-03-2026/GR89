@@ -1,6 +1,6 @@
 import { VocabularyQuizDetailMain } from '@/features/vocabulary'
 
-export default async function page({ params }: { params: { _id: string } }) {
+export default async function page({ params }: { params: Promise<{ _id: string }> }) {
   const { _id } = await params
   return (
     <div>

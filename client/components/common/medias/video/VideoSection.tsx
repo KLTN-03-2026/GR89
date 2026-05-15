@@ -1,7 +1,6 @@
 'use client'
 
 import { RefObject } from 'react'
-import type { Config } from 'react-player'
 import { cn } from '@/libs/utils'
 import ReactPlayer from 'react-player'
 
@@ -53,7 +52,7 @@ export function VideoSection({
   const baseMediaClass = 'absolute inset-0 h-full w-full'
   const videoClassName = `${baseMediaClass} object-cover`
 
-  const youtubeConfig: NonNullable<Config['youtube']> = {
+const youtubeConfig = {
     rel: 0,
     iv_load_policy: 3,
     cc_load_policy: 0,
@@ -81,7 +80,7 @@ export function VideoSection({
                 loop={loop}
                 playsInline={playsInline}
                 pip={false}
-                config={{ youtube: youtubeConfig }}
+                config={{ youtube: youtubeConfig } as Record<string, unknown>}
                 onPlay={onVideoPlay}
                 onPause={onVideoPause}
                 onClick={onVideoClick}

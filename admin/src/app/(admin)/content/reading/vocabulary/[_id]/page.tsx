@@ -1,9 +1,10 @@
 import { ReadingVocabularyMain } from '@/features/reading'
 
-export default function Page({ params }: { params: { _id: string } }) {
+export default async function Page({ params }: { params: Promise<{ _id: string }> }) {
+  const { _id } = await params
   return (
     <div>
-      <ReadingVocabularyMain _id={params._id} />
+      <ReadingVocabularyMain _id={_id} />
     </div>
   )
 }

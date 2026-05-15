@@ -22,7 +22,6 @@ import {
   ShieldCheck,
   Activity,
   Save,
-  X,
   Loader2,
   Sparkles,
   Info,
@@ -103,7 +102,7 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
                 Thông Tin Định Danh
               </div>
 
-              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label htmlFor="fullname-edit" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Họ và Tên <span className="text-rose-500">*</span>
@@ -140,7 +139,7 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
                 Quyền Hạn & Trạng Thái
               </div>
 
-              <div className="grid grid-cols-2 gap-6 bg-indigo-50/30 p-6 rounded-[2rem] border border-indigo-100/50">
+              <div className="grid grid-cols-2 gap-6 bg-indigo-50/30 p-6 rounded-4xl border border-indigo-100/50">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Vai Trò Hệ Thống
@@ -181,7 +180,7 @@ export function SheetUpdateUser({ user, isOpen, setIsOpen, callback }: SheetUpda
                 Lịch Sử Hoạt Động
               </div>
 
-              <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
+              <div className="bg-slate-50/80 p-6 rounded-4xl border border-slate-100 grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     <Activity className="w-3 h-3" /> Đăng nhập lần cuối

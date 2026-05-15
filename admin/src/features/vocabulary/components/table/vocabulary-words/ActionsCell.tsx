@@ -58,18 +58,18 @@ export default function ActionsCell({ vacabulary, callback }: props) {
 
       {/* Dialog xác nhận xóa */}
       <Dialog open={openDelete} onOpenChange={setOpenDelete}>
-        <DialogContent className="rounded-[2rem] border-none shadow-2xl">
+        <DialogContent className="rounded-4xl border-none shadow-2xl">
           <DialogHeader className="pt-8 px-8">
             <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 mb-4 shadow-inner">
               <Trash2 className="w-6 h-6" />
             </div>
             <DialogTitle className="text-xl font-black text-gray-900">Xác nhận xóa</DialogTitle>
             <DialogDescription className="text-gray-500 font-medium pt-2">
-              Bạn có chắc chắn muốn xóa từ vựng <span className="text-rose-600 font-bold">"{vacabulary.word}"</span>?
+              Bạn có chắc chắn muốn xóa từ vựng <span className="text-rose-600 font-bold">`&quot;`{vacabulary.word}`&quot;`</span>?
               Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-[2rem]">
+          <DialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-4xl">
             <Button 
               variant="outline" 
               onClick={() => setOpenDelete(false)} 

@@ -42,8 +42,8 @@ export function WritingSheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadJson={validateWritingImportJson}
       validateAfterReadExcel={parseExcelToWritingJson}
       defaultSkipErrors={true}
-      onImport={async (payload: SheetImportOnImportPayload): Promise<SheetImportResult> => {
-        const res = await importWritingJson(payload.jsonRoot as Writing[], payload.skipErrors)
+      onImport={async (payload: SheetImportOnImportPayload<Writing>): Promise<SheetImportResult> => {
+        const res = await importWritingJson(payload.jsonRoot, payload.skipErrors)
 
         type ImportWritingJsonResponse = {
           success: boolean

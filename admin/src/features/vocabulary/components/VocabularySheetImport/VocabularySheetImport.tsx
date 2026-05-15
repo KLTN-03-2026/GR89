@@ -43,8 +43,8 @@ export function VocabularySheetImport({ callback }: { callback?: () => void }) {
       validateAfterReadJson={validateVocabularyImportJson}
       validateAfterReadExcel={parseExcelToVocabularyJson}
       defaultSkipErrors={true}
-      onImport={async (payload: SheetImportOnImportPayload): Promise<SheetImportResult> => {
-        const res = await importVocabularyJson(payload.jsonRoot as VocabularyTopic[], payload.skipErrors)
+      onImport={async (payload: SheetImportOnImportPayload<VocabularyTopic>): Promise<SheetImportResult> => {
+        const res = await importVocabularyJson(payload.jsonRoot, payload.skipErrors)
 
         type ImportResponse = {
           success: boolean

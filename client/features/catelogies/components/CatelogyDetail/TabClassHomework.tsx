@@ -55,6 +55,7 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
     })
   }
 
+
   const applySelectedSubmission = (sub: IHomeworkSubmission) => {
     const submissionContent = sub?.content || ''
     setSubmittedHtml(submissionContent)
@@ -62,6 +63,7 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
     const corrected = sub?.correctedContent || ''
     const comment = sub?.comment || ''
     setCorrectedHtml(corrected)
+
     setCommentHtml(comment)
 
     if (stripText(corrected).length > 0 || stripText(comment).length > 0) {
@@ -252,7 +254,7 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
                 <TabsTrigger
                   value="corrected"
                   className="rounded-xl font-bold"
-                  disabled={stripText(correctedHtml).length === 0 && stripText(commentHtml).length === 0}
+                  disabled={!!stripText(correctedHtml) && !!stripText(commentHtml)}
                 >
                   Bài đã sửa
                 </TabsTrigger>
@@ -274,10 +276,13 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
                   disabled={isLoading}
                 >
                   {submissionHistory.map((s, idx) => {
+                    const formatDate = (date?: string) =>
+                    date ? new Date(date).toLocaleString('vi-VN') : 'Không rõ thời gian'
+
                     const label =
                       idx === 0
-                        ? `Mới nhất • ${new Date(s.submittedAt).toLocaleString('vi-VN')}`
-                        : `Lần ${submissionHistory.length - idx} • ${new Date(s.submittedAt).toLocaleString('vi-VN')}`
+                        ? `Mới nhất • ${formatDate(s?.submittedAt)}`
+                        : `Lần ${submissionHistory.length - idx} • ${formatDate(s?.submittedAt)}`
                     return (
                       <option key={String(s?._id ?? idx)} value={String(s?._id ?? idx)}>
                         {label}

@@ -8,12 +8,12 @@ import { DataTable } from '@/components/common'
 import { BookOpenCheck, ArrowLeft, Plus, FileCheck, Clock, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetTrigger } from "@/components/ui/sheet"
-import { HomeworkSubmissionsSheet } from './HomeworkSubmissionsSheet'
 import { SheetAssignHomework } from '../../dialogs/SheetAssignHomework'
 import { columnsHomeworkList } from '../HomeworkTable/HomeworkListColumn'
 import { ICenterClass, IHomework } from '../../../type'
 import { StatsGrid } from '@/components/common/shared/StatsGrid'
 import { ColumnDef } from '@tanstack/react-table'
+import { HomeworkSubmissionsSheet } from '@/features/center-management/classes/components/Homework/HomeworkMain/HomeworkSubmissionsSheet'
 
 interface HomeworkMainProps {
   initialData: ICenterClass | null

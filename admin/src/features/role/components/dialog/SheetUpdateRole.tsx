@@ -17,16 +17,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { 
   ShieldCheck, 
-  Type, 
   FileText, 
   Key, 
   Save, 
-  X,
   Loader2,
-  Sparkles,
   Info,
   ShieldAlert,
-  Zap
 } from "lucide-react"
 import { updateRole, RolePayload } from "../../services/api"
 import { toast } from "react-toastify"
@@ -76,8 +72,8 @@ export function SheetUpdateRole({ role, isOpen, setIsOpen, callback }: SheetUpda
       } else {
         toast.error(response.message || 'Có lỗi xảy ra')
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra khi cập nhật vai trò')
+    } catch {
+        console.error('Có lỗi xảy ra khi cập nhật vai trò')
     } finally {
       setLoading(false)
     }
@@ -111,7 +107,7 @@ export function SheetUpdateRole({ role, isOpen, setIsOpen, callback }: SheetUpda
                 Thông Tin Cơ Bản
               </div>
               
-              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label htmlFor="rolename-edit" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tên Vai Trò <span className="text-rose-500">*</span>
@@ -147,7 +143,7 @@ export function SheetUpdateRole({ role, isOpen, setIsOpen, callback }: SheetUpda
                 Danh Mục Quyền Hạn
               </div>
 
-              <div className="bg-rose-50/30 p-6 rounded-[2rem] border border-rose-100/50 space-y-4">
+              <div className="bg-rose-50/30 p-6 rounded-4xl border border-rose-100/50 space-y-4">
                 <div className="space-y-2.5">
                   <Label htmlFor="permissions-edit" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Chuỗi Quyền (Phân tách bằng dấu phẩy)
@@ -175,7 +171,7 @@ export function SheetUpdateRole({ role, isOpen, setIsOpen, callback }: SheetUpda
             </section>
 
             {/* Note Section */}
-            <div className="bg-amber-50/50 border border-amber-100 p-6 rounded-[2rem] flex gap-4 items-start pb-10">
+            <div className="bg-amber-50/50 border border-amber-100 p-6 rounded-4xl flex gap-4 items-start pb-10">
               <div className="p-2 bg-white rounded-xl shadow-sm">
                 <ShieldAlert className="w-5 h-5 text-amber-500" />
               </div>

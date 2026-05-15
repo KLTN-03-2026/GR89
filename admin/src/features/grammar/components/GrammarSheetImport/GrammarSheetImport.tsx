@@ -42,8 +42,8 @@ export function GrammarSheetImport({ callback }: { callback?: () => void }) {
       }}
       validateAfterReadJson={validateGrammarImportJson}
       validateAfterReadExcel={parseExcelToGrammarJson}
-      onImport={async (payload: SheetImportOnImportPayload) => {
-        const res = await importGrammarJson(payload.jsonRoot as GrammarTopic[], payload.skipErrors)
+      onImport={async (payload: SheetImportOnImportPayload<GrammarTopic>) => {
+        const res = await importGrammarJson(payload.jsonRoot, payload.skipErrors)
 
         type ImportResponse = {
           success: boolean

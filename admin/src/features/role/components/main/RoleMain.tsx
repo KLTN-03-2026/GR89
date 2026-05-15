@@ -1,5 +1,5 @@
 'use client'
-import { DataTable, PageHeader } from "@/components/common"
+import { DataTable } from "@/components/common"
 import { Card, CardContent } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { columnsRole } from "../table/RoleColumn"
@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, ShieldCheck, Info, FileText, Lock, Plus, Save, X } from "lucide-react"
+import { Loader2, ShieldCheck, Info, FileText, Lock, Plus } from "lucide-react"
 import { createRole, getRoleList } from "../../services/api"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -110,7 +110,7 @@ export function RoleMain() {
                   Thông Tin Cơ Bản
                 </div>
                 
-                <div className="grid gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                <div className="grid gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                   <div className="space-y-2.5">
                     <Label className="text-xs font-black text-gray-500 uppercase ml-1">Tên Vai Trò *</Label>
                     <Input
@@ -130,7 +130,7 @@ export function RoleMain() {
                       placeholder="Mô tả ngắn gọn về phạm vi của vai trò này..."
                       value={newRole.description}
                       onChange={(e) => setNewRole((prev) => ({ ...prev, description: e.target.value }))}
-                      className="bg-white border-gray-200 rounded-2xl focus:ring-indigo-500 font-medium px-4 py-3 min-h-[100px] resize-none shadow-sm"
+                      className="bg-white border-gray-200 rounded-2xl focus:ring-indigo-500 font-medium px-4 py-3 min-h-25 resize-none shadow-sm"
                     />
                   </div>
                 </div>
@@ -143,13 +143,13 @@ export function RoleMain() {
                   Phân Quyền Chi Tiết
                 </div>
                 
-                <div className="space-y-4 bg-amber-50/30 p-6 rounded-[2rem] border border-amber-100/50">
+                <div className="space-y-4 bg-amber-50/30 p-6 rounded-4xl border border-amber-100/50">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1">Danh Sách Quyền (Cách nhau bởi dấu phẩy)</Label>
                   <Textarea
                     placeholder="users:read, users:write, roles:manage..."
                     value={newRole.permissions}
                     onChange={(e) => setNewRole((prev) => ({ ...prev, permissions: e.target.value }))}
-                    className="bg-white border-gray-200 rounded-2xl focus:ring-amber-500 font-mono text-sm px-4 py-4 min-h-[120px] shadow-sm leading-relaxed"
+                    className="bg-white border-gray-200 rounded-2xl focus:ring-amber-500 font-mono text-sm px-4 py-4 min-h-30 shadow-sm leading-relaxed"
                   />
                   <div className="flex items-start gap-2 text-[11px] text-amber-700 font-bold bg-amber-100/50 p-3 rounded-xl">
                     <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />

@@ -114,7 +114,7 @@ export default function VocabularyTopicContent({ callback, initialData, paginati
     if (urlSearch !== search) {
       setSearch(urlSearch)
     }
-  }, [urlSearch])
+  }, [search, urlSearch])
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || (pages && newPage > pages)) {

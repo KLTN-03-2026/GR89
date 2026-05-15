@@ -28,8 +28,8 @@ export function DialogSelectAudio({ onSelect, children }: Props) {
         const res = await getMediaList()
         const audioFiles = res.data?.filter(item => item.type === 'audio') || []
         setAudioList(audioFiles)
-      } catch (e: any) {
-        toast.error(e.response?.data?.message || 'Không thể tải danh sách audio')
+      } catch {
+        console.error('Không thể tải danh sách audio')
       } finally {
         setLoading(false)
       }
@@ -54,7 +54,7 @@ export function DialogSelectAudio({ onSelect, children }: Props) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="w-[800px] !max-w-[95vw] !max-h-[80%] flex flex-col">
+      <DialogContent className="w-200 max-w-[95vw]! max-h-[80%]! flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Music2 className="h-5 w-5" />

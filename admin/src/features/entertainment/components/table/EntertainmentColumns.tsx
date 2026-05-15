@@ -41,7 +41,7 @@ function VideoThumb({ url, title }: { url: string; title: string }) {
     <div className="flex items-center justify-center">
       <button
         type="button"
-        className="group relative w-[50px] h-[50px] border border-gray-200 rounded overflow-hidden"
+        className="group relative w-12.5 h-12.5 border border-gray-200 rounded overflow-hidden"
         onClick={() => setOpen(true)}
       >
         {isYouTube ? (
@@ -54,7 +54,7 @@ function VideoThumb({ url, title }: { url: string; title: string }) {
         </span>
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[800px] w-[90vw] p-0">
+        <DialogContent className="max-w-200 w-[90vw] p-0">
           <DialogTitle className='hidden'>{title}</DialogTitle>
           <div className="w-full aspect-video">
             {isYouTube ? (
@@ -126,7 +126,7 @@ export const columnsEntertainment = (
 
         return (
           <div className="flex flex-col gap-1">
-            <Badge variant={variant as any}>{label}</Badge>
+            <Badge variant={variant}>{label}</Badge>
             {type === 'episode' && row.original.orderIndex !== undefined && (
               <span className="text-[10px] text-muted-foreground italic">Tập {row.original.orderIndex}</span>
             )}
@@ -150,7 +150,7 @@ export const columnsEntertainment = (
         const t = row.original.thumbnailUrl as unknown as { url?: string } | string | null
         const url = typeof t === 'string' ? t : t?.url
         return url ? (
-          <Image src={url} alt={row.original.title} width={50} height={50} className="w-[50px] h-[50px] object-cover border rounded" />
+          <Image src={url} alt={row.original.title} width={50} height={50} className="w-12.5 h-12.5 object-cover border rounded" />
         ) : (
           <Badge variant="secondary">Chưa có</Badge>
         )

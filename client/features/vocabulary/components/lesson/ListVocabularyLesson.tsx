@@ -6,8 +6,8 @@ import { ArrowLeft, ArrowRight, Layers, X } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { VocabularyTopics } from "@/types/vocabulary"
 import { ContentStateDisplay } from "@/components/common/ContentStateDisplay"
+import { VocabularyTopics } from "@/features/vocabulary/types"
 
 interface ListVocabularyLessonProps {
   topic: VocabularyTopics

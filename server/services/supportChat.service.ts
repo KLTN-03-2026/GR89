@@ -223,12 +223,12 @@ export class SupportChatService {
     ticketId: string,
     staffId: string,
     content: string,
-    attachments?: ISupportAttachment[],
+    attachments?: ISupportAttachment,
   ) {
     const ticketObjectId = this.ensureObjectId(ticketId, 'Ticket không hợp lệ')
     const staff = this.ensureObjectId(staffId, 'Người dùng không hợp lệ')
 
-    if ((!content || content.trim().length === 0) && (!attachments || attachments.length === 0)) {
+    if ((!content || content.trim().length === 0) && !attachments) {
       throw new ErrorHandler('Nội dung hoặc file đính kèm không được để trống', 400)
     }
 
@@ -245,7 +245,7 @@ export class SupportChatService {
       sender: staff,
       type: 'text',
       content: content || '',
-      attachments: Array.isArray(attachments) ? attachments : [],
+      attachments,
       readBy: [],
       createdAt: now,
     } as any)

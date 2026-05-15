@@ -1,5 +1,20 @@
 import type { ParseResult, Sheet } from '@/components/common/sheetImport/types'
 
+interface IpaImport {
+  sound: string
+  soundType: string
+  image?: string
+  imageID?: string
+  description: string
+  examples?: ExampleImport[]
+}
+
+interface ExampleImport {
+  word: string
+  phonetic: string
+  vietnamese: string
+}
+
 export function validateIpaImportJson(input: unknown): ParseResult {
   if (!Array.isArray(input)) {
     return { ok: false, errors: ['JSON phải là mảng các âm IPA.'] }
@@ -13,7 +28,7 @@ export function validateIpaImportJson(input: unknown): ParseResult {
       return
     }
 
-    const it = item as any
+    const it = item as IpaImport
     if (!it.sound) errors.push(`Dòng [${i}]: thiếu "sound"`)
     if (!it.soundType) {
       errors.push(`Dòng [${i}]: thiếu "soundType"`)
@@ -26,14 +41,14 @@ export function validateIpaImportJson(input: unknown): ParseResult {
     if (it.examples && !Array.isArray(it.examples)) {
       errors.push(`Dòng [${i}]: "examples" phải là mảng`)
     } else if (it.examples) {
-      it.examples.forEach((ex: any, j: number) => {
+      it.examples.forEach((ex: ExampleImport, j: number) => {
         if (!ex.word) errors.push(`Dòng [${i}] ví dụ [${j}]: thiếu "word"`)
       })
     }
   })
 
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, data: input as any[] }
+  return { ok: true, data: input as IpaImport[] }
 }
 
 export function parseExcelToIpaJson(sheets: Sheet[]): ParseResult {
@@ -46,7 +61,7 @@ export function parseExcelToIpaJson(sheets: Sheet[]): ParseResult {
   }
 
   // Group examples by sound
-  const examplesByIpa: Record<string, any[]> = {}
+  const examplesByIpa: Record<string, ExampleImport[]> = {}
   if (exampleSheet) {
     exampleSheet.rows.forEach((row, i) => {
       if (!row.IPA_ID) {

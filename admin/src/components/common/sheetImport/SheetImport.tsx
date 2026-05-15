@@ -36,7 +36,7 @@ const DEFAULT_FILE_SUBMIT = (defaultSkipErrors: boolean) => {
   }
 }
 
-export function SheetImport({
+export function SheetImport<T>({
   title,
   description,
   triggerLabel = 'Import',
@@ -50,7 +50,7 @@ export function SheetImport({
   validateAfterReadExcel,
   onImport,
   onImported
-}: SheetImportProps) {
+}: SheetImportProps<T>) {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [step, setStep] = useState<SheetImportStep>('upload')
@@ -116,7 +116,7 @@ export function SheetImport({
     try {
       // Support both legacy signature: (file, skipErrors)
       // and JSON-driven signature: ({ file, fileType, jsonRoot, skipErrors })
-      const importJsonDriven = onImport as ((payload: SheetImportOnImportPayload) => Promise<SheetImportResult>)
+      const importJsonDriven = onImport as ((payload: SheetImportOnImportPayload<unknown>) => Promise<SheetImportResult>)
       const importLegacy = onImport as ((file: File, skipErrors: boolean) => Promise<SheetImportResult>)
 
       const res: SheetImportResult =
@@ -226,7 +226,7 @@ export function SheetImport({
                 {errorPreview && errorPreview.length > 0 ? (
                   <div className="rounded-lg border border-red-200 bg-red-50 p-4 space-y-2">
                     <p className="text-sm font-bold text-red-700">⚠️ Có {errorPreview.length} lỗi khi đọc file</p>
-                    <div className="max-h-[180px] overflow-auto space-y-1">
+                    <div className="max-h-45 overflow-auto space-y-1">
                       {errorPreview.slice(0, 10).map((err, idx) => (
                         <p key={idx} className="text-xs text-red-700 font-medium">
                           {err}

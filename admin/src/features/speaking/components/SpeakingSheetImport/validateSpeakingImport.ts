@@ -1,5 +1,24 @@
 import type { ParseResult, Sheet } from '@/components/common/sheetImport/types'
 
+interface DataImportSpeaking {
+  title: string
+  description: string
+  videoUrl: string
+  level?: string
+  isActive: boolean
+  subtitles?: DataImportSubtitle[]
+}
+
+interface DataImportSubtitle {
+  start: string
+  end: string
+  english?: string
+  phonetic?: string
+  vietnamese?: string
+  sentence?: string
+  raw?: string
+}
+
 export function validateSpeakingImportJson(input: unknown): ParseResult {
   if (!Array.isArray(input)) {
     return { ok: false, errors: ['JSON phải là mảng các bài nói.'] }
@@ -13,7 +32,7 @@ export function validateSpeakingImportJson(input: unknown): ParseResult {
       return
     }
 
-    const it = item as any
+    const it = item as DataImportSpeaking
     if (!it.title) errors.push(`Dòng [${i}]: thiếu "title"`)
     if (!it.videoUrl) errors.push(`Dòng [${i}]: thiếu "videoUrl" (media ID)`)
     if (it.level && !['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(it.level)) {
@@ -24,7 +43,7 @@ export function validateSpeakingImportJson(input: unknown): ParseResult {
       errors.push(`Dòng [${i}]: "subtitles" phải là mảng`)
     }
 
-    it.subtitles?.forEach((s: any, j: number) => {
+    it.subtitles?.forEach((s: DataImportSubtitle, j: number) => {
       if (!s.start) errors.push(`Dòng [${i}] Subtitle [${j}]: thiếu "start"`)
       if (!s.end) errors.push(`Dòng [${i}] Subtitle [${j}]: thiếu "end"`)
       if (!s.english && !s.sentence) errors.push(`Dòng [${i}] Subtitle [${j}]: thiếu "english" hoặc "sentence"`)
@@ -32,7 +51,7 @@ export function validateSpeakingImportJson(input: unknown): ParseResult {
   })
 
   if (errors.length > 0) return { ok: false, errors }
-  return { ok: true, data: input as any[] }
+  return { ok: true, data: input as DataImportSpeaking[] }
 }
 
 export function parseExcelToSpeakingJson(sheets: Sheet[]): ParseResult {
@@ -44,7 +63,7 @@ export function parseExcelToSpeakingJson(sheets: Sheet[]): ParseResult {
     return { ok: false, errors: ['Thiếu sheet Speakings'] }
   }
 
-  const speakingMap = new Map<string, any>()
+  const speakingMap = new Map<string, DataImportSpeaking>()
 
   speakingSheet.rows.forEach((row, i) => {
     const speakingId = String(row.ID || row.title || '').trim()
@@ -78,7 +97,7 @@ export function parseExcelToSpeakingJson(sheets: Sheet[]): ParseResult {
       return
     }
 
-    speaking.subtitles.push({
+    speaking?.subtitles?.push({
       start: String(row.start || '').trim(),
       end: String(row.end || '').trim(),
       english: String(row.english || row.sentence || '').trim(),

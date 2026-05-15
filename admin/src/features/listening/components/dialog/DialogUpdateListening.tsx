@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { updateListening, DataListening } from '@/features/listening/services/api'
-import { Music, FileText, Info, Layers, Save, CheckCircle2, Edit3, Sparkles } from 'lucide-react'
+import { Music, FileText, Info, Layers, Save, CheckCircle2, Edit3 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { Media } from '@/features/Media/types'
@@ -87,8 +87,8 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
       callback()
       toast.success('Cập nhật bài nghe thành công')
       setIsOpen(false)
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
+    } catch {
+      console.error('Đã có lỗi xảy ra')
     } finally {
       setLoading(false)
     }
@@ -158,7 +158,7 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
                     placeholder="Nhập mô tả ngắn gọn..."
                     value={data.description}
                     onChange={(e) => setData({ ...data, description: e.target.value })}
-                    className="bg-white border-zinc-200 rounded-lg font-medium min-h-[80px] resize-none"
+                    className="bg-white border-zinc-200 rounded-lg font-medium min-h-20 resize-none"
                   />
                 </div>
               </div>
@@ -204,7 +204,7 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
                   placeholder="1&#10;00:00:00,000 --> 00:00:02,000&#10;Hello, welcome to English class!"
                   value={data.subtitle}
                   onChange={(e) => setData({ ...data, subtitle: e.target.value })}
-                  className="min-h-[300px] font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
+                  className="min-h-75 font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
                 />
                 <Label className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-1.5">
                   <FileText className="h-4 w-4" /> Phụ đề tiếng Việt <span className="text-rose-500">*</span>
@@ -213,7 +213,7 @@ export function DialogUpdateListening({ listening, callback, isOpen, setIsOpen }
                   placeholder="Xin chào, chào mừng bạn đến với lớp tiếng Anh!"
                   value={data.subtitleVi}
                   onChange={(e) => setData({ ...data, subtitleVi: e.target.value })}
-                  className="min-h-[200px] font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
+                  className="min-h-50 font-mono text-sm bg-zinc-50 border-zinc-200 rounded-lg p-4 resize-y"
                 />
 
                 <p className="text-xs text-zinc-500 leading-relaxed rounded-lg border border-dashed border-zinc-200 bg-zinc-50/80 p-3">

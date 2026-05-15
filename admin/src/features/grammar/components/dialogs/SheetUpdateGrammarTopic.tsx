@@ -27,7 +27,7 @@ import {
   History,
   User as UserIcon
 } from "lucide-react"
-import { updateGrammarTopic } from "../../services/api"
+import { DataCreateGrammarTopic, updateGrammarTopic } from "../../services/api"
 import { toast } from "react-toastify"
 import { GrammarTopic } from "../../types"
 import { format } from "date-fns"
@@ -70,11 +70,11 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
         title: data.title,
         description: data.description,
         level: data.level
-      } as any)
+      } as DataCreateGrammarTopic)
       toast.success('Cập nhật chủ đề thành công')
       setOpen(false)
       callback()
-    } catch (error) {
+    } catch {
       toast.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
@@ -109,7 +109,7 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
                 Thông Tin Cấu Trúc
               </div>
 
-              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label htmlFor="title-update" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tiêu Đề <span className="text-rose-500">*</span>
@@ -127,7 +127,7 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
                   <Label htmlFor="level-update" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     <Layers className="w-3.5 h-3.5" /> Trình Độ <span className="text-rose-500">*</span>
                   </Label>
-                  <Select value={data.level} onValueChange={(value) => setData({ ...data, level: value as any })}>
+                  <Select value={data.level} onValueChange={(value) => setData({ ...data, level: value as DataCreateGrammarTopic['level'] })}>
                     <SelectTrigger id="level-update" className="h-12 bg-white border-gray-200 rounded-2xl focus:ring-emerald-500 font-bold px-4 shadow-sm">
                       <SelectValue placeholder="Chọn trình độ" />
                     </SelectTrigger>
@@ -161,7 +161,7 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
                 Lịch Sử Chỉnh Sửa
               </div>
 
-              <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
+              <div className="bg-slate-50/80 p-6 rounded-4xl border border-slate-100 grid grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     <UserIcon className="w-3 h-3" /> Người tạo

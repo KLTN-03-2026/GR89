@@ -59,7 +59,7 @@ export function ListMediaVideo({ initialData, pagination }: Props) {
   }
 
   const handleLimitChange = (nextLimit: number) => {
-    const safeLimit = ALLOWED_LIMITS.includes(nextLimit as any) ? nextLimit : 12
+    const safeLimit = ALLOWED_LIMITS.includes(nextLimit as 6 | 12 | 18 | 24 | 48 | 96) ? nextLimit : 12
     updateUrl({ limit: safeLimit, page: 1 })
   }
 
@@ -69,7 +69,7 @@ export function ListMediaVideo({ initialData, pagination }: Props) {
   }
 
   useEffect(() => {
-    if (!ALLOWED_LIMITS.includes(limit as any)) {
+    if (!ALLOWED_LIMITS.includes(limit as 6 | 12 | 18 | 24 | 48 | 96)) {
       updateUrl({ limit: 12, page: 1 })
     }
   }, [limit, updateUrl])

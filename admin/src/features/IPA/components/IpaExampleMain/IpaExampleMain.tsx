@@ -5,7 +5,7 @@ import { columnsIpaExample } from '../IpaExampleTable/IpaExampleColumn'
 import { useState } from 'react'
 import { deleteMultipleExamplesIpa } from '@/features/IPA/services/api'
 import { Ipa, Example } from '@/features/IPA/types'
-import { Loader2, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,7 +30,6 @@ interface Props {
 
 export function IpaExampleMain({ _id, initialData }: Props) {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
   const [ipa, setIpa] = useState<Ipa>(initialData)
   const [selectedExamples, setSelectedExamples] = useState<Example[]>([])
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -66,14 +65,6 @@ export function IpaExampleMain({ _id, initialData }: Props) {
       setIsDeleting(false)
       setIsDeleteDialogOpen(false)
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
   }
 
   if (!ipa) {
@@ -114,12 +105,11 @@ export function IpaExampleMain({ _id, initialData }: Props) {
         </div>
       </div>
 
-      <Card className="rounded-[2rem] border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden mt-6">
+      <Card className="rounded-4xl border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden mt-6">
         <CardContent className="p-0">
           <DataTable
             columns={columnsIpaExample(_id, () => router.refresh())}
             data={ipa.examples || []}
-            isLoading={isLoading}
             columnNameSearch="word"
             onSelectedRowsChange={(rows) => setSelectedExamples(rows as Example[])}
           />

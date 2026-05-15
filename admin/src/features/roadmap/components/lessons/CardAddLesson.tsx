@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { BookOpen, Eye, FileText, Headphones, Mic, PenTool, Target } from 'lucide-react'
 import { SheetAddLesson } from './SheetAddLesson'
 import { cn } from '@/lib/utils'
@@ -90,7 +89,7 @@ export default function CardAddLesson({ roadmapId, onLessonsChange }: CardAddLes
 
   return (
     <>
-      <div className='mt-8 p-6 bg-gray-50/50 rounded-[2rem] border-2 border-dashed border-gray-200'>
+      <div className='mt-8 p-6 bg-gray-50/50 rounded-4xl border-2 border-dashed border-gray-200'>
         <div className="flex items-center gap-2 mb-4 px-2">
           <Plus className="w-4 h-4 text-gray-400" />
           <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Thêm nội dung bài học</span>

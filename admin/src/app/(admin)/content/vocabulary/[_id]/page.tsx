@@ -9,7 +9,7 @@ export default async function page({ params }: { params: Promise<{ _id: string }
   return (
     <VocabularyMain
       _id={_id}
-      initialData={response.data}
+      initialData={response?.data || null}
     />
   )
 }

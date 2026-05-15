@@ -1,5 +1,6 @@
 import { PlansMain } from "@/features/billing"
 import { getPlansServer } from "@/features/billing/services/serverApi"
+import { Plan } from "@/lib/apis/api";
 
 interface PageProps {
   searchParams: Promise<{
@@ -31,13 +32,13 @@ export default async function PlansPage({ searchParams }: PageProps) {
     limit: Number(limit),
     search,
     isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-    displayType: displayType as any,
-    billingCycle: billingCycle as any,
+    displayType: displayType  as "default" | "vip" | "premium",
+    billingCycle: billingCycle as "monthly" | "yearly" | "lifetime",
     sortBy,
     sortOrder: sortOrder as 'asc' | 'desc'
   });
 
-  const formattedData = (response?.data || []).map((p: any) => ({ 
+  const formattedData = (response?.data || []).map((p: Plan) => ({ 
     ...p, 
     active: p.isActive 
   }));

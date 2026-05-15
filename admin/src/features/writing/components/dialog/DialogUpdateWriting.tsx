@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { updateWriting } from '../../services/api'
+import { updateWriting, WritingPayload } from '../../services/api'
 import { Writing } from '@/features/writing/types'
 import { Plus, Trash2, Info, Settings, Lightbulb, ListOrdered, Save, Clock, Type, Edit3, Sparkles } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -61,12 +61,12 @@ export function DialogUpdateWriting({ callback, writing, isOpen, setIsOpen }: pr
 
     setIsLoading(true)
     try {
-      await updateWriting(writing._id, data as any)
+      await updateWriting(writing._id, data as WritingPayload)
       callback()
       toast.success('Sửa bài viết thành công')
       setIsOpen(false)
-    } catch (error) {
-      toast.error('Đã có lỗi xảy ra')
+    } catch {
+      console.error('Đã có lỗi xảy ra')
     } finally {
       setIsLoading(false)
     }
@@ -104,7 +104,7 @@ export function DialogUpdateWriting({ callback, writing, isOpen, setIsOpen }: pr
                 <Info className="h-4 w-4" />
                 Thông Tin Cơ Bản
               </div>
-              <div className="grid grid-cols-4 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-4 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="col-span-3 space-y-2.5">
                   <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tiêu đề bài viết <span className="text-rose-500 text-lg">*</span>
@@ -141,7 +141,7 @@ export function DialogUpdateWriting({ callback, writing, isOpen, setIsOpen }: pr
                     placeholder="Nhập yêu cầu chi tiết cho bài viết..."
                     value={data.description}
                     onChange={(e) => setData({ ...data, description: e.target.value })}
-                    className="bg-white border-gray-200 rounded-2xl focus:ring-primary font-medium px-4 py-3 min-h-[100px] resize-none shadow-sm"
+                    className="bg-white border-gray-200 rounded-2xl focus:ring-primary font-medium px-4 py-3 min-h-25 resize-none shadow-sm"
                   />
                 </div>
               </div>
@@ -153,7 +153,7 @@ export function DialogUpdateWriting({ callback, writing, isOpen, setIsOpen }: pr
                 <Settings className="h-4 w-4" />
                 Cấu Hình Giới Hạn
               </div>
-              <div className="grid grid-cols-3 gap-6 bg-blue-50/30 p-6 rounded-[2rem] border border-blue-100/50 shadow-sm">
+              <div className="grid grid-cols-3 gap-6 bg-blue-50/30 p-6 rounded-4xl border border-blue-100/50 shadow-sm">
                 <div className="space-y-2.5">
                   <Label className="text-xs font-black text-blue-700/60 uppercase ml-1 flex items-center gap-1.5">
                     <Type className="h-3.5 w-3.5" /> Số từ tối thiểu
@@ -209,7 +209,7 @@ export function DialogUpdateWriting({ callback, writing, isOpen, setIsOpen }: pr
                     onChange={(e) =>
                       setData({ ...data, suggestedVocabulary: e.target.value.split(',').map((line) => line.trim()) })
                     }
-                    className="bg-white border-gray-200 rounded-3xl focus:ring-amber-500 font-medium px-6 py-4 min-h-[80px] resize-none shadow-sm"
+                    className="bg-white border-gray-200 rounded-3xl focus:ring-amber-500 font-medium px-6 py-4 min-h-20 resize-none shadow-sm"
                   />
                 </div>
 

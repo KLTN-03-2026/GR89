@@ -50,7 +50,7 @@ export default function AdminActivitiesPage() {
 
   useEffect(() => {
     fetchActivities(page, search)
-  }, [page])
+  }, [page, search])
 
   const onSearch = () => {
     setPage(1)

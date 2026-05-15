@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { PageHeader, StatsGrid } from '@/components/common'
-import { Volume2, Users, Eye, TrendingUp, LucideIcon, Download } from 'lucide-react'
+import { Volume2, Users, Eye, LucideIcon, Download } from 'lucide-react'
 import { exportIpaExcel, getIpaOverviewStats } from '@/features/IPA/services/api'
 import { IpaStatsSkeleton } from '@/components/common/Skeletons/IpaStatsSkeleton'
 import { IpaSheetImport } from '../IpaSheetImport'

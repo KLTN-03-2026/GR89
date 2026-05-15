@@ -32,7 +32,7 @@ interface ChatContextType {
   setOpenChat: (chat: ChatType) => void
   humanTicket: ChatConversation | null
   humanMessages: ChatMessage[]
-  refreshHumanTicket: () => Promise<void>
+  refreshHumanTicket: () => Promise<ChatConversation | null>
   sendHumanMessage: (
     content: string,
     attachments?: ChatAttachment[]
@@ -56,6 +56,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // FIX: dùng ref để tránh socket effect rerun liên tục
   const openChatRef = useRef<ChatType>(null)
+  const unreadCountRef = useRef<number>(0)
+  const lastAssigneeMessageAtMsRef = useRef<number>(0)
+  const inflightRef = useRef(false)
+  const lastSoundAtMsRef = useRef<number>(0)
 
   const socket = useSocketStore((s) => s.socket)
 
@@ -66,12 +70,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     openChatRef.current = openChat
   }, [openChat])
 
+  useEffect(() => {
+    unreadCountRef.current = unreadCount
+  }, [unreadCount])
+
   // reset khi logout
   useEffect(() => {
     if (!user?._id) {
       setHumanTicket(null)
       setHumanMessages([])
       setUnreadCount(0)
+      lastAssigneeMessageAtMsRef.current = 0
     }
   }, [user?._id])
 
@@ -89,30 +98,43 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }
 
   const refreshHumanTicket = useCallback(async () => {
-    if (!user?._id) return
+    if (!user?._id) return null
 
     try {
       const ticket = await getTicketForUser()
 
       setHumanTicket(ticket || null)
       setHumanMessages(ticket?.messages || [])
+
+      const ms = ticket?.lastAssigneeMessageAt
+        ? new Date(ticket.lastAssigneeMessageAt).getTime()
+        : 0
+      if (Number.isFinite(ms) && ms > 0) {
+        lastAssigneeMessageAtMsRef.current = ms
+      }
+
+      return ticket || null
     } catch (error) {
       console.error('refreshHumanTicket error:', error)
+      return null
     }
   }, [user?._id])
 
   const refreshUnreadCount = useCallback(async () => {
     if (!user?._id) {
       setUnreadCount(0)
-      return
+      return 0
     }
 
     try {
       const ticket = await getUnreadCountForUser()
 
-      setUnreadCount(ticket?.countUnRead || 0)
+      const next = ticket?.countUnRead || 0
+      setUnreadCount(next)
+      return next
     } catch (error) {
       console.error('refreshUnreadCount error:', error)
+      return 0
     }
   }, [user?._id])
 
@@ -154,23 +176,49 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     if (!socket) return
 
     const onTicketUpdated = async () => {
-      console.log('ticket updated')
+      if (inflightRef.current) return
+      inflightRef.current = true
+      try {
+        if (openChatRef.current === 'human') {
+          const ticket = await refreshHumanTicket()
+          const nextMs = ticket?.lastAssigneeMessageAt
+            ? new Date(ticket.lastAssigneeMessageAt).getTime()
+            : 0
+          const prevMs = lastAssigneeMessageAtMsRef.current
 
-      // đang mở chat
-      if (openChatRef.current === 'human') {
-        await refreshHumanTicket()
+          if (
+            Number.isFinite(nextMs) &&
+            nextMs > 0 &&
+            prevMs > 0 &&
+            nextMs > prevMs
+          ) {
+            const now = Date.now()
+            if (now - lastSoundAtMsRef.current >= 1200) {
+              lastSoundAtMsRef.current = now
+              playSound()
+            }
+            lastAssigneeMessageAtMsRef.current = nextMs
+          } else if (Number.isFinite(nextMs) && nextMs > 0 && prevMs === 0) {
+            lastAssigneeMessageAtMsRef.current = nextMs
+          }
 
-        setUnreadCount(0)
+          setUnreadCount(0)
+          return
+        }
 
-        playSound()
+        const prevUnread = unreadCountRef.current
+        const nextUnread = await refreshUnreadCount()
 
-        return
+        if (nextUnread > prevUnread) {
+          const now = Date.now()
+          if (now - lastSoundAtMsRef.current >= 1200) {
+            lastSoundAtMsRef.current = now
+            playSound()
+          }
+        }
+      } finally {
+        inflightRef.current = false
       }
-
-      // chưa mở chat
-      playSound()
-
-      await refreshUnreadCount()
     }
 
     const onReadAll = async () => {
@@ -186,7 +234,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       socket.off('message:readAll', onReadAll)
     }
-  }, [socket])
+  }, [refreshHumanTicket, refreshUnreadCount, socket])
 
   return (
     <ChatContext.Provider

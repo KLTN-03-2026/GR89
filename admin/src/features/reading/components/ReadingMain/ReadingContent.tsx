@@ -118,7 +118,6 @@ export default function ReadingContent({ refresh, callback }: props) {
 
   useEffect(() => {
     fetchReadings()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchReadings, refresh])
 
   // Count active filters

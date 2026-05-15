@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -10,7 +10,7 @@ import { toast } from 'react-toastify'
 import { IHomework, ISubmission } from '../../../type'
 import { useRouter } from 'next/navigation'
 import { RichEditor } from '@/components/common/editor/RichEditor'
-import { getHomeworkSubmissionReview, gradeHomework } from '../../../services/api'
+import { gradeHomework } from '../../../services/api'
 
 interface HomeworkSubmissionActionsCellProps {
   homeworkId: IHomework['_id']
@@ -63,7 +63,6 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
       const res = await gradeHomework(homeworkId, {
         userId,
         feedback,
-        correctedContent,
       })
       if (res.success) {
         toast.success(submission.status === 'graded' ? 'Đã cập nhật nhận xét' : 'Đã chấm bài')
@@ -107,25 +106,7 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={openGrade}
-        onOpenChange={async (next) => {
-          setOpenGrade(next)
-          if (!next) return
-
-          setFeedback(submission.feedback || '')
-          setCorrectedContent(submission.content || '')
-
-          if (!userId) return
-          try {
-            const res = await getHomeworkSubmissionReview(homeworkId, userId)
-            const review = res.data || null
-            if (review?.comment) setFeedback(review.comment)
-            if (review?.correctedContent) setCorrectedContent(review.correctedContent)
-          } catch {
-          }
-        }}
-      >
+      <Dialog open={openGrade}>
         <DialogTrigger asChild>
           <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl h-10 font-bold text-xs">
             <Send className="w-4 h-4 mr-2" /> {submission.status === 'graded' ? 'Cập nhật nhận xét' : 'Chấm bài'}

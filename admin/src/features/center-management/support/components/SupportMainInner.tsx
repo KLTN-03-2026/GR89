@@ -46,12 +46,12 @@ export function SupportMainInner() {
     setIsUploading(true)
     await uploadSupportAttachmentForStaff(file)
       .then(async (res) => {
-        const attachments = res.data as SupportAttachment[]
-        if (!attachments || attachments.length === 0) {
+        const attachments = res as SupportAttachment 
+        if (!attachments) {
           toast.error('Không thể gửi tệp lúc này')
           return
         }
-        await sendMessageAsStaff('', [attachments])
+        await sendMessageAsStaff('', attachments)
       })
       .finally(() => setIsUploading(false))
   }

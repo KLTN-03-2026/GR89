@@ -10,7 +10,6 @@ import {
   SheetDescription,
   SheetClose
 } from '@/components/ui/sheet'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -171,7 +170,7 @@ export function SheetUpdateIpa({ ipa, callback }: SheetUpdateIpaProps) {
                   Thông Tin Cơ Bản
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+                <div className="grid grid-cols-2 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                   <div className="space-y-2.5">
                     <IpaSoundInput
                       value={data.sound as (typeof sounds[number])}
@@ -210,7 +209,7 @@ export function SheetUpdateIpa({ ipa, callback }: SheetUpdateIpaProps) {
                       placeholder="Mô tả chi tiết cách phát âm, vị trí lưỡi, môi..."
                       value={data.description}
                       onChange={(e) => setData(prev => ({ ...prev, description: e.target.value }))}
-                      className="bg-white border-gray-200 rounded-2xl focus:ring-indigo-500 font-medium px-4 py-3 min-h-[100px] resize-none shadow-sm"
+                      className="bg-white border-gray-200 rounded-2xl focus:ring-indigo-500 font-medium px-4 py-3 min-h-25 resize-none shadow-sm"
                     />
                   </div>
                 </div>
@@ -219,11 +218,11 @@ export function SheetUpdateIpa({ ipa, callback }: SheetUpdateIpaProps) {
               {/* Section: Media */}
               <section className="space-y-6">
                 <div className="flex items-center gap-2.5 text-blue-600 font-black uppercase text-[11px] tracking-[0.2em]">
-                  <Video className="h-4 h-4" />
+                  <Video className="h-4" />
                   Video Hướng Dẫn
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 bg-blue-50/30 p-6 rounded-[2rem] border border-blue-100/50">
+                <div className="grid grid-cols-2 gap-6 bg-blue-50/30 p-6 rounded-4xl border border-blue-100/50">
                   {/* Mouth Shape Video */}
                   <div className="space-y-4">
                     <Label className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
@@ -299,7 +298,7 @@ export function SheetUpdateIpa({ ipa, callback }: SheetUpdateIpaProps) {
                   Lịch Sử Chỉnh Sửa
                 </div>
 
-                <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 grid grid-cols-2 gap-6">
+                <div className="bg-slate-50/80 p-6 rounded-4xl border border-slate-100 grid grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                       <UserIcon className="w-3 h-3" /> Người tạo

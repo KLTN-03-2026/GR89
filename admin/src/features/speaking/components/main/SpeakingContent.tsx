@@ -61,7 +61,6 @@ export default function SpeakingContent({ callback, initialData, pagination }: p
   const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
-  const [isLoading, setIsLoading] = useState(false)
   const [speakings, setSpeakings] = useState<Speaking[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
@@ -97,7 +96,7 @@ export default function SpeakingContent({ callback, initialData, pagination }: p
     if (urlSearch !== search) {
       setSearch(urlSearch)
     }
-  }, [urlSearch])
+  }, [search, urlSearch])
 
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -285,7 +284,6 @@ export default function SpeakingContent({ callback, initialData, pagination }: p
           <DataTable
             columns={columnsSpeaking(callback, speakings, handleSwapOrder)}
             data={speakings}
-            isLoading={isLoading}
             columnNameSearch="Tiêu đề"
             handleDeleteMultiple={handleDeleteMultipleSpeaking}
             handlePublishMultiple={handlePublishMany}

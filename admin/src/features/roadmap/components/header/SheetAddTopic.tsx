@@ -56,8 +56,8 @@ export function SheetAddTopic({ isOpen, onOpenChange }: TopicDialogProps) {
       setTitle('')
       setDescription('')
       setIcon('📚')
-    } catch (error) {
-      toast.error('Không thể tạo chủ đề')
+    } catch {
+      console.error('Không thể tạo chủ đề')
     } finally {
       setIsLoading(false)
     }
@@ -91,7 +91,7 @@ export function SheetAddTopic({ isOpen, onOpenChange }: TopicDialogProps) {
                 Thông Tin Chặng Đường
               </div>
 
-              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 shadow-sm">
+              <div className="grid grid-cols-1 gap-6 bg-gray-50/50 p-6 rounded-4xl border border-gray-100 shadow-sm">
                 <div className="space-y-2.5">
                   <Label htmlFor="title-roadmap" className="text-xs font-black text-gray-500 uppercase ml-1 flex items-center gap-1.5">
                     Tên Chặng <span className="text-rose-500">*</span>
@@ -171,7 +171,7 @@ export function SheetAddTopic({ isOpen, onOpenChange }: TopicDialogProps) {
             </section>
 
             {/* Note Section */}
-            <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-[2rem] flex gap-4 items-start pb-10">
+            <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-4xl flex gap-4 items-start pb-10">
               <div className="p-2 bg-white rounded-xl shadow-sm">
                 <Sparkles className="w-5 h-5 text-blue-500" />
               </div>

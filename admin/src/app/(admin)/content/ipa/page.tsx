@@ -28,10 +28,10 @@ export default async function page({ searchParams }: PageProps) {
     page: Number(page),
     limit: Number(limit),
     search,
-    soundType: soundType as any,
+    soundType: soundType as 'vowel' | 'consonant' | 'diphthong',
     isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-    sortBy: sortBy as any,
-    sortOrder: sortOrder as any
+    sortBy: sortBy as 'sound' | 'soundType' | 'createdAt' | 'updatedAt',
+    sortOrder: sortOrder as 'asc' | 'desc'
   })
 
   return (

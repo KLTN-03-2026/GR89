@@ -12,7 +12,7 @@ import { useState } from "react"
 type ImagePick = { _id?: string; url: string }
 import Image from "next/image"
 import { Trash2 } from "lucide-react"
-import { updateVocabularyTopic } from "../../services/api"
+import { DataUpdateVocabularyTopic, updateVocabularyTopic } from "../../services/api"
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
 import { VocabularyTopic } from "../../types"
@@ -45,7 +45,7 @@ export default function FormUpdateVocabularyTopic({ setIsLoading, callback, topi
 
   const onSubmit = async (data: FormData) => {
     setIsLoading(true)
-    await updateVocabularyTopic(topic._id, data as any)
+    await updateVocabularyTopic(topic._id, data as DataUpdateVocabularyTopic)
       .then(() => {
         toast.success('Cập nhật chủ đề từ vựng thành công')
       })

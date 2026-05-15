@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { PageHeader, StatsGrid } from '@/components/common'
-import { Bookmark, Users, Eye, TrendingUp, LucideIcon, Download } from 'lucide-react'
+import { Bookmark, Users, TrendingUp, LucideIcon, Download } from 'lucide-react'
 import { exportGrammarExcel, getGrammarOverviewStats } from '../../services/api'
 import { GrammarStatsSkeleton } from '@/components/common/Skeletons/GrammarStatsSkeleton'
 import { GrammarSheetImport } from '../GrammarSheetImport/GrammarSheetImport'
