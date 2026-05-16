@@ -63,6 +63,7 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
       const res = await gradeHomework(homeworkId, {
         userId,
         feedback,
+        correctedContent
       })
       if (res.success) {
         toast.success(submission.status === 'graded' ? 'Đã cập nhật nhận xét' : 'Đã chấm bài')
@@ -108,7 +109,7 @@ export function HomeworkSubmissionActionsCell({ homeworkId, submission }: Homewo
 
       <Dialog open={openGrade}>
         <DialogTrigger asChild>
-          <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl h-10 font-bold text-xs">
+          <Button onClick={() => setOpenGrade(true)} className="flex-1 bg-indigo-600 hover:bg-indigo-700 rounded-xl h-10 font-bold text-xs">
             <Send className="w-4 h-4 mr-2" /> {submission.status === 'graded' ? 'Cập nhật nhận xét' : 'Chấm bài'}
           </Button>
         </DialogTrigger>

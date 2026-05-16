@@ -337,7 +337,7 @@ export async function deleteGrammarQuiz(quizId: string, grammarId: string): Prom
 /*=============== GRAMMAR STATISTICS ==============*/
 export interface GrammarOverviewStats {
   totalLessons: number
-  activeLessons: number
+  activeTopics: number
   totalUsers: number
   completionRate: number
   monthlyLearns: number

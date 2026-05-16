@@ -1,4 +1,5 @@
 import { ArrowRight } from "lucide-react";
+import { Activity } from "lucide-react";
 import RecentActivitiCard from "./RecentActivitiCard";
 import { IRecentActivity } from "@/constants/routes";
 import { Button } from "@/components/ui/button";
@@ -63,9 +64,19 @@ export function RecentActivities({ activities }: RecentActivitiesProps) {
       <div className="space-y-3">
         {displayActivities.length ? displayActivities.map((activity: IRecentActivity, index: number) => (
           <RecentActivitiCard key={index} {...activity} />
-        )) : displayActivities.map((activity: IRecentActivity, index: number) => (
-          <RecentActivitiCard key={index} {...activity} />
-        ))}
+        )) : (
+          <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 p-6 text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200/70 dark:border-gray-700">
+              <Activity className="h-5 w-5 text-gray-500 dark:text-gray-300" />
+            </div>
+            <p className="mt-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Chưa có hoạt động nào
+            </p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Học một bài bất kỳ để bắt đầu lưu lịch sử.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 text-center">

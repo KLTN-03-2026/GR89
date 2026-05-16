@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react'
 import { PageHeader, StatsGrid } from '@/components/common'
 import { DialogAddWriting } from '@/features/writing'
 import { PenTool, Users, Eye, LucideIcon, Download } from 'lucide-react'
-import { getWritingOverviewStats, exportWritingExcel } from '@/features/writing/services/api'
-import { WritingStatsSkeleton } from '@/components/common/Skeletons/WritingStatsSkeleton'
+import { exportWritingExcel, WritingOverviewStats } from '@/features/writing/services/api'
 import { WritingSheetImport } from '../WritingSheetImport'
 
-interface props {
+interface Props {
   callback: () => void
+  initialStats: WritingOverviewStats
 }
 
 interface IStatsOverviewProps {
@@ -17,41 +17,29 @@ interface IStatsOverviewProps {
   icon: LucideIcon
 }
 
-export default function WritingHeader({ callback }: props) {
+export default function WritingHeader({ callback, initialStats }: Props) {
   const [stats, setStats] = useState<IStatsOverviewProps[]>([])
-  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const fetchWritingStats = async () => {
-      setLoading(true)
-      await getWritingOverviewStats()
-        .then((res) => {
-          const data = res.data
-          setStats([
-            {
-              title: 'Tổng Bài Viết',
-              value: data?.totalLessons?.toString() || '0',
-              icon: PenTool,
-            },
-            {
-              title: 'Tổng Người Học',
-              value: data?.totalUsers?.toString() || '0',
-              icon: Users,
-            },
-            {
-              title: 'Tỷ Lệ Hoàn Thành',
-              value: `${data && data?.completionRate}%`,
-              icon: Eye,
-            }
-          ])
-        })
-        .finally(() => {
-          setLoading(false)
-        })
-    }
-
-    fetchWritingStats()
-  }, [])
+    if (!initialStats) return
+    setStats([
+      {
+        title: 'Tổng Bài Viết',
+        value: initialStats.totalLessons?.toString() || '0',
+        icon: PenTool,
+      },
+      {
+        title: 'Tổng Người Học',
+        value: initialStats.totalUsers?.toString() || '0',
+        icon: Users,
+      },
+      {
+        title: 'Tỷ Lệ Hoàn Thành',
+        value: `${initialStats.completionRate}%`,
+        icon: Eye,
+      }
+    ])
+  }, [initialStats])
 
   return (
     <header>
@@ -78,7 +66,7 @@ export default function WritingHeader({ callback }: props) {
         </div>
       </div>
 
-      {loading ? <WritingStatsSkeleton /> : <StatsGrid stats={stats} columns={3}/>}
+      <StatsGrid stats={stats} columns={3}/>
     </header>
   )
 }

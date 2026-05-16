@@ -31,7 +31,7 @@ export interface IHomeworkSubmission {
   createdAt: string;
   submittedAt?: string;
   correctedContent?: string;
-  comment?: string;
+  feedback?: string;
   reviewer?: User;
   reviewerId?: string;
 }

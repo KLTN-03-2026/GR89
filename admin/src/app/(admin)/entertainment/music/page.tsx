@@ -1,5 +1,49 @@
 import { EntertainmentMain } from '@/features/entertainment'
+import { getEntertainmentListServer, getEntertainmentStatsServer } from '@/features/entertainment/services/serverApi'
+import type { EntertainmentStats } from '@/features/entertainment/services/api'
+import type { Pagination } from '@/lib/apis/fetch-server'
 
-export default function MusicPage() {
-  return <EntertainmentMain type="music" />
+interface PageProps {
+  searchParams: Promise<{
+    page?: string
+    limit?: string
+    search?: string
+    sortBy?: string
+    sortOrder?: string
+    isActive?: string
+  }>
+}
+
+export default async function MusicPage({ searchParams }: PageProps) {
+  const {
+    page = '1',
+    limit = '10',
+    search = '',
+    sortBy = 'orderIndex',
+    sortOrder = 'asc',
+    isActive
+  } = await searchParams
+
+  const [response, stats] = await Promise.all([
+    getEntertainmentListServer({
+      page: Number(page),
+      limit: Number(limit),
+      search,
+      sortBy,
+      sortOrder: sortOrder as 'asc' | 'desc',
+      status: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      type: 'music'
+    }),
+    getEntertainmentStatsServer('music')
+  ])
+
+  return (
+    <EntertainmentMain
+      baseType="music"
+      type="music"
+      initialData={response.data}
+      pagination={response.pagination as unknown as Pagination}
+      initialStats={(stats || ({} as EntertainmentStats)) as EntertainmentStats}
+    />
+  )
 }

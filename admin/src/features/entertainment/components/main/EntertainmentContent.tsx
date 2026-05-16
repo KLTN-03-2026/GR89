@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { DataTable } from '@/components/common'
 import { columnsEntertainment } from '@/features/entertainment'
-import { getEntertainmentPaginated, updateMultipleEntertainmentStatus } from '../../services/api'
+import { updateMultipleEntertainmentStatus } from '../../services/api'
 import type { Entertainment } from '../../types'
 import { toast } from 'react-toastify'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -12,6 +12,7 @@ import { Loader2, Trash2, Eye, EyeOff, Filter, ChevronDown } from 'lucide-react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import FiltersPanel from './FiltersPanel'
 import { deleteManyEntertainment } from '@/lib/apis/api'
+import type { Pagination } from '@/lib/apis/fetch-server'
 
 // Custom hook for debouncing
 function useDebounce<T>(value: T, delay: number): T {
@@ -31,14 +32,16 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 interface Props {
-  refresh: boolean
   callback: () => void
-  type: 'movie' | 'music' | 'podcast' | 'series' | 'episode'
+  baseType: 'movie' | 'music' | 'podcast'
+  type: 'movie' | 'music' | 'podcast' | 'episode'
   parentId?: string
+  initialData: Entertainment[]
+  pagination: Pagination
   onManageEpisodes?: (parentId: string, title: string) => void
 }
 
-export default function EntertainmentContent({ refresh, callback, type, parentId, onManageEpisodes }: Props) {
+export default function EntertainmentContent({ callback, baseType, type, parentId, initialData, pagination, onManageEpisodes }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -54,10 +57,7 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
   const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [items, setItems] = useState<Entertainment[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [items, setItems] = useState<Entertainment[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
   const [activeFiltersCount, setActiveFiltersCount] = useState(0)
@@ -77,6 +77,10 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
     }
   }, [urlSearch, debouncedSearch])
 
+  useEffect(() => {
+    setItems(initialData)
+  }, [initialData])
+
   const updateUrl = useCallback((updates: Record<string, string | number | boolean | undefined>) => {
     const params = new URLSearchParams(searchParams.toString())
     Object.entries(updates).forEach(([key, value]) => {
@@ -95,35 +99,6 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
     }
   }, [debouncedSearch, urlSearch, updateUrl])
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const params = {
-        page: urlPage,
-        limit: urlLimit,
-        search: urlSearch || undefined,
-        sortBy: urlSortBy,
-        sortOrder: urlSortOrder,
-        status: urlIsActive,
-        type: type === 'series' || type === 'episode' ? undefined : type
-      }
-
-      const res = await getEntertainmentPaginated(params)
-      setItems(res.data || [])
-      setTotal(res.pagination?.total || 0)
-      setPages(res.pagination?.pages || 0)
-    } catch (error) {
-      console.error('❌ Error fetching:', error)
-      setItems([])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive, type])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData, refresh])
-
   useEffect(() => {
     let count = 0
     if (urlSearch) count++
@@ -134,7 +109,7 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
   }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || (pages && newPage > pages)) {
+    if (newPage < 1 || (pagination.pages && newPage > pagination.pages)) {
       return
     }
     updateUrl({ page: newPage })
@@ -164,7 +139,6 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
       toast.success(`Đã xóa ${ids.length} mục thành công`)
       setSelectedRows([])
       setOpenDeleteDialog(false)
-      fetchData()
       callback()
     } finally {
       setIsDeleting(false)
@@ -204,7 +178,6 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
         toast.success(`Đã ${newStatus ? 'hiển thị' : 'ẩn'} ${res.data?.updatedCount || 0} mục`)
         setSelectedRows([])
         setOpenPublishDialog(false)
-        fetchData()
         callback()
       }
     } finally {
@@ -248,24 +221,23 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
           activeFiltersCount={activeFiltersCount}
           setShowFilters={setShowFilters}
           itemsLength={items.length}
-          total={total}
+          total={pagination.total}
         />
       )}
 
       <DataTable
         data={items}
-        isLoading={isLoading}
+        isLoading={false}
         serverSidePagination
         pagination={{
           page: urlPage,
           limit: urlLimit,
-          total: total,
-          pages: pages
+          total: pagination.total,
+          pages: pagination.pages
         }}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
         columns={columnsEntertainment(() => {
-          fetchData()
           callback()
         }, onManageEpisodes)}
         columnNameSearch="title"
@@ -357,4 +329,3 @@ export default function EntertainmentContent({ refresh, callback, type, parentId
     </>
   )
 }
-

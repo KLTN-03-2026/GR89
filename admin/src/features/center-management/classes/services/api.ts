@@ -124,7 +124,7 @@ export async function updateHomework(homeworkId: string, data: { title?: string,
 }
 
 // Chấm bài cho học sinh (Admin/Teacher)
-export async function gradeHomework(homeworkId: string, data: { userId: string, feedback: string }): Promise<ApiResponse<IHomework>> {
+export async function gradeHomework(homeworkId: string, data: { userId: string, feedback: string, correctedContent: string }): Promise<ApiResponse<IHomework>> {
   const response = await AuthorizedAxios.post<ApiResponse<IHomework>>(`/center-classes/homework/${homeworkId}/grade`, data)
   return response.data
 }

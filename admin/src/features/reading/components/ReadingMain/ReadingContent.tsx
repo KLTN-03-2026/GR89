@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { columnsReading } from "../ReadingTable/ReadingColumn";
 import { useEffect, useState, useCallback } from "react";
 import { Reading } from "@/features/reading/types";
-import { deleteMultipleReading, getReadingListPaginated, updateMultipleReadingStatus } from '@/features/reading/services/api';
+import { deleteMultipleReading, updateMultipleReadingStatus } from '@/features/reading/services/api';
 import { toast } from "react-toastify";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Filter, ChevronDown, Loader2, Trash2, Eye, EyeOff } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import FiltersPanel from './FiltersPanel';
+import type { Pagination } from "@/lib/apis/fetch-server";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -30,11 +31,12 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 interface props {
-  refresh: boolean
+  initialData: Reading[]
+  pagination: Pagination
   callback: () => void
 }
 
-export default function ReadingContent({ refresh, callback }: props) {
+export default function ReadingContent({ initialData, pagination, callback }: props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -50,10 +52,7 @@ export default function ReadingContent({ refresh, callback }: props) {
   const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt') : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [readings, setReadings] = useState<Reading[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [readings, setReadings] = useState<Reading[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
   const [activeFiltersCount, setActiveFiltersCount] = useState(0)
@@ -66,6 +65,10 @@ export default function ReadingContent({ refresh, callback }: props) {
 
   // Debounce search input
   const debouncedSearch = useDebounce(search, 500)
+
+  useEffect(() => {
+    setReadings(initialData)
+  }, [initialData])
 
   useEffect(() => {
     if (urlSearch !== debouncedSearch) {
@@ -91,35 +94,6 @@ export default function ReadingContent({ refresh, callback }: props) {
     }
   }, [debouncedSearch, urlSearch, updateUrl])
 
-  const fetchReadings = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await getReadingListPaginated({
-        page: urlPage,
-        limit: urlLimit,
-        search: urlSearch,
-        sortBy: urlSortBy,
-        sortOrder: urlSortOrder,
-        isActive: urlIsActive
-      })
-
-      setReadings(res.data || [])
-      setTotal(res.pagination?.total || 0)
-      setPages(res.pagination?.pages || 0)
-    } catch (error) {
-      console.error('❌ Error fetching readings:', error)
-      setReadings([])
-      setTotal(0)
-      setPages(0)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
-
-  useEffect(() => {
-    fetchReadings()
-  }, [fetchReadings, refresh])
-
   // Count active filters
   useEffect(() => {
     let count = 0
@@ -131,7 +105,7 @@ export default function ReadingContent({ refresh, callback }: props) {
   }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || (pages && newPage > pages)) {
+    if (newPage < 1 || (pagination.pages && newPage > pagination.pages)) {
       return
     }
     updateUrl({ page: newPage })
@@ -162,7 +136,6 @@ export default function ReadingContent({ refresh, callback }: props) {
       setSelectedRows([])
       setOpenDeleteDialog(false)
       callback()
-      fetchReadings()
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Xóa bài đọc thất bại'
       toast.error(errorMessage)
@@ -205,7 +178,6 @@ export default function ReadingContent({ refresh, callback }: props) {
         setSelectedRows([])
         setOpenPublishDialog(false)
         callback()
-        fetchReadings()
       }
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || `${publishAction === 'publish' ? 'Xuất bản' : 'Ẩn'} thất bại`
@@ -292,7 +264,7 @@ export default function ReadingContent({ refresh, callback }: props) {
               activeFiltersCount={activeFiltersCount}
               setShowFilters={setShowFilters}
               readingsLength={readings.length}
-              total={total}
+              total={pagination.total}
             />
           )}
 
@@ -300,7 +272,7 @@ export default function ReadingContent({ refresh, callback }: props) {
           <DataTable
             columns={columnsReading(callback, router, readings, handleSwapOrder)}
             data={readings}
-            isLoading={isLoading}
+            isLoading={false}
             columnNameSearch="Tiêu đề"
             handleDeleteMultiple={handleDeleteMultipleReading}
             handlePublishMultiple={handlePublishMany}
@@ -309,8 +281,8 @@ export default function ReadingContent({ refresh, callback }: props) {
             pagination={{
               page: urlPage,
               limit: urlLimit,
-              total: total,
-              pages: pages
+              total: pagination.total,
+              pages: pagination.pages
             }}
             onPageChange={handlePageChange}
             onSearch={handleSearch}

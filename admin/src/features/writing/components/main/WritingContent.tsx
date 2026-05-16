@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { columnsWriting } from '../table/WritingColumn'
 import { useEffect, useState, useCallback } from 'react'
 import { Writing } from '@/features/writing/types'
-import { deleteMultipleWriting, getWritingListPaginated, updateMultipleWritingStatus } from '@/features/writing/services/api'
+import { deleteMultipleWriting, updateMultipleWritingStatus } from '@/features/writing/services/api'
 import { toast } from 'react-toastify'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import type { WritingSortField, WritingSortOrder } from '../../types'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import FiltersPanel from './FiltersPanel'
+import type { Pagination } from '@/lib/apis/fetch-server'
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
@@ -31,11 +32,12 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 interface props {
-  refresh: boolean
+  initialData: Writing[]
+  pagination: Pagination
   callback: () => void
 }
 
-export default function WritingContent({ refresh, callback }: props) {
+export default function WritingContent({ initialData, pagination, callback }: props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -51,10 +53,7 @@ export default function WritingContent({ refresh, callback }: props) {
   const urlSortBy = ['orderIndex', 'title', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as WritingSortField) : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as WritingSortOrder) : 'asc'
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [writings, setWritings] = useState<Writing[]>([])
-  const [total, setTotal] = useState(0)
-  const [pages, setPages] = useState(0)
+  const [writings, setWritings] = useState<Writing[]>(initialData)
   const [search, setSearch] = useState(urlSearch)
   const [showFilters, setShowFilters] = useState(false)
   const [activeFiltersCount, setActiveFiltersCount] = useState(0)
@@ -66,6 +65,10 @@ export default function WritingContent({ refresh, callback }: props) {
   const [loadingAction, setLoadingAction] = useState(false)
 
   const debouncedSearch = useDebounce(search, 500)
+
+  useEffect(() => {
+    setWritings(initialData)
+  }, [initialData])
 
   useEffect(() => {
     if (urlSearch !== debouncedSearch) {
@@ -91,36 +94,6 @@ export default function WritingContent({ refresh, callback }: props) {
     }
   }, [debouncedSearch, urlSearch, updateUrl])
 
-  const fetchWritings = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await getWritingListPaginated({
-        page: urlPage,
-        limit: urlLimit,
-        search: urlSearch,
-        sortBy: urlSortBy,
-        sortOrder: urlSortOrder,
-        isActive: urlIsActive,
-      })
-
-      setWritings(res.data || [])
-      setTotal(res.pagination?.total || 0)
-      setPages(res.pagination?.pages || 0)
-    } catch (error) {
-      console.error('❌ Error fetching Writing:', error)
-      setWritings([])
-      setTotal(0)
-      setPages(0)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [urlPage, urlLimit, urlSearch, urlSortBy, urlSortOrder, urlIsActive])
-
-  useEffect(() => {
-    fetchWritings()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchWritings, refresh])
-
   useEffect(() => {
     let count = 0
     if (urlSearch) count++
@@ -131,7 +104,7 @@ export default function WritingContent({ refresh, callback }: props) {
   }, [urlSearch, urlIsActive, urlSortBy, urlSortOrder])
 
   const handlePageChange = (newPage: number) => {
-    if (newPage < 1 || (pages && newPage > pages)) {
+    if (newPage < 1 || (pagination.pages && newPage > pagination.pages)) {
       return
     }
     updateUrl({ page: newPage })
@@ -161,7 +134,7 @@ export default function WritingContent({ refresh, callback }: props) {
       toast.success(`Đã xóa ${ids.length} bài viết thành công`)
       setSelectedRows([])
       setOpenDeleteDialog(false)
-      fetchWritings()
+      callback()
     } catch (error: unknown) {
       const errorMessage =
         (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Xóa bài viết thất bại'
@@ -204,7 +177,7 @@ export default function WritingContent({ refresh, callback }: props) {
         toast.success(`Đã ${newIsActive ? 'xuất bản' : 'ẩn'} ${res.data?.updatedCount || 0} bài viết`)
         setSelectedRows([])
         setOpenPublishDialog(false)
-        fetchWritings()
+        callback()
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -288,14 +261,14 @@ export default function WritingContent({ refresh, callback }: props) {
               activeFiltersCount={activeFiltersCount}
               setShowFilters={setShowFilters}
               writingsLength={writings.length}
-              total={total}
+              total={pagination.total}
             />
           )}
 
           <DataTable
             columns={columnsWriting(callback, writings, handleSwapOrder)}
             data={writings}
-            isLoading={isLoading}
+            isLoading={false}
             columnNameSearch="Tiêu đề"
             handleDeleteMultiple={handleDeleteMultipleWriting}
             handlePublishMultiple={handlePublishMany}
@@ -304,8 +277,8 @@ export default function WritingContent({ refresh, callback }: props) {
             pagination={{
               page: urlPage,
               limit: urlLimit,
-              total: total,
-              pages: pages,
+              total: pagination.total,
+              pages: pagination.pages,
             }}
             onPageChange={handlePageChange}
             onSearch={handleSearch}

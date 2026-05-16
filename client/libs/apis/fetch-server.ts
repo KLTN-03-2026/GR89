@@ -24,7 +24,7 @@ const cookieStore = await cookies()
 
   const data = await response.json()
 
-  if (!response.ok) {
+  if (!data.success) {
     const error = new Error(data.message || data.error || `API Error: ${response.statusText}`) as { status?: number }
     error.status = response.status
     throw error

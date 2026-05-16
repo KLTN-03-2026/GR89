@@ -46,6 +46,14 @@ export interface EntertainmentPaginationMeta {
   next?: number | null
 }
 
+export interface EntertainmentStats {
+  activeItems: number
+  interactions: { total: number; liked: number; watched: number }
+  totalItems: number
+  typeBreakdown: { movie: number; music: number; podcast: number }
+  vipItems: number
+}
+
 export async function getEntertainmentList(): Promise<Response<Entertainment[]>> {
   const res = await AuthorizedAxios.get('/entertainment/legacy')
   return res.data as Response<Entertainment[]>
@@ -59,7 +67,8 @@ export async function getEntertainmentPaginated(params?: {
   sortOrder?: 'asc' | 'desc'
   status?: boolean
   createdBy?: string
-  type?: 'movie' | 'music' | 'podcast'
+  type?: 'movie' | 'music' | 'podcast' | 'series' | 'episode'
+  parentId?: string
 }): Promise<{ success: boolean; data: Entertainment[]; pagination: EntertainmentPaginationMeta }> {
   const query = new URLSearchParams()
   if (params?.page != null) query.append('page', String(params.page))
@@ -70,6 +79,7 @@ export async function getEntertainmentPaginated(params?: {
   if (params?.status !== undefined) query.append('status', params.status ? 'true' : 'false')
   if (params?.createdBy) query.append('createdBy', params.createdBy)
   if (params?.type) query.append('type', params.type)
+  if (params?.parentId) query.append('parentId', params.parentId)
 
   const url = `/entertainment/${query.toString() ? `?${query.toString()}` : ''}`
   const res = await AuthorizedAxios.get(url)
@@ -166,16 +176,8 @@ export async function importEntertainmentJson(items: Entertainment[], skipErrors
 }
 
 /*=============== ENTERTAINMENT STATISTICS ==============*/
-interface EntertainmentStats {
-  activeItems: number, 
-  interactions: {total: number, liked: number, watched: number}
-  totalItems: number
-  typeBreakdown: {movie: number, music: number, podcast: number}
-  vipItems: number
-}
 export async function getEntertainmentStats(type?: string): Promise<Response<EntertainmentStats>> {
   const query = type ? `?type=${type}` : ''
   const res = await AuthorizedAxios.get(`/entertainment/overview${query}`)
   return res.data as Response<EntertainmentStats>
 }
-

@@ -1,14 +1,15 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { DialogAddReading } from "@/features/reading/components/dialogs";
 import { PageHeader, StatsGrid } from "@/components/common"
 import { BookOpen, Users, Eye, LucideIcon, Download } from "lucide-react";
-import { getReadingOverviewStats, exportReadingExcel } from "@/features/reading/services/api";
-import { ReadingStatsSkeleton } from "@/components/common/Skeletons/ReadingStatsSkeleton";
+import { exportReadingExcel } from "@/features/reading/services/api";
 import { ReadingSheetImport } from '@/features/reading/components/ReadingSheetImport'
+import type { ReadingOverviewStats } from '@/features/reading/types'
 
-interface props {
+interface Props {
   callback: () => void
+  initialStats: ReadingOverviewStats
 }
 
 interface IStatsOverviewProps {
@@ -17,41 +18,29 @@ interface IStatsOverviewProps {
   icon: LucideIcon;
 }
 
-export default function ReadingHeader({ callback }: props) {
+export default function ReadingHeader({ callback, initialStats }: Props) {
   const [stats, setStats] = useState<IStatsOverviewProps[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchReadingStats = async () => {
-      setLoading(true);
-      await getReadingOverviewStats()
-        .then(res => {
-          const data = res.data;
-          setStats([
-            {
-              title: "Tổng Bài Đọc",
-              value: data?.totalLessons?.toString() || '0',
-              icon: BookOpen
-            },
-            {
-              title: "Tổng Người Học",
-              value: data?.totalUsers?.toString() || '0',
-              icon: Users
-            },
-            {
-              title: "Tỷ Lệ Hoàn Thành",
-              value: `${data && data?.completionRate}%`,
-              icon: Eye
-            }
-          ]);
-        })
-        .finally(() => {
-          setLoading(false);
-        })
-    };
-
-    fetchReadingStats();
-  }, []);
+    if (!initialStats) return
+    setStats([
+      {
+        title: "Tổng Bài Đọc",
+        value: initialStats.totalLessons?.toString() || '0',
+        icon: BookOpen
+      },
+      {
+        title: "Tổng Người Học",
+        value: initialStats.totalUsers?.toString() || '0',
+        icon: Users
+      },
+      {
+        title: "Tỷ Lệ Hoàn Thành",
+        value: `${initialStats.completionRate}%`,
+        icon: Eye
+      }
+    ])
+  }, [initialStats]);
 
   return (
     <header>
@@ -81,11 +70,7 @@ export default function ReadingHeader({ callback }: props) {
         </div>
       </div>
 
-      {loading ? (
-        <ReadingStatsSkeleton />
-      ) : (
-        <StatsGrid stats={stats} />
-      )}
+      <StatsGrid stats={stats} columns={3} />
     </header>
   );
 }

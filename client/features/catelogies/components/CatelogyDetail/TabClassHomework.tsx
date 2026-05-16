@@ -61,7 +61,7 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
     setSubmittedHtml(submissionContent)
 
     const corrected = sub?.correctedContent || ''
-    const comment = sub?.comment || ''
+    const comment = sub?.feedback || ''
     setCorrectedHtml(corrected)
 
     setCommentHtml(comment)
@@ -254,7 +254,6 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
                 <TabsTrigger
                   value="corrected"
                   className="rounded-xl font-bold"
-                  disabled={!!stripText(correctedHtml) && !!stripText(commentHtml)}
                 >
                   Bài đã sửa
                 </TabsTrigger>

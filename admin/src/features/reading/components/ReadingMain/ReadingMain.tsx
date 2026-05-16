@@ -1,15 +1,23 @@
 'use client'
-import { useState } from "react";
-import ReadingContent from "./ReadingContent";
-import ReadingHeader from "./ReadingHeader";
+import { useRouter } from 'next/navigation'
+import type { Pagination } from '@/lib/apis/fetch-server'
+import type { Reading, ReadingOverviewStats } from '@/features/reading/types'
+import ReadingContent from './ReadingContent'
+import ReadingHeader from './ReadingHeader'
 
-export function ReadingMain() {
-  const [refresh, setRefresh] = useState(false)
+interface ReadingMainProps {
+  initialData: Reading[]
+  pagination: Pagination
+  initialStats: ReadingOverviewStats
+}
+
+export function ReadingMain({ initialData, pagination, initialStats }: ReadingMainProps) {
+  const router = useRouter()
 
   return (
     <div>
-      <ReadingHeader callback={() => setRefresh(!refresh)} />
-      <ReadingContent refresh={refresh} callback={() => setRefresh(!refresh)} />
+      <ReadingHeader callback={() => router.refresh()} initialStats={initialStats} />
+      <ReadingContent initialData={initialData} pagination={pagination} callback={() => router.refresh()} />
     </div>
   )
 }

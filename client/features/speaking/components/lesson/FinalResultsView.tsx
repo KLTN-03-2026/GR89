@@ -36,7 +36,7 @@ export function FinalResultsView({
 
   const handleRetry = () => {
     if (!onRetry) {
-      router.replace(`/skills//${speakingId}`)
+      router.replace(`/skills/speaking/${speakingId}`)
     } else {
       onRetry()
     }
@@ -54,7 +54,7 @@ export function FinalResultsView({
                     <div className="flex items-center justify-between mb-3">
                       <div className="text-sm font-medium text-gray-600">Câu {result.index + 1}</div>
                       <div className={`text-lg font-bold px-3 py-1 rounded-full border ${getWordColorForFinal(result.score)}`}>
-                        {result.score}/100
+                        {Math.round(result.score * 100) / 100}/ 100
                       </div>
                     </div>
 

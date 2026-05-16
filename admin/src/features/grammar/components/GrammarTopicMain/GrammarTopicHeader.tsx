@@ -27,6 +27,7 @@ export default function GrammarTopicHeader({ callback }: Props) {
       await getGrammarOverviewStats()
         .then((res) => {
           const data = res.data
+          console.log(data)
           setStats([
             {
               title: 'Tổng Chủ Đề Ngữ Pháp',
@@ -34,8 +35,8 @@ export default function GrammarTopicHeader({ callback }: Props) {
               icon: Bookmark
             },
             {
-              title: 'Tổng Bài Học',
-              value: data?.totalLessons?.toString() || '0',
+              title: 'Tổng Chủ Đề Đang Hoạt Động',
+              value: data?.activeTopics?.toString() || '0',
               icon: Users
             },
             {

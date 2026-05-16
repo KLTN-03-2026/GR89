@@ -77,7 +77,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!socket) return
 
-    const onNew = (payload: any) => {
+    const onNew = (payload: AppNotification) => {
       if (!payload?._id) return
       const next: AppNotification = {
         _id: String(payload._id),

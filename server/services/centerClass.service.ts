@@ -4,6 +4,7 @@ import { GlobalDocument } from '../models/globalDocument.model'
 import ErrorHandler from '../utils/ErrorHandler'
 import mongoose from 'mongoose'
 import { User } from '../models/user.model'
+import { NotificationService } from './notification.service'
 
 export interface ICreateClassData {
   name: string
@@ -571,6 +572,7 @@ export class CenterClassService {
     homework.submissions.push({
       user: new mongoose.Types.ObjectId(userId),
       content,
+      correctedContent: '',
       feedback: '',
       submittedAt: new Date(),
       status: 'pending',
@@ -603,24 +605,25 @@ export class CenterClassService {
     }, candidates[0] as any)
 
     latest.feedback = feedback
+    latest.correctedContent = correctedContent || ''
     latest.gradedAt = new Date()
     latest.status = 'graded'
 
     await homework.save()
 
-    if (reviewerId) {
-      const hw = this.ensureObjectId(homeworkId, 'Bài tập không hợp lệ')
-      const student = this.ensureObjectId(userId, 'Học sinh không hợp lệ')
-      const reviewer = this.ensureObjectId(reviewerId, 'Người chấm không hợp lệ')
-
-      const setPayload: any = {
-        reviewer,
-        comment: feedback || '',
-      }
-      if (typeof correctedContent === 'string') {
-        setPayload.correctedContent = correctedContent
-      }
-    }
+    await NotificationService.createForUsers({
+      userIds: [userId],
+      type: 'homework',
+      title: 'Bài tập đã được chấm',
+      body: `Bài tập của bạn đã được chấm với kết quả ${feedback}`,
+      link: `/center-classes/homework/${homeworkId}`,
+      data: {
+        homeworkId,
+        feedback,
+        correctedContent,
+        reviewerId,
+      },
+    })
 
     return homework
   }

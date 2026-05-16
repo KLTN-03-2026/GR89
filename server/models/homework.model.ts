@@ -4,6 +4,7 @@ import mongoosePaginate from 'mongoose-paginate-v2'
 export interface ISubmission {
   user: mongoose.Types.ObjectId
   content: string
+  correctedContent: string
   feedback: string
   submittedAt: Date
   gradedAt?: Date
@@ -31,6 +32,10 @@ const submissionSchema = new Schema<ISubmission>(
       required: [true, 'Người nộp bài là bắt buộc'],
     },
     content: {
+      type: String,
+      default: '',
+    },
+    correctedContent: {
       type: String,
       default: '',
     },

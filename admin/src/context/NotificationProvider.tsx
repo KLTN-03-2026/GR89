@@ -2,19 +2,15 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import AuthorizedAxios from '@/lib/apis/authorizrAxios'
 import { useSocketStore } from '@/hooks/useSocketStore'
 import { useAuth } from '@/context/AuthContext'
-
-export interface AdminNotification {
-  _id: string
-  type: string
-  title: string
-  body: string
-  link?: string
-  isRead: boolean
-  createdAt: string
-}
+import {
+  getAdminNotifications,
+  getAdminUnreadCount,
+  markAdminNotificationRead,
+  markAllAdminNotificationsRead
+} from '@/features/notification/services/api'
+import type { AdminNotification } from '@/features/notification/types'
 
 interface NotificationContextType {
   items: AdminNotification[]
@@ -44,10 +40,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setUnreadCount(0)
       return
     }
-    const res = await AuthorizedAxios.get<{ success: boolean; data: { unreadCount: number } }>(
-      '/notifications/admin/unread-count',
-    )
-    setUnreadCount(res.data.data?.unreadCount || 0)
+    const nextCount = await getAdminUnreadCount()
+    setUnreadCount(nextCount)
   }, [user?._id])
 
   const refreshRecent = useCallback(async () => {
@@ -55,10 +49,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setItems([])
       return
     }
-    const res = await AuthorizedAxios.get<{ success: boolean; data: AdminNotification[] }>('/notifications/admin', {
-      params: { page: 1, limit: 10 },
-    })
-    setItems(res.data.data || [])
+    const res = await getAdminNotifications({ page: 1, limit: 10 })
+    setItems(res.data || [])
   }, [user?._id])
 
   const refresh = useCallback(async () => {
@@ -103,13 +95,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [socket, pathname])
 
   const markRead = useCallback(async (id: string) => {
-    await AuthorizedAxios.patch(`/notifications/admin/${id}/read`)
+    await markAdminNotificationRead(id)
     setItems((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)))
     setUnreadCount((prev) => Math.max(0, prev - 1))
   }, [])
 
   const markAllRead = useCallback(async () => {
-    await AuthorizedAxios.patch('/notifications/admin/read-all')
+    await markAllAdminNotificationsRead()
     setItems((prev) => prev.map((n) => ({ ...n, isRead: true })))
     await refreshUnreadCount()
   }, [refreshUnreadCount])
@@ -133,4 +125,3 @@ export function useNotification() {
   if (!ctx) throw new Error('useNotification must be used within NotificationProvider')
   return ctx
 }
-

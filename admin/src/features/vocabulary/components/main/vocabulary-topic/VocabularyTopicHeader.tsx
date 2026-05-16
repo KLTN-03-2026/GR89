@@ -32,8 +32,8 @@ export default function VocabularyTopicHeader({ callback }: props) {
           const data = res.data;
           setStats([
             {
-              title: "Tổng Danh Mục",
-              value: data?.totalTopics?.toString() || '0',
+              title: "Tổng Chủ Đề Từ Vựng",
+              value: data?.totalLessons?.toString() || '0',
               icon: BookOpen
             },
             {

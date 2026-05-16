@@ -11,19 +11,40 @@ import type { EntertainmentStatsEntry } from '@/features/entertainment'
 import { User } from "@/types/user"
 import { QuickActions } from "./QuickActions"
 import { RecentActivities } from "./RecentActivities"
-import type { RecentActivity, IDailySuggestion } from "../types"
+import type { IDailySuggestion, RecentActivity } from "../types"
+import { useEffect, useState } from "react"
+import { getDailySuggestion } from "@/features/dashboard/services/api"
 
 interface DashboardContentProps {
   user: User
   lessonStats: LessonStatsResponse | null
   entertainmentStats: EntertainmentStatsEntry[]
   recentActivities: RecentActivity[]
-  dailySuggestion: IDailySuggestion | null
 }
 
-export function DashboardContent({ user, lessonStats, entertainmentStats, recentActivities, dailySuggestion }: DashboardContentProps) {
+export function DashboardContent({ user, lessonStats, entertainmentStats, recentActivities }: DashboardContentProps) {
   const streak = user?.currentStreak || 0
   const longestStreak = user?.longestStreak || 0
+  const [dailySuggestion, setDailySuggestion] = useState<IDailySuggestion | null>(null)
+
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchDailySuggestion = async () => {
+      setIsLoading(true) 
+      await getDailySuggestion()
+        .then(res => {
+          setDailySuggestion(res.data)
+        })
+        .catch(() => {
+          setDailySuggestion(null)
+        })
+        .finally(() => {
+          setIsLoading(false)
+        })
+    }
+    fetchDailySuggestion()
+  }, [])
 
   const descriptions: { text: string, textHighlight?: string }[] = [
     {
@@ -141,8 +162,8 @@ export function DashboardContent({ user, lessonStats, entertainmentStats, recent
       </div>
 
       {/* Hành động nhanh & Hoạt động gần đây */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 w-full mt-4">
-        <QuickActions dailySuggestion={dailySuggestion} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mt-4">
+        <QuickActions dailySuggestion={dailySuggestion} isLoading={isLoading} />
         <RecentActivities activities={recentActivities} />
       </div>
     </>

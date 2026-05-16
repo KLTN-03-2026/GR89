@@ -287,7 +287,7 @@ export async function exportVocabularyExcel(): Promise<Blob> {
 
 /*=============== VOCABULARY STATISTICS ==============*/
 export interface VocabularyOverviewStats {
-  totalTopics: number
+  totalLessons: number
   activeTopics: number
   totalWords: number
   totalUsers: number

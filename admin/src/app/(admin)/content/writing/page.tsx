@@ -1,6 +1,48 @@
 import { WritingMain } from '@/features/writing'
+import { WritingOverviewStats } from '@/features/writing/services/api'
+import { getWritingListServer, getWritingOverviewStatsServer } from '@/features/writing/services/serverApi'
 import React from 'react'
 
-export default function page() {
-  return <WritingMain />
+interface PageProps {
+  searchParams: Promise<{
+    page?: string
+    limit?: string
+    search?: string
+    sortBy?: string
+    sortOrder?: string
+    isActive?: string
+  }>
+}
+
+export default async function page({ searchParams }: PageProps) {
+  const {
+    page = '1',
+    limit = '10',
+    search = '',
+    sortBy = 'orderIndex',
+    sortOrder = 'asc',
+    isActive
+  } = await searchParams
+
+  const [response, stats] = await Promise.all([
+    getWritingListServer({
+      page: Number(page),
+      limit: Number(limit),
+      search,
+      sortBy: sortBy as 'orderIndex' | 'title' | 'createdAt' | 'updatedAt',
+      sortOrder: sortOrder as 'asc' | 'desc',
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined
+    }),
+    getWritingOverviewStatsServer()
+  ])
+
+  return (
+    <div>
+      <WritingMain
+        initialData={response.data}
+        pagination={response.pagination}
+        initialStats={(stats || {}) as WritingOverviewStats}
+      />
+    </div>
+  )
 }
