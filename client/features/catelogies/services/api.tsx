@@ -30,3 +30,11 @@ export const submitHomework = async (homeworkId: string, content: string) => {
   })
   return response.data
 }
+
+export const respondCenterClassInvite = async (inviteId: string, accepted: boolean) => {
+  const response = await authorizedAxios.post(
+    `/center-classes/user/invites/${inviteId}/respond`,
+    { accepted }
+  )
+  return response.data
+}

@@ -15,6 +15,14 @@ export interface ICenterClass extends Document {
     user: mongoose.Types.ObjectId
     joinDate: Date
   }[]
+  studentInvites?: {
+    user: mongoose.Types.ObjectId
+    email: string
+    status: 'pending' | 'accepted' | 'declined' | 'cancelled'
+    requestedBy: mongoose.Types.ObjectId
+    requestedAt: Date
+    respondedAt?: Date | null
+  }[]
   documents: mongoose.Types.ObjectId[]
   homeworks: mongoose.Types.ObjectId[]
 }
@@ -79,6 +87,21 @@ const centerClassSchema = new Schema<ICenterClass>(
           type: Date,
           default: Date.now,
         },
+      },
+    ],
+    studentInvites: [
+      {
+        user: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+        email: { type: String, required: true, trim: true, lowercase: true },
+        status: {
+          type: String,
+          enum: ['pending', 'accepted', 'declined', 'cancelled'],
+          default: 'pending',
+          index: true,
+        },
+        requestedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+        requestedAt: { type: Date, default: Date.now },
+        respondedAt: { type: Date, default: null },
       },
     ],
     documents: [

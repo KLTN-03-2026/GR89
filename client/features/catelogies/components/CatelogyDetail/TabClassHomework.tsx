@@ -1,11 +1,9 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TabsContent } from '@/components/ui/tabs'
 import UploadHomeworkSheet from '@/features/catelogies/components/Dialogs/UploadHomeworkSheet'
+import { HomeworkSubmissionDialog, HomeworkViewTab } from '@/features/catelogies/components/Dialogs/HomeworkSubmissionDialog'
 import { getHomeworkSubmissions, submitHomework } from '@/features/catelogies/services/api'
 import { IDocument, IHomework, IHomeworkSubmission } from '@/features/catelogies/types'
 import { formatDateOnly } from '@/libs/utils'
@@ -16,9 +14,9 @@ import { toast } from 'react-toastify'
 
 interface Props {
   homeworks: IHomework[]
-  onView: (homework: IDocument) => void
+  onViewDocument: (homework: IDocument) => void
 }
-export default function TabClassHomework({ homeworks, onView }: Props) {
+export default function TabClassHomework({ homeworks, onViewDocument }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentHomework, setCurrentHomework] = useState<IHomework>()
   const [isLoading, setIsLoading] = useState(false)
@@ -27,7 +25,7 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
   const [submittedHtml, setSubmittedHtml] = useState('')
   const [correctedHtml, setCorrectedHtml] = useState('')
   const [commentHtml, setCommentHtml] = useState('')
-  const [activeViewTab, setActiveViewTab] = useState<'submitted' | 'corrected'>('submitted')
+  const [activeViewTab, setActiveViewTab] = useState<HomeworkViewTab>('submitted')
   const [submissionHistory, setSubmissionHistory] = useState<IHomeworkSubmission[]>([])
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>('')
   const router = useRouter()
@@ -121,6 +119,12 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
       setIsLoading(false)
     }
   }
+
+  const handleSelectSubmissionId = (nextId: string) => {
+    setSelectedSubmissionId(nextId)
+    const picked = submissionHistory.find((s, idx) => String(s?._id ?? idx) === String(nextId))
+    if (picked) applySelectedSubmission(picked as IHomeworkSubmission)
+  }
   
   return (
     <TabsContent value="homeworks" className="space-y-6">
@@ -165,7 +169,7 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
                             size="sm"
                             className="font-bold text-gray-600 hover:bg-gray-200 hover:text-gray-800 bg-white border border-gray-100"
                             onClick={() => {
-                              onView({
+                              onViewDocument({
                                 ...doc,
                                 name: doc?.name  ?? `Tài liệu ${docIndex + 2}`,
                                 content: doc?.content ?? '',
@@ -178,7 +182,7 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
                       </div>
                     ) : (
                     <Button variant="outline" size="sm" disabled>
-                      Chưa có tài liệu đính kèm
+                      Không có tài liệu đính kèm
                     </Button>
                   )}
                 </div>
@@ -223,8 +227,8 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
         </div>
       )}
 
-      <Dialog
-        open={openSubmission}
+      <HomeworkSubmissionDialog
+        isOpen={openSubmission}
         onOpenChange={(next) => {
           setOpenSubmission(next)
           if (!next) {
@@ -237,94 +241,17 @@ export default function TabClassHomework({ homeworks, onView }: Props) {
             setSelectedSubmissionId('')
           }
         }}
-      >
-        <DialogContent className="sm:max-w-5xl h-[85vh] overflow-hidden flex flex-col rounded-3xl p-0 border-none shadow-2xl">
-          <DialogHeader className="p-8 pb-4 border-b border-gray-100">
-            <DialogTitle className="text-2xl font-black text-gray-900">
-              {viewHomework?.title || 'Bài nộp'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="px-8 pt-6 shrink-0">
-            <Tabs value={activeViewTab} onValueChange={(v) => setActiveViewTab(v as 'submitted' | 'corrected')}>
-              <TabsList className="rounded-2xl">
-                <TabsTrigger value="submitted" className="rounded-xl font-bold">
-                  Bài đã nộp
-                </TabsTrigger>
-                <TabsTrigger
-                  value="corrected"
-                  className="rounded-xl font-bold"
-                >
-                  Bài đã sửa
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            {submissionHistory.length > 1 ? (
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <div className="text-xs font-black text-gray-400 uppercase tracking-widest">Lịch sử nộp</div>
-                <select
-                  className="h-10 rounded-2xl border border-gray-100 bg-white px-4 text-sm font-bold text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  value={selectedSubmissionId}
-                  onChange={(e) => {
-                    const nextId = e.target.value
-                    setSelectedSubmissionId(nextId)
-                    const picked = submissionHistory.find((s, idx) => String(s?._id ?? idx) === String(nextId))
-                    applySelectedSubmission(picked as IHomeworkSubmission)
-                  }}
-                  disabled={isLoading}
-                >
-                  {submissionHistory.map((s, idx) => {
-                    const formatDate = (date?: string) =>
-                    date ? new Date(date).toLocaleString('vi-VN') : 'Không rõ thời gian'
-
-                    const label =
-                      idx === 0
-                        ? `Mới nhất • ${formatDate(s?.submittedAt)}`
-                        : `Lần ${submissionHistory.length - idx} • ${formatDate(s?.submittedAt)}`
-                    return (
-                      <option key={String(s?._id ?? idx)} value={String(s?._id ?? idx)}>
-                        {label}
-                      </option>
-                    )
-                  })}
-                </select>
-              </div>
-            ) : null}
-          </div>
-
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="p-8 pt-6 space-y-6">
-              {activeViewTab === 'submitted' ? (
-                <div className="prose prose-blue max-w-none prose-headings:font-black prose-p:text-gray-700 prose-p:leading-relaxed prose-img:rounded-3xl prose-img:shadow-lg">
-                  <div dangerouslySetInnerHTML={{ __html: submittedHtml || '<p>Chưa có bài nộp.</p>' }} />
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {stripText(commentHtml).length > 0 ? (
-                    <div className="rounded-3xl border border-amber-100 bg-amber-50/50 p-6">
-                      <div className="text-xs font-black text-amber-600 uppercase tracking-widest mb-3">Nhận xét</div>
-                      <div className="prose prose-blue max-w-none prose-p:text-gray-700 prose-p:leading-relaxed">
-                        <div dangerouslySetInnerHTML={{ __html: commentHtml }} />
-                      </div>
-                    </div>
-                  ) : null}
-                  <div className="rounded-3xl border border-gray-100 bg-white p-6">
-                    <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Bài đã sửa</div>
-                    <div className="prose prose-blue max-w-none prose-headings:font-black prose-p:text-gray-700 prose-p:leading-relaxed prose-img:rounded-3xl prose-img:shadow-lg">
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: correctedHtml || '<p>Giáo viên chưa sửa bài.</p>',
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+        title={viewHomework?.title || 'Bài nộp'}
+        isLoading={isLoading}
+        activeTab={activeViewTab}
+        onTabChange={setActiveViewTab}
+        submissionHistory={submissionHistory}
+        selectedSubmissionId={selectedSubmissionId}
+        onSelectSubmissionId={handleSelectSubmissionId}
+        submittedHtml={submittedHtml}
+        correctedHtml={correctedHtml}
+        commentHtml={commentHtml}
+      />
 
       <UploadHomeworkSheet 
         isOpen={isOpen}

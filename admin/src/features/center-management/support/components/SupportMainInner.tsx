@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { toast } from 'react-toastify'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ChatList } from './ChatList'
 import { ChatHeader } from './ChatHeader'
 import { MessageInput } from './MessageInput'
@@ -22,6 +23,7 @@ export function SupportMainInner() {
     newCount,
     canTakeOver,
     canReply,
+    isSelectedTicketLoading,
     selectTicketId,
     claimSelectedTicket,
     sendMessageAsStaff,
@@ -59,6 +61,23 @@ export function SupportMainInner() {
   const messages: SupportMessage[] = selectedTicket?.messages || []
   const selectedName = selectedTicket?.requester?.fullName || 'Học viên'
   const hasMessages = messages.length > 0
+
+  const LoadingMessages = () => (
+    <div className="space-y-4">
+      {Array.from({ length: 7 }).map((_, i) => {
+        const isRight = i % 3 === 0
+        return (
+          <div key={i} className={cn('flex', isRight ? 'justify-end' : 'justify-start')}>
+            <div className={cn('max-w-[78%] rounded-3xl p-4 bg-white border border-gray-100 shadow-sm', isRight ? 'rounded-tr-lg' : 'rounded-tl-lg')}>
+              <Skeleton className="h-3 w-44" />
+              <Skeleton className="h-3 w-64 mt-2" />
+              <Skeleton className="h-3 w-32 mt-2" />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
 
   return (
     <div className="relative flex h-[calc(100vh-110px)] bg-white rounded-3xl overflow-hidden">
@@ -100,11 +119,17 @@ export function SupportMainInner() {
       </div>
 
       <div className="flex-1 flex flex-col bg-white">
-        <ChatHeader selectedTicket={selectedTicket} onOpenList={() => setIsMobileListOpen(true)} />
+        <ChatHeader
+          selectedTicket={selectedTicket}
+          onOpenList={() => setIsMobileListOpen(true)}
+          isLoading={isSelectedTicketLoading}
+        />
 
         <ScrollArea className="flex-1 overflow-auto bg-gray-50/50">
           <div className="p-8 space-y-6">
-            {!selectedTicket ? (
+            {isSelectedTicketLoading ? (
+              <LoadingMessages />
+            ) : !selectedTicket ? (
               <SupportEmptyState title="Chọn một ticket để bắt đầu" description="Danh sách ticket nằm ở cột bên trái." />
             ) : !hasMessages ? (
               <SupportEmptyState title="Chưa có tin nhắn" description="Khi học viên gửi tin, nội dung sẽ hiển thị ở đây." />
@@ -119,7 +144,7 @@ export function SupportMainInner() {
               </div>
             )}
 
-            {hasMessages &&
+            {!isSelectedTicketLoading && hasMessages &&
               messages.map((msg, index) => (
                 <SupportMessageRow
                   key={msg._id}
@@ -133,7 +158,7 @@ export function SupportMainInner() {
         </ScrollArea>
 
         <div className="border-t border-gray-200">
-          {!canReply && selectedTicket?.status === 'open' && (
+          {!canReply && !isSelectedTicketLoading && selectedTicket?.status === 'open' && (
             <div className="px-6 pt-4">
               {selectedTicket?.assignedTo ? (
                 <p className="text-xs font-bold text-gray-500">
@@ -155,10 +180,13 @@ export function SupportMainInner() {
               )}
             </div>
           )}
-          <MessageInput onSendMessage={handleSendMessage} onSendFile={handleSendFile} disabled={!canReply || isUploading} />
+          <MessageInput
+            onSendMessage={handleSendMessage}
+            onSendFile={handleSendFile}
+            disabled={!canReply || isUploading || isSelectedTicketLoading}
+          />
         </div>
       </div>
     </div>
   )
 }
-

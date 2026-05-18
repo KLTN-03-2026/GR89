@@ -4,13 +4,23 @@ import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { AdminPageShell } from '@/components/common/shared/AdminPageShell'
 import { AdminPageHeader } from '@/components/common/shared/AdminPageHeader'
-import { Users, ArrowLeft, UserPlus, UserCheck, UserMinus, Badge, Calendar } from 'lucide-react'
+import { Users, ArrowLeft, UserPlus, UserCheck, UserMinus, Badge, Calendar, MoreHorizontal, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetTrigger } from "@/components/ui/sheet"
 
-import { ICenterClass } from '../../../type'
+import { ICenterClass, IClassStudent } from '../../../type'
 import { SheetAddStudent } from '../../dialogs/SheetAddStudent'
 import { StatsGrid } from '@/components/common/shared/StatsGrid'
+import { ActionConfirmDialog } from '../../dialogs/ActionConfirmDialog'
+import { removeStudentFromClass } from '../../../services/api'
+import { toast } from 'react-toastify'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface StudentsMainProps {
   initialData: ICenterClass | null
@@ -21,6 +31,9 @@ export function StudentsMain({ initialData, classId }: StudentsMainProps) {
   const router = useRouter()
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [openRemove, setOpenRemove] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState<IClassStudent | null>(null)
+  const [isRemoving, setIsRemoving] = useState(false)
 
   const classData = initialData
 
@@ -39,8 +52,44 @@ export function StudentsMain({ initialData, classId }: StudentsMainProps) {
     router.push('/center-management/classes')
   }
 
+  const handleAskRemove = (student: IClassStudent) => {
+    setSelectedStudent(student)
+    setOpenRemove(true)
+  }
+
+  const handleRemove = async () => {
+    if (!selectedStudent?.user?._id) return
+    setIsRemoving(true)
+    await removeStudentFromClass(classId, selectedStudent.user._id)
+      .then(() => {
+        toast.success('Xóa học viên khỏi lớp thành công')
+        router.refresh()
+      })
+      .finally(() => {
+        setIsRemoving(false)
+        setOpenRemove(false)
+        setSelectedStudent(null)
+      })
+  }
+
   return (
     <AdminPageShell>
+      <ActionConfirmDialog
+        open={openRemove}
+        onOpenChange={(next) => {
+          setOpenRemove(next)
+          if (!next) setSelectedStudent(null)
+        }}
+        title="Xác nhận xóa học viên"
+        description={
+          selectedStudent?.user?.fullName
+            ? `Bạn có chắc chắn muốn xóa học viên "${selectedStudent.user.fullName}" khỏi lớp học này?`
+            : 'Bạn có chắc chắn muốn xóa học viên này khỏi lớp học?'
+        }
+        onConfirm={handleRemove}
+        isLoading={isRemoving}
+      />
+
       <AdminPageHeader
         title={classData ? `Học viên: ${classData.name}` : 'Quản lý học viên'}
         subtitle={classData ? `Quản lý danh sách học viên trực tiếp của lớp ${classData.name}` : 'Chưa lấy được thông tin lớp học. Bạn vẫn có thể thêm học viên nếu mã lớp chính xác.'}
@@ -106,7 +155,32 @@ export function StudentsMain({ initialData, classId }: StudentsMainProps) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {(classData.students || []).map((student) => (
-              <div key={student.user._id} className="bg-white rounded-3xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-indigo-50/50 transition-all flex flex-col items-center text-center space-y-4">
+              <div key={student.user._id} className="bg-white rounded-3xl border border-gray-100 p-6 hover:shadow-xl hover:shadow-indigo-50/50 transition-all flex flex-col items-center text-center space-y-4 relative">
+                <div className="absolute top-4 right-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-9 w-9 p-0 rounded-full" disabled={isRemoving}>
+                        {isRemoving && selectedStudent?.user?._id === student.user._id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <MoreHorizontal className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-2xl p-2 w-48">
+                      <DropdownMenuLabel className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                        Hành động
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem
+                        className="rounded-xl text-red-600 cursor-pointer"
+                        onClick={() => handleAskRemove(student)}
+                      >
+                        <UserMinus className="w-4 h-4 mr-2" /> Xóa khỏi lớp
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
                 <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-2xl shadow-inner">
                   {student.user.fullName.charAt(0)}
                 </div>

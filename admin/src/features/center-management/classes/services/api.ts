@@ -79,7 +79,7 @@ export async function deleteCenterClass(id: string): Promise<ApiResponse<void>> 
  *============================================================================*/
 
 // Thêm học sinh vào lớp học
-export async function addStudentToClass(classId: string, data: { userId: string, joinDate?: string }): Promise<ApiResponse<ICenterClass>> {
+export async function addStudentToClass(classId: string, data: { email: string, joinDate?: string }): Promise<ApiResponse<ICenterClass>> {
   const response = await AuthorizedAxios.post<ApiResponse<ICenterClass>>(`/center-classes/${classId}/students`, data)
   return response.data
 }

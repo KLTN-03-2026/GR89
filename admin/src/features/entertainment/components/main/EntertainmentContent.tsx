@@ -33,15 +33,12 @@ function useDebounce<T>(value: T, delay: number): T {
 
 interface Props {
   callback: () => void
-  baseType: 'movie' | 'music' | 'podcast'
-  type: 'movie' | 'music' | 'podcast' | 'episode'
-  parentId?: string
   initialData: Entertainment[]
   pagination: Pagination
   onManageEpisodes?: (parentId: string, title: string) => void
 }
 
-export default function EntertainmentContent({ callback, baseType, type, parentId, initialData, pagination, onManageEpisodes }: Props) {
+export default function EntertainmentContent({ callback, initialData, pagination, onManageEpisodes }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

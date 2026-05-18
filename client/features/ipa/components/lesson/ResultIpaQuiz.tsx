@@ -60,7 +60,7 @@ export default function ResultIpaQuiz({ results, onRetry }: ResultIpaQuizProps) 
   }
 
   return (
-    <div className="space-y-6 max-h-[80vh] overflow-auto pr-1">
+    <div className="max-w-5xl mx-auto space-y-6 max-h-[80vh] overflow-auto pr-1">
       <Card className="bg-gradient-to-r from-slate-950 via-slate-800 to-indigo-900 text-white shadow-2xl sticky top-0 z-10 rounded-2xl border-0">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>

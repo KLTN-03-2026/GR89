@@ -32,7 +32,7 @@ export function SheetAddStudent({ classId, onClose }: SheetAddStudentProps) {
     }
 
     setLoading(true)
-    await addStudentToClass(classId, { userId: email })
+    await addStudentToClass(classId, { email })
       .then(() => {
         toast.success('Đã mời học viên vào lớp thành công')
         onClose()

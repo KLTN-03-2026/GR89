@@ -5,7 +5,31 @@ import { toast } from "react-toastify"
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
 
 let isRefreshing = false
-let pendingRequests: (() => void)[] = []
+let pendingRequests: Array<{
+  resolve: (value: unknown) => void
+  reject: (reason?: unknown) => void
+  request: InternalAxiosRequestConfig & { _retry?: boolean; _skipErrorToast?: boolean }
+}> = []
+
+let hasSessionExpired = false
+let lastSessionExpiredToastAtMs = 0
+
+function triggerSessionExpiredOnce() {
+  if (hasSessionExpired) return
+  hasSessionExpired = true
+
+  isRefreshing = false
+
+  const now = Date.now()
+  if (now - lastSessionExpiredToastAtMs > 1500) {
+    lastSessionExpiredToastAtMs = now
+    toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+  }
+
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.replace('/login')
+  }
+}
 
 // =========================
 //  UTILITY FUNCTIONS
@@ -152,6 +176,12 @@ api.interceptors.response.use(
       return Promise.reject(handledError)
     }
 
+    if (hasSessionExpired) {
+      const handledError = error as AxiosError & { _handled?: boolean }
+      handledError._handled = true
+      return Promise.reject(handledError)
+    }
+
     const status = error.response?.status
 
     if (
@@ -162,8 +192,8 @@ api.interceptors.response.use(
       originalRequest._retry = true
 
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          pendingRequests.push(() => resolve(api(originalRequest)))
+        return new Promise((resolve, reject) => {
+          pendingRequests.push({ resolve, reject, request: originalRequest })
         })
       }
 
@@ -172,17 +202,18 @@ api.interceptors.response.use(
       try {
         await refreshApi.post('/auth/refresh-token', { role: 'admin' })
 
-        pendingRequests.forEach((cb) => cb())
+        pendingRequests.forEach(({ resolve, request }) => resolve(api(request)))
         pendingRequests = []
         isRefreshing = false
 
         return api(originalRequest)
       } catch (refreshError) {
         isRefreshing = false
+
+        pendingRequests.forEach(({ reject }) => reject(refreshError))
         pendingRequests = []
 
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
-        window.location.href = '/login'
+        triggerSessionExpiredOnce()
 
         const handledError = refreshError as AxiosError & { _handled?: boolean }
         handledError._handled = true
@@ -260,4 +291,3 @@ if (typeof window !== "undefined") {
 }
 
 export default api
-

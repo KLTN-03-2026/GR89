@@ -60,12 +60,9 @@ export function EntertainmentMain({
 
       <EntertainmentContent
         callback={() => router.refresh()}
-        baseType={baseType}
-        type={type}
-        parentId={parentId}
         initialData={initialData}
         pagination={pagination}
-        onManageEpisodes={(nextParentId, _title) => {
+        onManageEpisodes={(nextParentId) => {
           const params = new URLSearchParams(window.location.search)
           params.set('parentId', nextParentId)
           params.set('page', '1')

@@ -210,8 +210,33 @@ export class CenterClassController {
   // Thêm học sinh vào lớp
   static addStudent = CatchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params
-    const { userId, joinDate } = req.body
-    if (!userId) return next(new ErrorHandler('ID người dùng là bắt buộc', 400))
+    const { email, userId, joinDate } = req.body
+
+    const rawEmail =
+      typeof email === 'string'
+        ? email
+        : typeof userId === 'string' && userId.includes('@')
+          ? userId
+          : ''
+    if (rawEmail) {
+      const requestedById = String(req.user?._id || '')
+      if (!requestedById) return next(new ErrorHandler('Vui lòng đăng nhập trước', 401))
+
+      const invite = await CenterClassService.inviteStudentToClassByEmail({
+        classId: id,
+        email: rawEmail,
+        requestedById,
+      })
+
+      res.status(200).json({
+        success: true,
+        message: 'Đã gửi lời mời cho học viên. Đang chờ xác nhận.',
+        data: invite,
+      })
+      return
+    }
+
+    if (!userId) return next(new ErrorHandler('Email hoặc ID người dùng là bắt buộc', 400))
 
     const updatedClass = await CenterClassService.addStudentToClass(id, userId, joinDate)
     res.status(200).json({
@@ -221,11 +246,57 @@ export class CenterClassController {
     })
   })
 
+  static respondStudentInvite = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const { inviteId } = req.params as { inviteId: string }
+      const userId = String(req.user?._id || '')
+      if (!userId) return next(new ErrorHandler('Vui lòng đăng nhập trước', 401))
+
+      const accepted = !!req.body?.accepted
+      const result = await CenterClassService.respondStudentInvite({ inviteId, userId, accepted })
+
+      res.status(200).json({
+        success: true,
+        message: accepted ? 'Bạn đã chấp nhận lời mời' : 'Bạn đã từ chối lời mời',
+        data: result,
+      })
+    },
+  )
+
   // Xóa học sinh khỏi lớp
   static removeStudent = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
       const { id, userId } = req.params
+      const centerClass = await CenterClass.findById(id).select('name category students')
+      if (!centerClass) return next(new ErrorHandler('Không tìm thấy lớp học', 404))
+
+      const isMember = (centerClass.students || []).some(
+        (s: any) => String(s?.user) === String(userId),
+      )
+      if (!isMember) return next(new ErrorHandler('Học viên không có trong lớp này', 400))
+
       const updatedClass = await CenterClassService.removeStudentFromClass(id, userId)
+
+      const className = String(centerClass.name || '')
+      const classCategory = String(centerClass.category || 'adult')
+      const link = `/catelogy/${classCategory}`
+      await NotificationService.createOne({
+        recipientId: String(userId),
+        recipientRole: 'user',
+        type: 'system',
+        title: 'Bạn đã bị xóa khỏi lớp học',
+        body: className
+          ? `Bạn đã bị xóa khỏi lớp "${className}".`
+          : 'Bạn đã bị xóa khỏi một lớp học.',
+        link,
+        data: {
+          action: 'center_class_removed',
+          classId: String(id),
+          className,
+          classCategory,
+        },
+      })
+
       res.status(200).json({
         success: true,
         message: 'Xóa học sinh khỏi lớp thành công',

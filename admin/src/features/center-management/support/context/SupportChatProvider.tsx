@@ -18,6 +18,7 @@ interface SupportChatContextType {
   newCount: number
   canTakeOver: boolean
   canReply: boolean
+  isSelectedTicketLoading: boolean
   selectTicketId: (ticketId: string) => void
   refreshTickets: () => Promise<void>
   refreshTicketDetail: (ticketId: string) => Promise<void>
@@ -27,14 +28,28 @@ interface SupportChatContextType {
 
 const SupportChatContext = createContext<SupportChatContextType | undefined>(undefined)
 
-export function SupportChatProvider({ children }: { children: React.ReactNode }) {
+export function SupportChatProvider({
+  children,
+  initialTickets,
+  initialSelectedTicketId,
+  initialSelectedTicket,
+}: {
+  children: React.ReactNode
+  initialTickets?: SupportTicket[]
+  initialSelectedTicketId?: string
+  initialSelectedTicket?: SupportTicket | null
+}) {
   const { user } = useAuth()
   const socket = useSocketStore((s) => s.socket)
 
-  const [tickets, setTickets] = useState<SupportTicket[]>([])
-  const [selectedTicketId, setSelectedTicketId] = useState<string>('')
-  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
+  const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets || [])
+  const [selectedTicketId, setSelectedTicketId] = useState<string>(
+    initialSelectedTicketId || initialTickets?.[0]?._id || '',
+  )
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(initialSelectedTicket || null)
+  const [isSelectedTicketLoading, setIsSelectedTicketLoading] = useState(false)
   const lastSelectedMessageAtRef = useRef<string | null>(null)
+  const ticketDetailRequestSeqRef = useRef(0)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   useEffect(() => {
@@ -84,13 +99,26 @@ export function SupportChatProvider({ children }: { children: React.ReactNode })
     if (!ticketId) {
       setSelectedTicket(null)
       lastSelectedMessageAtRef.current = null
+      setIsSelectedTicketLoading(false)
       return
     }
-    const res = await getSupportTicketDetailForStaff(ticketId)
-    const ticket = res.data || null
-    setSelectedTicket(ticket)
-    if (ticketId === selectedTicketId) {
-      lastSelectedMessageAtRef.current = ticket?.lastMessageAt || null
+    const requestSeq = ++ticketDetailRequestSeqRef.current
+    const startedAt = Date.now()
+    setIsSelectedTicketLoading(true)
+    try {
+      const res = await getSupportTicketDetailForStaff(ticketId)
+      const ticket = res.data || null
+      const elapsed = Date.now() - startedAt
+      const minDurationMs = 250
+      const remaining = minDurationMs - elapsed
+      if (remaining > 0) {
+        await new Promise((r) => setTimeout(r, remaining))
+      }
+      if (requestSeq !== ticketDetailRequestSeqRef.current) return
+      setSelectedTicket(ticket)
+      if (ticketId === selectedTicketId) lastSelectedMessageAtRef.current = ticket?.lastMessageAt || null
+    } finally {
+      if (requestSeq === ticketDetailRequestSeqRef.current) setIsSelectedTicketLoading(false)
     }
   }, [selectedTicketId])
 
@@ -132,8 +160,11 @@ export function SupportChatProvider({ children }: { children: React.ReactNode })
   }
 
   const selectTicketId = useCallback((ticketId: string) => {
+    if (ticketId && ticketId !== selectedTicketId) setIsSelectedTicketLoading(true)
     setSelectedTicketId(ticketId)
-  }, [])
+    setSelectedTicket(null)
+    lastSelectedMessageAtRef.current = null
+  }, [selectedTicketId])
 
   useEffect(() => {
     refreshTickets()
@@ -145,8 +176,12 @@ export function SupportChatProvider({ children }: { children: React.ReactNode })
       lastSelectedMessageAtRef.current = null
       return
     }
+    if (selectedTicket && selectedTicket._id === selectedTicketId && Array.isArray(selectedTicket.messages)) {
+      lastSelectedMessageAtRef.current = selectedTicket?.lastMessageAt || null
+      return
+    }
     refreshTicketDetail(selectedTicketId)
-  }, [selectedTicketId, refreshTicketDetail])
+  }, [refreshTicketDetail, selectedTicket, selectedTicketId])
 
   useEffect(() => {
     if (!socket) return
@@ -175,6 +210,7 @@ export function SupportChatProvider({ children }: { children: React.ReactNode })
         newCount,
         canTakeOver,
         canReply,
+        isSelectedTicketLoading,
         selectTicketId,
         refreshTickets,
         refreshTicketDetail,

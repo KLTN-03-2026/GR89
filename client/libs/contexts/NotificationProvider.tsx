@@ -13,6 +13,7 @@ export type AppNotification = {
   title: string
   body: string
   link?: string
+  data?: Record<string, any>
   isRead: boolean
   createdAt: string
 }
@@ -85,6 +86,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         title: String(payload.title || ''),
         body: String(payload.body || ''),
         link: payload.link ? String(payload.link) : '',
+        data: payload.data && typeof payload.data === 'object' ? payload.data : {},
         isRead: false,
         createdAt: payload.createdAt ? String(payload.createdAt) : new Date().toISOString(),
       }
@@ -136,4 +138,3 @@ export function useNotification() {
   if (!ctx) throw new Error('useNotification must be used within NotificationProvider')
   return ctx
 }
-

@@ -60,18 +60,12 @@ export default function CardPodcast({
       <div className="space-y-2">
         {/* Thumbnail */}
         <div className="relative aspect-video rounded-lg bg-gray-100 overflow-hidden">
-          {image && image.trim() !== '' ? (
-            <Image
-              src={image}
-              alt={title}
-              fill
-              className="object-cover transition-transform duration-200 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-              <Mic className="w-12 h-12 text-gray-400" />
-            </div>
-          )}
+          <Image
+            src={image.trim() !== '/placeholder.png' ? image : '/images/default-entertainment.jpg'}
+            alt={title}
+            fill
+            className="object-cover transition-transform duration-200 group-hover:scale-105"
+          />
 
           {/* Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">

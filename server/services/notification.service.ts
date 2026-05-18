@@ -36,6 +36,7 @@ export class NotificationService {
       title: doc.title,
       body: doc.body,
       link: doc.link,
+      data: doc.data || {},
       createdAt: doc.createdAt,
     })
 
@@ -73,6 +74,7 @@ export class NotificationService {
         title: n.title,
         body: n.body,
         link: n.link,
+        data: (n as any).data || {},
         createdAt: n.createdAt,
       })
     })
@@ -112,6 +114,7 @@ export class NotificationService {
         title: n.title,
         body: n.body,
         link: n.link,
+        data: (n as any).data || {},
         createdAt: n.createdAt,
       })
     })

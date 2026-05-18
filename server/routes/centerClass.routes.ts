@@ -99,6 +99,13 @@ router.delete(
   CenterClassController.removeStudent,
 )
 
+router.post(
+  '/user/invites/:inviteId/respond',
+  authenticateTokenUser,
+  requireRole(['user']),
+  CenterClassController.respondStudentInvite,
+)
+
 /*============================ QUẢN LÝ TÀI LIỆU ============================*/
 
 router.post(

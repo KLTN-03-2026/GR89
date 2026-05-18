@@ -48,18 +48,12 @@ export function CardMusic({
       <div className="space-y-2">
         {/* Thumbnail */}
         <div className="relative aspect-video rounded-lg bg-gray-100 overflow-hidden">
-          {thumbnail && thumbnail.trim() !== '' ? (
-            <Image
-              src={thumbnail}
-              alt={title}
-              fill
-              className="object-cover transition-transform duration-200 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-              <Music className="w-12 h-12 text-gray-400" />
-            </div>
-          )}
+          <Image
+            src={thumbnail.trim() !== '/placeholder.png' ? thumbnail : '/images/default-entertainment.jpg'}
+            alt={title}
+            fill
+            className="object-cover transition-transform duration-200 group-hover:scale-105"
+          />
 
           {/* Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">

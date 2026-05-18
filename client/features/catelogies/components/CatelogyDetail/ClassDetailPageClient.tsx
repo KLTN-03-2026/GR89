@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { IClass, IDocument } from "../../types"
 import { DocumentDetailDialog } from "../Dialogs/DocumentDetailDialog"
-import { SolutionDetailDialog } from "../Dialogs/SolutionDetailDialog"
 import { BookOpen, Calendar, Clock, GraduationCap, FileText, CheckCircle2 } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -15,9 +14,7 @@ import TabClassHomework from "@/features/catelogies/components/CatelogyDetail/Ta
 export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
   const searchParams = useSearchParams()
   const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null)
-  const [selectedSolution, setSelectedSolution] = useState<IDocument | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [isSolutionOpen, setIsSolutionOpen] = useState(false)
   const tabParam = searchParams.get('tab')
   const desiredTab = useMemo(() => (tabParam === 'homeworks' ? 'homeworks' : 'materials'), [tabParam])
   const [activeTab, setActiveTab] = useState<'materials' | 'homeworks'>(desiredTab)
@@ -29,11 +26,6 @@ export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
   const handleViewDocument = (doc: IDocument) => {
     setSelectedDoc(doc)
     setIsDialogOpen(true)
-  }
-
-  const handleViewSolution = (doc: IDocument) => {
-    setSelectedSolution(doc)
-    setIsSolutionOpen(true)
   }
 
   return (
@@ -117,7 +109,10 @@ export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
 
           <TabClassDocuments documents={classItem.documents} onView={handleViewDocument} />
 
-          <TabClassHomework homeworks={classItem.homeworks} onView={handleViewSolution} />
+          <TabClassHomework 
+            homeworks={classItem.homeworks} 
+            onViewDocument={handleViewDocument}
+           />
         </Tabs>
       </div>
 
@@ -125,12 +120,6 @@ export function ClassDetailPageClient({ classItem }: { classItem: IClass }) {
         document={selectedDoc}
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-      />
-
-      <SolutionDetailDialog
-        document={selectedSolution}
-        isOpen={isSolutionOpen}
-        onClose={() => setIsSolutionOpen(false)}
       />
     </div>
   )

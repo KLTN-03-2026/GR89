@@ -381,6 +381,171 @@ export class CenterClassService {
     return centerClass
   }
 
+  static async inviteStudentToClassByEmail(params: {
+    classId: string
+    email: string
+    requestedById: string
+  }): Promise<{
+    inviteId: string
+    userId: string
+    classId: string
+    className: string
+    classCategory: string
+  }> {
+    const email = String(params.email || '')
+      .trim()
+      .toLowerCase()
+    if (!email) throw new ErrorHandler('Email là bắt buộc', 400)
+
+    const user = await User.findOne({ email }).select('_id role isActive email fullName')
+    if (!user) throw new ErrorHandler('Email chưa đăng ký tài khoản', 404)
+    if (!user.isActive) throw new ErrorHandler('Tài khoản đang bị khóa', 403)
+    if (String(user.role) !== 'user')
+      throw new ErrorHandler('Email không thuộc tài khoản học viên', 400)
+
+    const centerClass = await CenterClass.findById(params.classId).select(
+      '_id name category students studentInvites',
+    )
+    if (!centerClass) throw new ErrorHandler('Không tìm thấy lớp học', 404)
+
+    const isAlreadyMember = (centerClass.students || []).some(
+      (s: any) => String(s.user) === String(user._id),
+    )
+    if (isAlreadyMember) throw new ErrorHandler('Học viên đã có trong lớp này', 400)
+
+    const centerClassAny = centerClass as any
+    centerClassAny.studentInvites = Array.isArray(centerClassAny.studentInvites)
+      ? centerClassAny.studentInvites
+      : []
+
+    const hasPendingInvite = centerClassAny.studentInvites.some(
+      (inv: any) => String(inv?.user) === String(user._id) && String(inv?.status) === 'pending',
+    )
+    if (hasPendingInvite)
+      throw new ErrorHandler('Đã gửi lời mời cho học viên này và đang chờ xác nhận', 400)
+
+    const invite = {
+      user: user._id,
+      email: user.email,
+      status: 'pending' as const,
+      requestedBy: new mongoose.Types.ObjectId(params.requestedById),
+      requestedAt: new Date(),
+      respondedAt: null,
+    }
+
+    centerClassAny.studentInvites.push(invite)
+    await centerClassAny.save()
+
+    const created = centerClassAny.studentInvites[centerClassAny.studentInvites.length - 1]
+    const inviteId = created?._id ? String(created._id) : ''
+    if (!inviteId) throw new ErrorHandler('Không thể tạo lời mời vào lớp học', 500)
+
+    const className = String(centerClassAny.name || '')
+    const classCategory = String(centerClassAny.category || 'adult')
+
+    await NotificationService.createOne({
+      recipientId: String(user._id),
+      recipientRole: 'user',
+      type: 'system',
+      title: 'Lời mời vào lớp học',
+      body: className
+        ? `Bạn được mời tham gia lớp "${className}".`
+        : 'Bạn có một lời mời tham gia lớp học.',
+      link: '/notifications',
+      data: {
+        action: 'center_class_invite',
+        inviteId,
+        classId: String(centerClass._id),
+        className,
+        classCategory,
+      },
+    })
+
+    return {
+      inviteId,
+      userId: String(user._id),
+      classId: String(centerClass._id),
+      className,
+      classCategory,
+    }
+  }
+
+  static async respondStudentInvite(params: {
+    inviteId: string
+    userId: string
+    accepted: boolean
+  }): Promise<{ classId: string; classCategory: string; accepted: boolean }> {
+    const inviteId = String(params.inviteId || '').trim()
+    if (!inviteId) throw new ErrorHandler('inviteId là bắt buộc', 400)
+    if (!mongoose.isValidObjectId(inviteId)) throw new ErrorHandler('Lời mời không hợp lệ', 400)
+
+    const centerClass = await CenterClass.findOne({
+      'studentInvites._id': new mongoose.Types.ObjectId(inviteId),
+    }).select('_id name category students studentInvites')
+    if (!centerClass) throw new ErrorHandler('Không tìm thấy lời mời', 404)
+
+    const invite = (centerClass as any).studentInvites?.id(inviteId) as any
+    if (!invite) throw new ErrorHandler('Không tìm thấy lời mời', 404)
+    if (String(invite.user) !== String(params.userId))
+      throw new ErrorHandler('Bạn không có quyền xử lý lời mời này', 403)
+    if (String(invite.status) !== 'pending')
+      throw new ErrorHandler('Lời mời này đã được xử lý trước đó', 400)
+
+    const accepted = !!params.accepted
+    invite.status = accepted ? 'accepted' : 'declined'
+    invite.respondedAt = new Date()
+
+    if (accepted) {
+      const isAlreadyMember = (centerClass.students || []).some(
+        (s: any) => String(s.user) === String(params.userId),
+      )
+      if (!isAlreadyMember) {
+        centerClass.students.push({
+          user: new mongoose.Types.ObjectId(params.userId),
+          joinDate: new Date(),
+        })
+      }
+    }
+
+    await centerClass.save()
+
+    const adminId = invite.requestedBy ? String(invite.requestedBy) : ''
+    if (adminId) {
+      const adminUser = await User.findById(adminId).select('_id role')
+      const adminRole = (adminUser?.role as any) || 'admin'
+      const className = String((centerClass as any).name || '')
+      const title = accepted ? 'Học viên đã chấp nhận lời mời' : 'Học viên đã từ chối lời mời'
+      const body = className
+        ? accepted
+          ? `Một học viên đã chấp nhận tham gia lớp "${className}".`
+          : `Một học viên đã từ chối tham gia lớp "${className}".`
+        : accepted
+          ? 'Một học viên đã chấp nhận tham gia lớp học.'
+          : 'Một học viên đã từ chối tham gia lớp học.'
+
+      await NotificationService.createOne({
+        recipientId: adminId,
+        recipientRole: adminRole,
+        type: 'system',
+        title,
+        body,
+        link: `/center-management/classes/students/${String(centerClass._id)}/`,
+        data: {
+          action: 'center_class_invite_result',
+          inviteId,
+          classId: String(centerClass._id),
+          accepted,
+        },
+      })
+    }
+
+    return {
+      classId: String(centerClass._id),
+      classCategory: String((centerClass as any).category || 'adult'),
+      accepted,
+    }
+  }
+
   // (ADMIN/CONTENT) Xóa học viên khỏi lớp
   static async removeStudentFromClass(classId: string, userId: string): Promise<ICenterClass> {
     const centerClass = await CenterClass.findById(classId)

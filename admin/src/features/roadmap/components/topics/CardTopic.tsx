@@ -27,6 +27,7 @@ interface CardTopicProps {
   topic: RoadmapTopic,
   index: number,
   isSelected: boolean,
+  isLessonsLoading?: boolean,
   onSelect: (topicId: string) => void
 }
 
@@ -34,6 +35,7 @@ export default function CardTopic({
   topic,
   index,
   isSelected,
+  isLessonsLoading,
   onSelect,
 }: CardTopicProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -93,7 +95,7 @@ export default function CardTopic({
       >
         <div className="flex items-center gap-4">
           <div
-            className="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            className="shrink-0 cursor-grab active:cursor-grabbing touch-none p-1 hover:bg-gray-100 rounded-lg transition-colors"
             {...attributes}
             {...listeners}
             onClick={(e) => e.stopPropagation()}
@@ -102,7 +104,7 @@ export default function CardTopic({
           </div>
 
           {/* Icon emoji */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className={cn(
               "w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border transition-all duration-300 shadow-sm",
               isSelected
@@ -156,7 +158,12 @@ export default function CardTopic({
               "font-black text-sm line-clamp-1 tracking-tight transition-colors",
               isSelected ? "text-amber-900" : "text-gray-700"
             )}>
-              {topic.title}
+              <span className="inline-flex items-center gap-2">
+                {topic.title}
+                {isSelected && isLessonsLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600" />
+                ) : null}
+              </span>
             </h3>
             <p className="text-[11px] font-bold text-gray-400 mt-0.5">
               {(typeof topic.lessonsCount === 'number' ? topic.lessonsCount : (topic.lessons || []).length) || 0} bài học
@@ -178,7 +185,7 @@ export default function CardTopic({
       />
 
       <AlertDialog open={isVisibilityConfirmOpen} onOpenChange={setIsVisibilityConfirmOpen}>
-        <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl">
+        <AlertDialogContent className="rounded-4xl border-none shadow-2xl">
           <AlertDialogHeader className="pt-8 px-8">
             <div className={cn(
               "w-12 h-12 rounded-2xl flex items-center justify-center mb-4 shadow-inner",
@@ -195,7 +202,7 @@ export default function CardTopic({
                 : `Bạn có chắc chắn muốn xuất bản chặng "${topic.title}"? Chặng này sẽ bắt đầu hiển thị với người học.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-[2rem]">
+          <AlertDialogFooter className="p-8 bg-gray-50/50 border-t border-gray-100 mt-4 rounded-b-4xl">
             <AlertDialogCancel
               disabled={visibilityLoading}
               className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-600"
