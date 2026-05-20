@@ -228,6 +228,7 @@ export class SupportChatService {
     const ticketObjectId = this.ensureObjectId(ticketId, 'Ticket không hợp lệ')
     const staff = this.ensureObjectId(staffId, 'Người dùng không hợp lệ')
 
+    console.log(attachments)
     if ((!content || content.trim().length === 0) && !attachments) {
       throw new ErrorHandler('Nội dung hoặc file đính kèm không được để trống', 400)
     }

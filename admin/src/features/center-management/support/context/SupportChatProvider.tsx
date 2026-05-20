@@ -181,7 +181,6 @@ export function SupportChatProvider({
   }
 
   const sendMessageAsStaff = async (content: string, attachments?: SupportAttachment) => {
-    console.log('content: ', content, 'attachments: ', attachments)
     if (!selectedTicketId) return
     await sendSupportMessageAsStaff(selectedTicketId, content, attachments)
     await refreshTickets()

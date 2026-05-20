@@ -46,11 +46,11 @@ export async function sendSupportMessageAsStaff(
   return response.data as ApiResponse<SupportTicket>
 }
 
-export async function uploadSupportAttachmentForStaff(file: File): Promise<SupportAttachment> {
+export async function uploadSupportAttachmentForStaff(file: File): Promise<ApiResponse<SupportAttachment>> {
   const formData = new FormData()
   formData.append('file', file)
   const response = await AuthorizedAxios.post(`/support-chat/admin/attachments`, formData)
-  return response.data as SupportAttachment
+  return response.data as ApiResponse<SupportAttachment>
 }
 
 export async function openClaimTicket(): Promise<ApiResponse<SupportTicket>> {

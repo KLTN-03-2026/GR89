@@ -1,6 +1,6 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Loader2, MoreHorizontal, Pencil, Trash2, Crown } from "lucide-react"
+import { Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import { useState } from 'react'
 import { deleteVocabulary } from '@/features/vocabulary/services/api'
 import { toast } from 'react-toastify'

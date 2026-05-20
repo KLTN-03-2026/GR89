@@ -685,7 +685,6 @@ export class CenterClassService {
       documentIds?: string[] | null
     },
   ): Promise<IHomework> {
-    console.log(data)
     const update: any = {}
     if (data.title != null) update.title = data.title
     if (data.description != null) update.description = data.description

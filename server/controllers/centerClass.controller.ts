@@ -537,7 +537,6 @@ export class CenterClassController {
       const reviewerId = req.user?._id as string
       const { userId, feedback, correctedContent } = req.body
 
-      console.log(userId, feedback, correctedContent)
       if (!userId) {
         return next(new ErrorHandler('Vui lòng cung cấp ID học sinh', 400))
       }
