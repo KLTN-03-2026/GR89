@@ -96,7 +96,4 @@ const mediaSchema = new Schema<IMedia>({
   }
 }, { timestamps: true })
 
-mediaSchema.index({ url: 1 })
-
 export const Media = mongoose.model<IMedia>('Media', mediaSchema)
-

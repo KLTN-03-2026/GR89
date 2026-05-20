@@ -116,7 +116,6 @@ const couponSchema = new Schema<ICoupon>(
 );
 
 // Indexes
-couponSchema.index({ code: 1 }, { unique: true });
 couponSchema.index({ isActive: 1 });
 couponSchema.index({ validFrom: 1, validTo: 1 });
 couponSchema.index({ name: "text", description: "text", code: "text" });
@@ -147,4 +146,3 @@ export interface ICouponModel extends mongoose.Model<ICoupon> {
 }
 
 export const Coupon = mongoose.model<ICoupon, ICouponModel>("Coupon", couponSchema);
-

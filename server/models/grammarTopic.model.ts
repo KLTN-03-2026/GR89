@@ -235,7 +235,6 @@ const grammarTopicSchema = new Schema<IGrammarTopic>(
 grammarTopicSchema.index({ title: "text", description: "text" });
 grammarTopicSchema.index({ isActive: 1 });
 grammarTopicSchema.index({ isVipRequired: 1 });
-grammarTopicSchema.index({ orderIndex: 1 });
 grammarTopicSchema.index({ createdBy: 1 });
 
 grammarTopicSchema.pre("validate", async function (this: IGrammarTopic, next) {

@@ -108,7 +108,6 @@ const ipaSchema = new Schema<IIpa>({
 // Thêm indexes cho search và sort
 ipaSchema.index({ sound: 'text', description: 'text' }); // Text search
 ipaSchema.index({ soundType: 1 });
-ipaSchema.index({ orderIndex: 1 });
 ipaSchema.index({ createdAt: -1 });
 
 // Plugin mongoose-paginate-v2

@@ -35,7 +35,7 @@ export interface IPAQueryParams {
   page?: number
   limit?: number
   search?: string
-  sortBy?: 'sound' | 'soundType' | 'createdAt' | 'updatedAt'
+  sortBy?: 'sound' | 'soundType' | 'createdAt' | 'updatedAt' | 'orderIndex'
   sortOrder?: 'asc' | 'desc'
   soundType?: 'vowel' | 'consonant' | 'diphthong'
   createdBy?: string

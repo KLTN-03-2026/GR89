@@ -73,7 +73,6 @@ const writingSchema = new Schema<IWriting>({
 // Thêm indexes cho search và sort
 writingSchema.index({ title: 'text', description: 'text' }); // Text search
 writingSchema.index({ isActive: 1 });
-writingSchema.index({ orderIndex: 1 });
 writingSchema.index({ createdBy: 1 });
 writingSchema.index({ createdAt: -1 });
 

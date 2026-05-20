@@ -84,7 +84,6 @@ const vocabularyTopicSchema = new Schema<IVocabularyTopic>({
   },
 }, { timestamps: true })
 
-vocabularyTopicSchema.index({ orderIndex: 1 });
 vocabularyTopicSchema.index({ isActive: 1 });
 vocabularyTopicSchema.index({ name: 'text' });
 vocabularyTopicSchema.index({ createdAt: -1 });

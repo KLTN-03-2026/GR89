@@ -279,7 +279,7 @@ export class CenterClassService {
     const centerClass = await CenterClass.findById(classId)
       .select('-password')
       .populate('teacher', 'fullName email avatar')
-      .populate('students.user', 'fullName email avatar')
+      // .populate('students.user', 'fullName email avatar')
       .populate('documents')
       .populate({
         path: 'homeworks',

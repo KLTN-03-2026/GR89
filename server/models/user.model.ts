@@ -219,8 +219,6 @@ userSchema.pre('findOneAndUpdate', function (next) {
   next()
 })
 
-// Tạo index cho email để tìm kiếm nhanh hơn
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ fullName: 'text', email: 'text' });
 userSchema.index({ isActive: 1 });
 userSchema.index({ role: 1 });

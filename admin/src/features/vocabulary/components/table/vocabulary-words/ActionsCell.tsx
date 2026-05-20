@@ -2,7 +2,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Button } from '@/components/ui/button'
 import { Loader2, MoreHorizontal, Pencil, Trash2, Crown } from "lucide-react"
 import { useState } from 'react'
-import { deleteVocabulary, toggleVocabularyVipStatus } from '@/features/vocabulary/services/api'
+import { deleteVocabulary } from '@/features/vocabulary/services/api'
 import { toast } from 'react-toastify'
 import { SheetUpdateVocabulary } from '@/features/vocabulary/components/dialog/SheetUpdateVocabulary'
 import {
@@ -36,20 +36,6 @@ export default function ActionsCell({ vacabulary, callback }: props) {
       .finally(() => {
         setIsLoading(false)
       })
-  }
-
-  const handleToggleVip = async () => {
-    setIsLoading(true)
-    try {
-      await toggleVocabularyVipStatus(vacabulary._id)
-      toast.success(`Đã ${vacabulary.isVipRequired ? 'tắt' : 'bật'} VIP cho bài học này`)
-      callback()
-    } catch (error: unknown) {
-      const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Cập nhật VIP thất bại'
-      toast.error(errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   return (
@@ -104,11 +90,6 @@ export default function ActionsCell({ vacabulary, callback }: props) {
           <DropdownMenuItem onClick={() => setOpenEdit(true)} disabled={isLoading}>
             <Pencil className="h-4 w-4" />
             Sửa
-          </DropdownMenuItem>
-
-          <DropdownMenuItem onClick={handleToggleVip} disabled={isLoading}>
-            <Crown className="h-4 w-4" />
-            {vacabulary.isVipRequired ? 'Chuyển thành thường' : 'Chuyển thành VIP'}
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />

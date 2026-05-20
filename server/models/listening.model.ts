@@ -65,7 +65,6 @@ const listeningSchema = new Schema<IListening>({
 // Thêm indexes cho search và sort
 listeningSchema.index({ title: 'text', description: 'text', subtitle: 'text', subtitleVi: 'text' }); // Text search
 listeningSchema.index({ isActive: 1 });
-listeningSchema.index({ orderIndex: 1 });
 listeningSchema.index({ createdAt: -1 });
 
 // Plugin mongoose-paginate-v2

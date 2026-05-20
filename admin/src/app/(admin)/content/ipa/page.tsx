@@ -20,7 +20,7 @@ export default async function page({ searchParams }: PageProps) {
     search = '',
     soundType,
     isActive,
-    sortBy = 'sound',
+    sortBy = 'orderIndex',
     sortOrder = 'asc'
   } = await searchParams
 
@@ -30,7 +30,7 @@ export default async function page({ searchParams }: PageProps) {
     search,
     soundType: soundType as 'vowel' | 'consonant' | 'diphthong',
     isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-    sortBy: sortBy as 'sound' | 'soundType' | 'createdAt' | 'updatedAt',
+    sortBy: sortBy as 'sound' | 'soundType' | 'createdAt' | 'updatedAt' | 'orderIndex',
     sortOrder: sortOrder as 'asc' | 'desc'
   })
 

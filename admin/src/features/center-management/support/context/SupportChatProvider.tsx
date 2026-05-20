@@ -11,6 +11,12 @@ import {
   sendSupportMessageAsStaff,
 } from '../services/api'
 
+type RefreshTicketDetailOptions = {
+  // Chỉ bật loading skeleton khi cần.
+  showLoading?: boolean
+  minDurationMs?: number
+}
+
 interface SupportChatContextType {
   tickets: SupportTicket[]
   selectedTicketId: string
@@ -18,10 +24,11 @@ interface SupportChatContextType {
   newCount: number
   canTakeOver: boolean
   canReply: boolean
+  // Loading dành riêng cho trường hợp chuyển ticket (đổi cuộc hội thoại).
   isSelectedTicketLoading: boolean
   selectTicketId: (ticketId: string) => void
   refreshTickets: () => Promise<void>
-  refreshTicketDetail: (ticketId: string) => Promise<void>
+  refreshTicketDetail: (ticketId: string, options?: RefreshTicketDetailOptions) => Promise<void>
   claimSelectedTicket: () => Promise<void>
   sendMessageAsStaff: (content: string, attachments?: SupportAttachment) => Promise<void>
 }
@@ -42,17 +49,24 @@ export function SupportChatProvider({
   const { user } = useAuth()
   const socket = useSocketStore((s) => s.socket)
 
+  // Danh sách ticket ở cột trái.
   const [tickets, setTickets] = useState<SupportTicket[]>(initialTickets || [])
+  // Ticket đang được chọn để hiển thị chat.
   const [selectedTicketId, setSelectedTicketId] = useState<string>(
     initialSelectedTicketId || initialTickets?.[0]?._id || '',
   )
+  // Chi tiết ticket đang hiển thị (bao gồm messages).
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(initialSelectedTicket || null)
+  // Loading khi chuyển ticket (hiển thị skeleton ở header/messages + disable input).
   const [isSelectedTicketLoading, setIsSelectedTicketLoading] = useState(false)
+  // Dùng để so sánh khi có tin nhắn mới (phục vụ play sound / hạn chế gọi thừa).
   const lastSelectedMessageAtRef = useRef<string | null>(null)
+  // Chống race-condition: khi user bấm đổi ticket liên tục, chỉ request mới nhất được áp dụng.
   const ticketDetailRequestSeqRef = useRef(0)
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   useEffect(() => {
+    // Âm thanh báo tin nhắn mới (chỉ play khi học viên nhắn).
     audioRef.current = new Audio('/sounds/message.mp3')
   }, [])
 
@@ -61,10 +75,14 @@ export function SupportChatProvider({
   }
 
   const newCount = useMemo(() => {
+    // Đếm số ticket đang "mới" (đang mở và đang chờ assignee).
     return tickets.filter((t) => t.status === 'open' && t.waitingFor === 'assignee').length
   }, [tickets])
 
   const canTakeOver = useMemo(() => {
+    // Cho phép "Nhận phản hồi" khi:
+    // - ticket open, đang chờ assignee
+    // - chưa có người nhận, hoặc đã quá 5 phút kể từ tin nhắn cuối của học viên mà assignee chưa trả lời
     if (!selectedTicket) return false
     if (selectedTicket.status !== 'open') return false
     if (selectedTicket.waitingFor !== 'assignee') return false
@@ -81,6 +99,7 @@ export function SupportChatProvider({
   }, [selectedTicket])
 
   const canReply = useMemo(() => {
+    // Chỉ assignee của ticket mới được trả lời (và ticket phải đang open).
     if (!selectedTicket) return false
     if (selectedTicket.status !== 'open') return false
     if (!user?._id) return false
@@ -89,13 +108,19 @@ export function SupportChatProvider({
   }, [selectedTicket, user?._id])
 
   const refreshTickets = useCallback(async () => {
+    // Refresh danh sách ticket (cột trái).
     const res = await getSupportTicketsForStaff({ status: 'open' })
     const list = res.data || []
     setTickets(list)
     setSelectedTicketId((prev) => (prev ? prev : list[0]?._id || ''))
   }, [])
 
-  const refreshTicketDetail = useCallback(async (ticketId: string) => {
+  const refreshTicketDetail = useCallback(async (ticketId: string, options?: RefreshTicketDetailOptions) => {
+    // Refresh chi tiết ticket (messages). Lưu ý:
+    // - showLoading=true chỉ dùng khi chuyển ticket để UI có skeleton rõ ràng.
+    // - Khi gửi tin nhắn / sync tin nhắn mới => showLoading để false để không "loading" liên tục.
+    const showLoading = options?.showLoading ?? false
+    const minDurationMs = options?.minDurationMs ?? 0
     if (!ticketId) {
       setSelectedTicket(null)
       lastSelectedMessageAtRef.current = null
@@ -104,26 +129,28 @@ export function SupportChatProvider({
     }
     const requestSeq = ++ticketDetailRequestSeqRef.current
     const startedAt = Date.now()
-    setIsSelectedTicketLoading(true)
+    if (showLoading) setIsSelectedTicketLoading(true)
     try {
       const res = await getSupportTicketDetailForStaff(ticketId)
       const ticket = res.data || null
-      const elapsed = Date.now() - startedAt
-      const minDurationMs = 250
-      const remaining = minDurationMs - elapsed
-      if (remaining > 0) {
-        await new Promise((r) => setTimeout(r, remaining))
+      if (showLoading && minDurationMs > 0) {
+        const elapsed = Date.now() - startedAt
+        const remaining = minDurationMs - elapsed
+        if (remaining > 0) await new Promise((r) => setTimeout(r, remaining))
       }
+      // Nếu trong lúc chờ API user đã chọn ticket khác => bỏ kết quả cũ để tránh setState sai.
       if (requestSeq !== ticketDetailRequestSeqRef.current) return
       setSelectedTicket(ticket)
       if (ticketId === selectedTicketId) lastSelectedMessageAtRef.current = ticket?.lastMessageAt || null
     } finally {
-      if (requestSeq === ticketDetailRequestSeqRef.current) setIsSelectedTicketLoading(false)
+      if (showLoading && requestSeq === ticketDetailRequestSeqRef.current) setIsSelectedTicketLoading(false)
     }
   }, [selectedTicketId])
 
   const refreshSelectedTicketOnUpdate = useCallback(
     async (ticketId: string) => {
+      // Khi socket báo ticket hiện tại có update:
+      // - Chỉ refresh data, KHÔNG bật loading để tránh UX bị giật.
       if (!ticketId) return
       const prevLastMessageAt = lastSelectedMessageAtRef.current
       const res = await getSupportTicketDetailForStaff(ticketId)
@@ -135,6 +162,7 @@ export function SupportChatProvider({
 
       if (prevLastMessageAt && nextLastMessageAt && nextLastMessageAt !== prevLastMessageAt) {
         if (lastMsg?.sender?.role === 'user') {
+          // Chỉ phát âm thanh nếu tin nhắn mới đến từ học viên.
           playSound()
         }
       }
@@ -145,6 +173,7 @@ export function SupportChatProvider({
   )
 
   const claimSelectedTicket = async () => {
+    // Nhận xử lý ticket: sau đó refresh list + detail.
     if (!selectedTicketId) return
     await claimSupportTicket(selectedTicketId, 5)
     await refreshTickets()
@@ -156,10 +185,14 @@ export function SupportChatProvider({
     if (!selectedTicketId) return
     await sendSupportMessageAsStaff(selectedTicketId, content, attachments)
     await refreshTickets()
+    // Refresh để lấy message mới, nhưng không bật loading.
     await refreshTicketDetail(selectedTicketId)
   }
 
   const selectTicketId = useCallback((ticketId: string) => {
+    // Khi user click chọn ticket mới:
+    // - set selectedTicket = null để UI chuyển sang skeleton/empty ngay
+    // - việc fetch detail sẽ chạy trong useEffect bên dưới
     if (ticketId && ticketId !== selectedTicketId) setIsSelectedTicketLoading(true)
     setSelectedTicketId(ticketId)
     setSelectedTicket(null)
@@ -167,10 +200,12 @@ export function SupportChatProvider({
   }, [selectedTicketId])
 
   useEffect(() => {
+    // Load list ngay khi vào trang.
     refreshTickets()
   }, [refreshTickets])
 
   useEffect(() => {
+    // Mỗi khi selectedTicketId đổi => fetch detail và bật loading (skeleton) để có hiệu ứng chuyển hội thoại.
     if (!selectedTicketId) {
       setSelectedTicket(null)
       lastSelectedMessageAtRef.current = null
@@ -180,10 +215,13 @@ export function SupportChatProvider({
       lastSelectedMessageAtRef.current = selectedTicket?.lastMessageAt || null
       return
     }
-    refreshTicketDetail(selectedTicketId)
+    refreshTicketDetail(selectedTicketId, { showLoading: true, minDurationMs: 250 })
   }, [refreshTicketDetail, selectedTicket, selectedTicketId])
 
   useEffect(() => {
+    // Lắng nghe socket để:
+    // - refresh danh sách ticket khi có update
+    // - nếu ticket đang mở bị update thì refresh detail (không bật loading)
     if (!socket) return
 
     const onStaffTicketUpdated = (payload: { ticketId?: string }) => {

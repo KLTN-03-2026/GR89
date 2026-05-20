@@ -85,7 +85,6 @@ const readingSchema = new Schema<IReading>({
 // Thêm indexes cho search và sort
 readingSchema.index({ title: 'text', description: 'text', paragraphEn: 'text', paragraphVi: 'text' }); // Text search
 readingSchema.index({ isActive: 1 });
-readingSchema.index({ orderIndex: 1 });
 readingSchema.index({ createdBy: 1 });
 readingSchema.index({ createdAt: -1 });
 

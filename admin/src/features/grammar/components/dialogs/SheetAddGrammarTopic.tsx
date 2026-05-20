@@ -37,7 +37,7 @@ export function SheetAddGrammarTopic({ callback }: Props) {
   })
 
   const handleCreateGrammarTopic = async () => {
-    if (!data.title.trim() || !data.level) {
+    if (!data.title.trim() || !data.description.trim() || !data.level) {
       toast.error('Vui lòng nhập đầy đủ thông tin')
       return
     }
@@ -50,7 +50,7 @@ export function SheetAddGrammarTopic({ callback }: Props) {
       setOpen(false)
       setData({ title: '', description: '', level: 'A1' })
     } catch {
-      toast.error('Đã có lỗi xảy ra')
+      
     } finally {
       setIsLoading(false)
     }
@@ -64,8 +64,8 @@ export function SheetAddGrammarTopic({ callback }: Props) {
           Thêm chủ đề
         </Button>
       </SheetTrigger>
-      <SheetContent className="sm:max-w-md">
-        <SheetHeader>
+      <SheetContent className="px-10">
+        <SheetHeader className='px-0'>
           <SheetTitle>Thêm chủ đề mới</SheetTitle>
           <SheetDescription>
             Tạo một chủ đề ngữ pháp mới để quản lý các bài học.

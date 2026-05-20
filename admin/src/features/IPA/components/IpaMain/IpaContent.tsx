@@ -63,7 +63,7 @@ export default function IpaContent({ refresh, callback, initialData, initialPagi
   const urlSearch = searchParams.get('search') || ""
   const urlSoundType = ['vowel', 'consonant', 'diphthong'].includes(rawSoundType || '') ? (rawSoundType as 'vowel' | 'consonant' | 'diphthong') : undefined
   const urlIsActive = rawIsActive === 'true' ? true : rawIsActive === 'false' ? false : undefined
-  const urlSortBy = ['sound', 'soundType', 'createdAt', 'updatedAt'].includes(rawSortBy || '') ? (rawSortBy as 'sound' | 'soundType' | 'createdAt' | 'updatedAt') : 'sound'
+  const urlSortBy = ['sound', 'soundType', 'createdAt', 'updatedAt', 'orderIndex'].includes(rawSortBy || '') ? (rawSortBy as 'sound' | 'soundType' | 'createdAt' | 'updatedAt' | 'orderIndex') : 'orderIndex'
   const urlSortOrder = ['asc', 'desc'].includes(rawSortOrder || '') ? (rawSortOrder as 'asc' | 'desc') : 'asc'
 
   const [isLoading, setIsLoading] = useState(false)
@@ -131,7 +131,7 @@ export default function IpaContent({ refresh, callback, initialData, initialPagi
     if (urlSearch) count++
     if (urlSoundType !== undefined) count++
     if (urlIsActive !== undefined) count++
-    if (urlSortBy !== 'sound') count++
+    if (urlSortBy !== 'sound' && urlSortBy !== 'orderIndex') count++
     if (urlSortOrder !== 'asc') count++
     setActiveFiltersCount(count)
   }, [urlSearch, urlSoundType, urlIsActive, urlSortBy, urlSortOrder])
@@ -153,7 +153,7 @@ export default function IpaContent({ refresh, callback, initialData, initialPagi
     updateUrl({ isActive: value === 'all' ? undefined : value === 'active', page: 1 })
   }
 
-  const handleSort = (field: 'sound' | 'soundType' | 'createdAt' | 'updatedAt') => {
+  const handleSort = (field: 'sound' | 'soundType' | 'createdAt' | 'updatedAt' | 'orderIndex') => {
     updateUrl({ sortBy: field, page: 1 })
   }
 
@@ -326,11 +326,12 @@ export default function IpaContent({ refresh, callback, initialData, initialPagi
                 {/* Sort By */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Sắp xếp theo</label>
-                  <Select value={urlSortBy} onValueChange={(value: 'sound' | 'soundType' | 'createdAt' | 'updatedAt') => handleSort(value)}>
+                  <Select value={urlSortBy} onValueChange={(value: 'sound' | 'soundType' | 'createdAt' | 'updatedAt' | 'orderIndex') => handleSort(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="orderIndex">Số thứ tự</SelectItem> 
                       <SelectItem value="sound">Âm</SelectItem>
                       <SelectItem value="soundType">Loại âm</SelectItem>
                       <SelectItem value="createdAt">Ngày tạo</SelectItem>

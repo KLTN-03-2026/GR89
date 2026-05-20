@@ -59,7 +59,7 @@ export function SheetUpdateGrammarTopic({ topic, open, setOpen, callback }: Prop
   }, [open, topic])
 
   const handleUpdateGrammarTopic = async () => {
-    if (!data.title.trim() || !data.level) {
+    if (!data.title.trim() || !data.description.trim() || !data.level) {
       toast.error('Vui lòng nhập đầy đủ thông tin')
       return
     }

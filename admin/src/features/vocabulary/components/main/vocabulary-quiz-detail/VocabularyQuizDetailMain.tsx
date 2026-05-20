@@ -34,11 +34,15 @@ export function VocabularyQuizDetailMain({ _id }: { _id: string }) {
       </div>
       <Card>
         <CardContent>
-          <DataTable columns={columnsVocabularyQuizDetail(_id, () => setRefresh(!refresh))} data={data} isLoading={loading} columnNameSearch="question" />
+          <DataTable
+            columns={columnsVocabularyQuizDetail(_id, () => setRefresh(!refresh))}
+            data={data}
+            isLoading={loading}
+            columnNameSearch="Câu hỏi"
+          />
         </CardContent>
       </Card>
     </>
   )
 }
-
 
