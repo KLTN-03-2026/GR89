@@ -1,4 +1,4 @@
-import { Baby, BarChart3, BookOpen, Briefcase, Eye, FileText, Film, Flame, GraduationCap, Headphones, Layers, LayoutDashboardIcon, LucideIcon, Map, Mic, Music, PenTool, PlayCircle, Radio, Rocket, Sparkles, Target, Trophy, Users, Volume2, Zap } from "lucide-react";
+import { BarChart3, BookOpen, Eye, FileText, Film, Flame, Headphones, LayoutDashboardIcon, LucideIcon, Map, Mic, Music, PenTool, PlayCircle, Radio, Sparkles, Target, Trophy, Users, Volume2, Zap } from "lucide-react";
 
 export interface ISidebarRoute {
   title: string;
@@ -161,30 +161,30 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
       },
     ],
   },
-  {
-    title: "catelogies",
-    icon: Layers,
-    items: [
-      {
-        title: "Danh mục trẻ em",
-        url: ROUTES_PATH.CATELOGY_KIDS,
-        icon: Baby,
-        gradient: "from-amber-400 to-orange-500",
-      },
-      {
-        title: "Danh mục thiếu niên",
-        url: ROUTES_PATH.CATELOGY_TEENAGER,
-        icon: GraduationCap,
-        gradient: "from-sky-400 to-indigo-600",
-      },
-      {
-        title: "Danh mục người lớn",
-        url: ROUTES_PATH.CATELOGY_ADULT,
-        icon: Briefcase,
-        gradient: "from-red-400 to-red-600",
-      }
-    ],
-  }
+  // {
+  //   title: "catelogies",
+  //   icon: Layers,
+  //   items: [
+  //     {
+  //       title: "Danh mục trẻ em",
+  //       url: ROUTES_PATH.CATELOGY_KIDS,
+  //       icon: Baby,
+  //       gradient: "from-amber-400 to-orange-500",
+  //     },
+  //     {
+  //       title: "Danh mục thiếu niên",
+  //       url: ROUTES_PATH.CATELOGY_TEENAGER,
+  //       icon: GraduationCap,
+  //       gradient: "from-sky-400 to-indigo-600",
+  //     },
+  //     {
+  //       title: "Danh mục người lớn",
+  //       url: ROUTES_PATH.CATELOGY_ADULT,
+  //       icon: Briefcase,
+  //       gradient: "from-red-400 to-red-600",
+  //     }
+  //   ],
+  // }
 ]
 
 export interface IQuickAction {

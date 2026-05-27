@@ -1,7 +1,6 @@
 import {
   BarChart3,
   BookOpen,
-  Database,
   Eye,
   FileText,
   Film,
@@ -13,19 +12,14 @@ import {
   Mic,
   Music,
   PenTool,
-  Settings,
-  Shield,
   TrendingUp,
   Users,
   Video,
   Volume2,
-  Wrench,
-  Globe,
   Award,
   Crown,
   Tag,
   Map,
-  GraduationCap,
 } from "lucide-react";
 
 export interface ISidebarRoute {
@@ -379,63 +373,63 @@ const SIDEBAR_ROUTES: ISidebarRouteGroup[] = [
     ],
   },
   // Center Management
-  {
-    title: 'Trung tâm Đào tạo',
-    icon: GraduationCap,
-    subItems: [
-      {
-        title: "Quản lý Lớp học",
-        href: ROUTES_PATH.CLASSES,
-        icon: Users,
-      },
-      {
-        title: "Kho Tài liệu",
-        href: ROUTES_PATH.DOCUMENTS,
-        icon: BookOpen,
-      },
-      {
-        title: "Hỗ trợ học viên",
-        href: ROUTES_PATH.SUPPORT,
-        icon: Headphones,
-      },
-    ],
-  },
-  {
-    title: 'Hệ thống & Cài đặt',
-    icon: Settings,
-    subItems: [
-      {
-        title: "Cài đặt chung",
-        href: ROUTES_PATH.GENERAL_SETTINGS,
-        icon: Settings,
-      },
-      {
-        title: "Bảo mật",
-        href: ROUTES_PATH.SECURITY,
-        icon: Shield,
-      },
-      {
-        title: "Nhật ký hệ thống",
-        href: ROUTES_PATH.SYSTEM_LOGS,
-        icon: FileText,
-      },
-      {
-        title: "Sao lưu & Khôi phục",
-        href: ROUTES_PATH.BACKUP_RESTORE,
-        icon: Database,
-      },
-      {
-        title: "Bảo trì",
-        href: ROUTES_PATH.MAINTENANCE,
-        icon: Wrench,
-      },
-      {
-        title: "Đa ngôn ngữ",
-        href: ROUTES_PATH.LOCALIZATION,
-        icon: Globe,
-      },
-    ],
-  }
+  // {
+  //   title: 'Trung tâm Đào tạo',
+  //   icon: GraduationCap,
+  //   subItems: [
+  //     {
+  //       title: "Quản lý Lớp học",
+  //       href: ROUTES_PATH.CLASSES,
+  //       icon: Users,
+  //     },
+  //     {
+  //       title: "Kho Tài liệu",
+  //       href: ROUTES_PATH.DOCUMENTS,
+  //       icon: BookOpen,
+  //     },
+  //     {
+  //       title: "Hỗ trợ học viên",
+  //       href: ROUTES_PATH.SUPPORT,
+  //       icon: Headphones,
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: 'Hệ thống & Cài đặt',
+  //   icon: Settings,
+  //   subItems: [
+  //     {
+  //       title: "Cài đặt chung",
+  //       href: ROUTES_PATH.GENERAL_SETTINGS,
+  //       icon: Settings,
+  //     },
+  //     {
+  //       title: "Bảo mật",
+  //       href: ROUTES_PATH.SECURITY,
+  //       icon: Shield,
+  //     },
+  //     {
+  //       title: "Nhật ký hệ thống",
+  //       href: ROUTES_PATH.SYSTEM_LOGS,
+  //       icon: FileText,
+  //     },
+  //     {
+  //       title: "Sao lưu & Khôi phục",
+  //       href: ROUTES_PATH.BACKUP_RESTORE,
+  //       icon: Database,
+  //     },
+  //     {
+  //       title: "Bảo trì",
+  //       href: ROUTES_PATH.MAINTENANCE,
+  //       icon: Wrench,
+  //     },
+  //     {
+  //       title: "Đa ngôn ngữ",
+  //       href: ROUTES_PATH.LOCALIZATION,
+  //       icon: Globe,
+  //     },
+  //   ],
+  // }
 ]
 
 export const ROUTES = { SIDEBAR_ROUTES, ROUTES_PATH, ROUTES_NAME }
