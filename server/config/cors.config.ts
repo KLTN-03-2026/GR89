@@ -6,8 +6,8 @@ const getAllowedOrigins = (): string[] => {
   const origins = [
     'http://localhost:3000', 'http://localhost:3001',
     'http://127.0.0.1:3000',
-    process.env.CLIENT_URL,
-    process.env.FRONTEND_URL,
+    process.env.ADMIN_BASE_URL,
+    process.env.CLIENT_BASE_URL,
   ]
 
   // Filter out undefined values
